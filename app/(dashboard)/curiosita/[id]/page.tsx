@@ -2,14 +2,16 @@
 
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
 
 
 
-export default function CuriositaDetailPage(){
+export default function CuriositaDettaglioPage(){
 
+
+  const router = useRouter();
 
   const params = useParams();
 
@@ -18,19 +20,28 @@ export default function CuriositaDetailPage(){
 
 
 
-  const [curiosita,setCuriosita]=useState<any>(null);
+  const [curiosita,setCuriosita] = useState<any>(null);
 
-  const [loading,setLoading]=useState(true);
-
-
+  const [loading,setLoading] = useState(true);
 
 
 
 
-  async function load(){
 
 
-    const {data,error}=await supabase
+
+
+
+  async function loadCuriosita(){
+
+
+    const {
+
+      data,
+
+      error
+
+    } = await supabase
 
       .from("curiosities")
 
@@ -54,8 +65,6 @@ export default function CuriositaDetailPage(){
 
       console.log(error);
 
-      setLoading(false);
-
       return;
 
     }
@@ -69,7 +78,9 @@ export default function CuriositaDetailPage(){
     setLoading(false);
 
 
+
   }
+
 
 
 
@@ -82,12 +93,77 @@ export default function CuriositaDetailPage(){
 
     if(id){
 
-      load();
+      loadCuriosita();
 
     }
 
 
   },[id]);
+
+
+
+
+
+
+
+
+
+  async function deleteCuriosita(){
+
+
+    const conferma = confirm(
+
+      "Eliminare questa curiosità?"
+
+    );
+
+
+    if(!conferma){
+
+      return;
+
+    }
+
+
+
+
+
+
+    const {error}=await supabase
+
+      .from("curiosities")
+
+      .delete()
+
+      .eq(
+
+        "id",
+
+        id
+
+      );
+
+
+
+
+
+
+    if(error){
+
+      alert(error.message);
+
+      return;
+
+    }
+
+
+
+
+
+    router.push("/curiosita");
+
+
+  }
 
 
 
@@ -112,6 +188,8 @@ export default function CuriositaDetailPage(){
 
 
   }
+
+
 
 
 
@@ -145,23 +223,79 @@ export default function CuriositaDetailPage(){
   return (
 
     <main className="
-      p-6
+      min-h-screen
       pb-28
       max-w-3xl
       mx-auto
+      p-6
     ">
+
+
+
+
+
+      <button
+
+        onClick={()=>router.back()}
+
+        className="
+          mb-6
+          text-gray-500
+        "
+
+      >
+
+        ← Indietro
+
+      </button>
+
+
+
+
+
+
+
+
+
+      {
+
+        curiosita.immagine_url && (
+
+
+          <img
+
+            src={curiosita.immagine_url}
+
+            className="
+              w-full
+              h-72
+              object-cover
+              rounded-3xl
+              mb-6
+            "
+
+          />
+
+
+        )
+
+      }
+
+
+
+
+
+
 
 
 
       <h1 className="
         text-3xl
         font-bold
-        mb-6
+        mb-4
       ">
 
-
         {curiosita.titolo}
-
 
       </h1>
 
@@ -170,23 +304,54 @@ export default function CuriositaDetailPage(){
 
 
 
+
+
+
       {
 
-        curiosita.immagine_url &&
+        curiosita.audio_url && (
 
 
-        <img
-
-          src={curiosita.immagine_url}
-
-          className="
-            w-full
+          <section className="
+            bg-purple-50
             rounded-3xl
+            p-5
             mb-6
-          "
+          ">
 
-        />
 
+            <h2 className="
+              font-bold
+              mb-3
+            ">
+
+              🎧 Audio
+
+            </h2>
+
+
+
+            <audio
+
+              controls
+
+              className="w-full"
+
+            >
+
+              <source
+
+                src={curiosita.audio_url}
+
+              />
+
+            </audio>
+
+
+          </section>
+
+
+        )
 
       }
 
@@ -195,45 +360,71 @@ export default function CuriositaDetailPage(){
 
 
 
-      {
-
-        curiosita.audio_url &&
-
-
-        <audio
-
-          controls
-
-          src={curiosita.audio_url}
-
-          className="
-            w-full
-            mb-6
-          "
-
-        />
-
-
-      }
 
 
 
-
-
-
-
-
-      <p className="
-        whitespace-pre-line
-        text-lg
-        leading-relaxed
+      <section className="
+        bg-white
+        rounded-3xl
+        border
+        p-6
       ">
 
 
-        {curiosita.contenuto}
+        <p className="
+          whitespace-pre-line
+          leading-relaxed
+        ">
+
+          {curiosita.contenuto}
+
+        </p>
 
 
-      </p>
+
+      </section>
+
+
+
+
+
+
+
+
+
+      {
+
+
+        curiosita.tipo === "community" && (
+
+
+          <button
+
+            onClick={deleteCuriosita}
+
+            className="
+              mt-6
+              w-full
+              bg-red-100
+              text-red-600
+              rounded-3xl
+              p-4
+              font-bold
+            "
+
+          >
+
+            🗑️ Elimina curiosità
+
+
+          </button>
+
+
+        )
+
+
+      }
+
 
 
 

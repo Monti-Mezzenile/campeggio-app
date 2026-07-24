@@ -111,7 +111,6 @@ export default function CuriositaPage(){
 
 
 
-
   async function deleteCuriosita(item:any){
 
 
@@ -136,10 +135,6 @@ export default function CuriositaPage(){
 
 
 
-
-
-
-    // elimina file immagine
 
     if(item.immagine_url){
 
@@ -171,8 +166,6 @@ export default function CuriositaPage(){
 
 
 
-    // elimina audio
-
     if(item.audio_url){
 
 
@@ -203,8 +196,6 @@ export default function CuriositaPage(){
 
 
 
-
-    // elimina record
 
     const {
 
@@ -373,121 +364,222 @@ export default function CuriositaPage(){
 
 
 
-      <div className="
-        grid
-        grid-cols-2
-        gap-4
+
+
+      <section>
+
+
+        <h2 className="
+          text-xl
+          font-bold
+          mb-4
+        ">
+
+          🏕️ Quello che ci rappresenta
+
+        </h2>
+
+
+
+
+
+        <div className="
+          grid
+          grid-cols-2
+          gap-4
+        ">
+
+
+
+          {
+
+
+            ufficiali.map((item)=>(
+
+
+              <button
+
+                key={item.titolo}
+
+                onClick={()=>router.push(item.link)}
+
+                className={`
+                  aspect-square
+                  rounded-3xl
+                  ${item.colore}
+                  flex
+                  flex-col
+                  items-center
+                  justify-center
+                  p-4
+                  active:scale-95
+                  transition
+                `}
+
+              >
+
+                <span className="text-5xl">
+
+                  {item.icona}
+
+                </span>
+
+
+
+                <span className="
+                  mt-4
+                  font-semibold
+                  text-center
+                ">
+
+                  {item.titolo}
+
+                </span>
+
+
+              </button>
+
+
+            ))
+
+          }
+
+
+        </div>
+
+
+      </section>
+
+
+
+
+
+
+
+
+
+      <section className="
+        mt-10
       ">
+
+
+
+        <div className="
+          flex
+          justify-between
+          items-center
+          mb-4
+        ">
+
+
+          <h2 className="
+            text-xl
+            font-bold
+          ">
+
+            ✨ Community
+
+          </h2>
+
+
+
+          <button
+
+            onClick={()=>router.push(
+              "/curiosita/nuova"
+            )}
+
+            className="
+              bg-purple-100
+              rounded-full
+              px-4
+              py-2
+              font-semibold
+            "
+
+          >
+
+            ➕
+
+          </button>
+
+
+
+        </div>
+
+
+
+
+
+
 
 
 
         {
 
-
-          ufficiali.map((item)=>(
-
-
-            <button
-
-              key={item.titolo}
-
-              onClick={()=>router.push(item.link)}
-
-              className={`
-                aspect-square
-                rounded-3xl
-                ${item.colore}
-                flex
-                flex-col
-                items-center
-                justify-center
-                active:scale-95
-                transition
-              `}
-
-            >
-
-              <span className="text-5xl">
-
-                {item.icona}
-
-              </span>
+          curiosita.length === 0 ? (
 
 
-
-              <span className="
-                mt-4
-                font-semibold
-                text-center
-              ">
-
-                {item.titolo}
-
-              </span>
-
-
-            </button>
-
-
-          ))
-
-        }
-
-
-      </div>
-
-
-
-
-
-
-
-
-
-      {
-
-        curiosita.length > 0 && (
-
-
-          <section className="mt-8">
-
-
-            <h2 className="
-              text-xl
-              font-bold
-              mb-4
+            <p className="
+              text-gray-500
             ">
 
-              ✨ Curiosità della community
+              Nessuna curiosità creata dalla community
 
-            </h2>
-
-
+            </p>
 
 
+          )
+
+          :
 
 
-            <div className="
-              grid
-              grid-cols-2
-              gap-4
-            ">
-
-
-
-              {
-
-
-                curiosita.map((item)=>(
+          <div className="
+            grid
+            grid-cols-2
+            gap-4
+          ">
 
 
 
-                  <div
+            {
 
-                    key={item.id}
+
+              curiosita.map((item)=>(
+
+
+
+                <div
+
+                  key={item.id}
+
+                  className="
+                    relative
+                  "
+
+                >
+
+
+
+
+                  <button
+
+                    onClick={()=>router.push(
+                      `/curiosita/${item.id}`
+                    )}
 
                     className="
+                      aspect-square
+                      w-full
+                      rounded-3xl
+                      bg-purple-50
+                      overflow-hidden
+                      flex
+                      flex-col
+                      justify-end
                       relative
+                      active:scale-95
+                      transition
                     "
 
                   >
@@ -495,73 +587,49 @@ export default function CuriositaPage(){
 
 
 
-
-                    <button
-
-                      onClick={()=>router.push(
-                        `/curiosita/${item.id}`
-                      )}
-
-                      className="
-                        aspect-square
-                        w-full
-                        rounded-3xl
-                        bg-purple-50
-                        flex
-                        flex-col
-                        items-center
-                        justify-center
-                        active:scale-95
-                        transition
-                      "
-
-                    >
+                    {
 
 
+                      item.immagine_url && (
 
-                      {
-
-
-                        item.immagine_url
-
-
-                        ?
 
                         <img
 
                           src={item.immagine_url}
 
                           className="
-                            w-20
-                            h-20
-                            rounded-2xl
+                            absolute
+                            inset-0
+                            w-full
+                            h-full
                             object-cover
                           "
 
                         />
 
 
-                        :
+                      )
+
+                    }
 
 
-                        <span className="text-5xl">
-
-                          {item.icona || "📚"}
-
-                        </span>
 
 
-                      }
 
-
+                    <div className="
+                      relative
+                      bg-white/80
+                      backdrop-blur
+                      w-full
+                      p-3
+                    ">
 
 
 
                       <span className="
-                        mt-3
                         font-semibold
                         text-center
-                        px-2
+                        block
                       ">
 
                         {item.titolo}
@@ -570,68 +638,11 @@ export default function CuriositaPage(){
 
 
 
-                    </button>
+                    </div>
 
 
 
-
-
-
-
-
-                    <button
-
-                      onClick={()=>deleteCuriosita(item)}
-
-                      className="
-                        absolute
-                        top-2
-                        right-2
-                        w-8
-                        h-8
-                        rounded-full
-                        bg-white
-                        shadow
-                        text-red-500
-                      "
-
-                    >
-
-                      🗑️
-
-
-                    </button>
-
-
-
-
-
-
-                  </div>
-
-
-
-                ))
-
-
-
-              }
-
-
-
-
-            </div>
-
-
-
-
-          </section>
-
-
-        )
-
-
-      }
+                  </button>
 
 
 
@@ -641,30 +652,56 @@ export default function CuriositaPage(){
 
 
 
-      <button
+                  <button
 
-        onClick={()=>router.push(
-          "/curiosita/nuova"
-        )}
+                    onClick={()=>deleteCuriosita(item)}
 
-        className="
-          mt-8
-          w-full
-          rounded-3xl
-          bg-purple-100
-          p-6
-          font-bold
-          text-lg
-          active:scale-95
-          transition
-        "
+                    className="
+                      absolute
+                      top-2
+                      right-2
+                      w-9
+                      h-9
+                      rounded-full
+                      bg-white
+                      shadow
+                      text-red-500
+                    "
 
-      >
+                  >
 
-        ➕ Aggiungi curiosità
+                    🗑️
 
 
-      </button>
+                  </button>
+
+
+
+
+
+                </div>
+
+
+
+              ))
+
+
+
+            }
+
+
+
+          </div>
+
+
+
+        }
+
+
+
+      </section>
+
+
 
 
 

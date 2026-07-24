@@ -14,7 +14,11 @@ export default function DashboardLayout({
 
   return (
 
-    <>
+    <main className="
+      min-h-screen
+      bg-monti-bg
+    ">
+
 
       {children}
 
@@ -22,7 +26,7 @@ export default function DashboardLayout({
       <BottomNav />
 
 
-    </>
+    </main>
 
   );
 

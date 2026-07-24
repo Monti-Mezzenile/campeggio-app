@@ -14,58 +14,42 @@ export default function BottomNav(){
 
 
 
+
   const items = [
 
 
     {
-
       name:"Home",
-
       icon:"🏕️",
-
       href:"/"
-
-
     },
 
 
     {
-
       name:"Storico",
-
       icon:"📚",
-
       href:"/history"
-
-
     },
 
 
     {
-
       name:"Curiosità",
-
       icon:"💡",
-
       href:"/curiosita"
-
-
     },
 
 
     {
-
       name:"Profilo",
-
       icon:"👤",
-
       href:"/profile"
-
-
     }
 
 
   ];
+
+
+
 
 
 
@@ -76,24 +60,31 @@ export default function BottomNav(){
 
     <nav
 
-
       className="
         fixed
-        bottom-0
-        left-0
-        right-0
-        bg-white
-        border-t
-        border-gray-200
+        bottom-4
+        left-4
+        right-4
         h-20
+        rounded-3xl
+        shadow-lg
         flex
         items-center
         justify-around
         z-50
+        border
+        border-black/5
       "
 
+      style={{
+
+        background:"#F0D5B3"
+
+      }}
 
     >
+
+
 
 
 
@@ -101,7 +92,6 @@ export default function BottomNav(){
 
 
         items.map((item)=>(
-
 
 
           <Link
@@ -114,61 +104,79 @@ export default function BottomNav(){
 
 
             className={`
-
+              
               flex
-
               flex-col
-
               items-center
-
               justify-center
-
               gap-1
-
-              text-xs
-
-              transition
+              rounded-2xl
+              px-4
+              py-2
+              transition-all
+              duration-200
 
               ${
-
                 pathname === item.href
 
                 ?
 
-                "text-black font-semibold"
+                "text-white scale-105"
 
                 :
 
-                "text-gray-400"
+                "text-[#3D3E62]"
 
               }
 
-
             `}
+
+
+            style={
+
+              pathname === item.href
+
+              ?
+
+              {
+                background:"#6C9A8B"
+              }
+
+              :
+
+              {}
+
+            }
 
 
           >
 
 
 
-            <span className="text-2xl">
 
+
+            <span className="
+              text-2xl
+            ">
 
               {item.icon}
 
-
             </span>
 
 
 
 
-            <span>
 
+
+            <span className="
+              text-xs
+              font-medium
+            ">
 
               {item.name}
 
-
             </span>
+
 
 
 
@@ -176,12 +184,13 @@ export default function BottomNav(){
           </Link>
 
 
-
         ))
 
 
 
       }
+
+
 
 
 
