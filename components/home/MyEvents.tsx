@@ -41,7 +41,9 @@ export default function MyEvents({
   return (
 
 
-    <section className="mt-8">
+    <section className="mt-6">
+
+
 
 
 
@@ -49,19 +51,23 @@ export default function MyEvents({
         flex
         justify-between
         items-center
-        mb-4
+        mb-3
       ">
 
 
 
         <h2 className="
-          text-xl
-          font-semibold
+          text-xs
+          font-bold
+          uppercase
+          tracking-widest
+          text-[#FFF4E3]
         ">
 
-          📚 I tuoi eventi
+          I MIEI EVENTI
 
         </h2>
+
 
 
 
@@ -77,11 +83,14 @@ export default function MyEvents({
 
 
               <span className="
-                text-sm
-                underline
+                text-xs
+                font-bold
+                uppercase
+                tracking-wide
+                text-[#FFF4E3]
               ">
 
-                + Crea
+                + CREA
 
               </span>
 
@@ -97,6 +106,8 @@ export default function MyEvents({
 
 
       </div>
+
+
 
 
 
@@ -126,19 +137,23 @@ export default function MyEvents({
 
 
 
-        <div className="
-          flex
-          gap-5
-          overflow-x-auto
-          pb-5
-        ">
+        <div
+          className="
+            flex
+            gap-3
+            overflow-x-auto
+            pb-2
+            scrollbar-hide
+            snap-x
+          "
+        >
 
 
 
           {
 
 
-            events.slice(0,3).map(event=>(
+            events.slice(0,5).map(event=>(
 
 
 
@@ -152,7 +167,8 @@ export default function MyEvents({
 
 
                 className="
-                  min-w-[260px]
+                  min-w-[220px]
+                  snap-start
                 "
 
 
@@ -160,73 +176,106 @@ export default function MyEvents({
 
 
 
-                <Card>
 
-
-
-                  <div className="
-                    flex
-                    justify-between
-                    items-center
-                  ">
-
-
-
-                    <div>
-
-
-
-                      <h3 className="
-                        font-semibold
-                      ">
-
-                        🏕️ {event.titolo}
-
-                      </h3>
+                <div
+                  className="
+                    relative
+                    h-[130px]
+                    rounded-3xl
+                    bg-[#a63a50]
+                    p-4
+                    overflow-hidden
+                    shadow-sm
+                  "
+                >
 
 
 
 
 
-                      <p className="
-                        text-sm
-                        text-gray-500
-                      ">
+                  <div
+                    className="
+                      absolute
+                      right-3
+                      top-2
+                      text-5xl
+                      opacity-20
+                    "
+                  >
 
-                        📍 {event.luogo}
+                    🏕️
 
-                      </p>
-
-
-
-
-
-                      <p className="
-                        text-sm
-                        text-gray-400
-                      ">
-
-                        📅 {event.data_inizio || event.data_evento}
-
-                      </p>
-
-
-
-
-                    </div>
+                  </div>
 
 
 
 
 
-                    <span className="
-                      text-gray-400
-                      text-2xl
-                    ">
 
-                      ›
 
-                    </span>
+                  <div
+                    className="
+                      relative
+                      z-10
+                    "
+                  >
+
+
+
+
+                    <h3
+                      className="
+                        text-[#FFFFFF]
+                        font-bold
+                        text-lg
+                        uppercase
+                        leading-tight
+                        pr-6
+                      "
+                    >
+
+                      {event.titolo}
+
+                    </h3>
+
+
+
+
+
+
+
+                    <p
+                      className="
+                        mt-7
+                        text-[#FFFFFF]/100
+                        text-xs
+                        font-medium
+                      "
+                    >
+
+                      📍 {event.luogo}
+
+                    </p>
+
+
+
+
+
+
+
+                    <p
+                      className="
+                        text-[#FFFFFF]/100
+                        text-xs
+                        mt-1
+                        font-bold
+                      "
+                    >
+
+                      📅 {event.data_inizio || event.data_evento}
+
+                    </p>
+
 
 
 
@@ -235,7 +284,35 @@ export default function MyEvents({
 
 
 
-                </Card>
+
+
+
+
+
+                  <span
+                    className="
+                      absolute
+                      bottom-3
+                      right-4
+                      text-[#FFF4E3]
+                      text-xl
+                    "
+                  >
+
+                    →
+
+                  </span>
+
+
+
+
+
+
+
+                </div>
+
+
+
 
 
 
@@ -248,6 +325,8 @@ export default function MyEvents({
 
 
           }
+
+
 
 
 

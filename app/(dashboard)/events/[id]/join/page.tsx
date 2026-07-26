@@ -431,12 +431,6 @@ export default function JoinEventPage(){
       ">
 
 
-
-
-
-
-
-
         <button
 
           onClick={()=>setScelta("partecipo")}
@@ -510,16 +504,7 @@ export default function JoinEventPage(){
 
 
         </button>
-
-
-
-
-
-
-
-
-
-        <button
+                <button
 
           onClick={()=>setScelta("forse")}
 
@@ -691,6 +676,7 @@ export default function JoinEventPage(){
 
 
       {
+
 
         scelta==="partecipo" &&
 
@@ -1019,24 +1005,17 @@ export default function JoinEventPage(){
     const payload = {
 
 
-
       event_id:id,
 
 
-
       user_id:user.id,
-
 
 
       stato:scelta,
 
 
 
-
-
       arrivo_data:
-
-
 
         scelta==="partecipo"
 
@@ -1050,12 +1029,7 @@ export default function JoinEventPage(){
 
 
 
-
-
-
       arrivo_ora:
-
-
 
         scelta==="partecipo"
 
@@ -1069,13 +1043,7 @@ export default function JoinEventPage(){
 
 
 
-
-
-
-
       partenza_data:
-
-
 
         scelta==="partecipo"
 
@@ -1089,13 +1057,7 @@ export default function JoinEventPage(){
 
 
 
-
-
-
-
       partenza_ora:
-
-
 
         scelta==="partecipo"
 
@@ -1108,14 +1070,7 @@ export default function JoinEventPage(){
         null,
 
 
-
     };
-
-
-
-
-
-
 
 
 
@@ -1125,20 +1080,16 @@ export default function JoinEventPage(){
 
     const {data:existing,error:checkError}=await supabase
 
-
       .from("event_members")
-
 
       .select("id")
 
-
       .eq("event_id",id)
-
 
       .eq("user_id",user.id)
 
-
       .maybeSingle();
+
 
 
 
@@ -1166,10 +1117,7 @@ export default function JoinEventPage(){
 
 
 
-
     let error;
-
-
 
 
 
@@ -1180,22 +1128,16 @@ export default function JoinEventPage(){
     if(existing){
 
 
-
       const result = await supabase
-
 
         .from("event_members")
 
-
         .update(payload)
-
 
         .eq("id",existing.id);
 
 
-
       error=result.error;
-
 
 
     }
@@ -1203,23 +1145,17 @@ export default function JoinEventPage(){
     else {
 
 
-
       const result = await supabase
-
 
         .from("event_members")
 
-
         .insert(payload);
-
 
 
       error=result.error;
 
 
-
     }
-
 
 
 
@@ -1231,7 +1167,6 @@ export default function JoinEventPage(){
     if(error){
 
 
-
       console.log(error);
 
 
@@ -1241,9 +1176,70 @@ export default function JoinEventPage(){
       return;
 
 
-
     }
 
+
+
+
+
+
+
+
+    /*
+      CREA CHECKLIST PERSONALE AUTOMATICA
+    */
+
+
+    if(
+
+      scelta==="partecipo" ||
+
+      scelta==="forse"
+
+    ){
+
+
+
+      const {data:existingChecklist}=await supabase
+
+        .from("checklists")
+
+        .select("id")
+
+        .eq("event_id",id)
+
+        .eq("user_id",user.id)
+
+        .maybeSingle();
+
+
+
+
+
+
+      if(!existingChecklist){
+
+
+
+        await supabase
+
+          .from("checklists")
+
+          .insert({
+
+            event_id:id,
+
+            user_id:user.id
+
+          });
+
+
+
+      }
+
+
+
+    }
 
 
 

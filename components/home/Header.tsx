@@ -18,34 +18,59 @@ export default function Header({
 
   return (
 
-    <div className="
-      text-center
-      mb-6
+    <header className="
+      flex
+      flex-col
+      items-center
+      mb-8
     ">
 
 
-      <h1 className="
-        text-3xl
-        font-bold
-      ">
+      {/* Logo MONTI */}
 
-        🏕️ MONTI
+      <img
 
-      </h1>
+        src="/monti/logo.png"
+
+        alt="MONTI"
+
+        className="
+          w-50
+          h-auto
+          object-contain
+        "
+
+      />
 
 
 
-      <p className="
-        text-gray-500
-        mt-2
-      ">
 
-        Ciao {name || "amico"} 👋
+
+      {/* Saluto */}
+
+      <p
+
+        className="
+          -mt-2
+          text-[#ebdec8]
+          text-1xl
+        "
+
+        style={{
+
+          fontFamily:"var(--font-caveat)"
+
+        }}
+
+      >
+
+        Ciao coniglietto\a 🐰
 
       </p>
 
 
-    </div>
+
+    </header>
 
   );
 

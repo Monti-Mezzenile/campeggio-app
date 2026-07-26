@@ -14,10 +14,23 @@ export default function DashboardLayout({
 
   return (
 
-    <main className="
-      min-h-screen
-      bg-monti-bg
-    ">
+    <main
+
+      className="
+        min-h-screen
+        bg-cover
+        bg-center
+        bg-fixed
+      "
+
+      style={{
+
+        backgroundImage:
+          "url('/monti/background.jpg')"
+
+      }}
+
+    >
 
 
       {children}

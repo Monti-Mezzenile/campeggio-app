@@ -1,8 +1,6 @@
 "use client";
 
-
 import { useEffect, useState } from "react";
-
 import { useParams } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
@@ -16,10 +14,7 @@ export default function ChecklistPage(){
 
   const params = useParams();
 
-
   const eventId = params.id as string;
-
-
 
 
 
@@ -31,15 +26,11 @@ export default function ChecklistPage(){
 
   const [selectedEquipment,setSelectedEquipment] = useState<string[]>([]);
 
-
   const [showEquipment,setShowEquipment] = useState(false);
-
 
   const [loading,setLoading] = useState(true);
 
-
   const [nome,setNome] = useState("");
-
 
 
 
@@ -51,17 +42,19 @@ export default function ChecklistPage(){
   async function loadChecklist(){
 
 
-
     setLoading(true);
 
 
 
-
     const {
+
       data:{
         user
+
       }
+
     } = await supabase.auth.getUser();
+
 
 
 
@@ -82,16 +75,45 @@ export default function ChecklistPage(){
 
 
 
+    /*
+      PRENDO LA CHECKLIST ESISTENTE
 
-    let {data:checklist}=await supabase
+      Una sola per:
+      evento + utente
+
+    */
+
+
+    let {
+
+      data:checklist,
+
+      error:checkError
+
+    } = await supabase
 
       .from("checklists")
 
       .select("*")
 
-      .eq("event_id",eventId)
+      .eq(
+        "event_id",
+        eventId
+      )
 
-      .eq("user_id",user.id)
+      .eq(
+        "user_id",
+        user.id
+      )
+
+      .order(
+        "created_at",
+        {
+          ascending:true
+        }
+      )
+
+      .limit(1)
 
       .maybeSingle();
 
@@ -101,13 +123,36 @@ export default function ChecklistPage(){
 
 
 
+    console.log(
+      "CHECKLIST TROVATA:",
+      checklist,
+      checkError
+    );
+
+
+
+
+
+
+
+
+    /*
+      SE NON ESISTE LA CREO
+
+    */
 
 
     if(!checklist){
 
 
 
-      const {data:newChecklist,error}=await supabase
+      const {
+
+        data:newChecklist,
+
+        error:createError
+
+      } = await supabase
 
         .from("checklists")
 
@@ -129,19 +174,30 @@ export default function ChecklistPage(){
 
 
 
-      if(error){
+      if(createError){
 
-        console.log(error);
+
+        console.log(
+          "ERRORE CREAZIONE CHECKLIST:",
+          createError
+        );
+
 
         setLoading(false);
 
         return;
 
+
       }
 
 
 
-      checklist=newChecklist;
+
+
+
+
+      checklist = newChecklist;
+
 
     }
 
@@ -151,7 +207,12 @@ export default function ChecklistPage(){
 
 
 
-    setChecklistId(checklist.id);
+
+    setChecklistId(
+
+      checklist.id
+
+    );
 
 
 
@@ -160,15 +221,67 @@ export default function ChecklistPage(){
 
 
 
-    const {data:itemsData}=await supabase
+    /*
+      CARICO GLI ELEMENTI
+
+    */
+
+
+    const {
+
+      data:itemsData,
+
+      error:itemsError
+
+    } = await supabase
 
       .from("checklist_items")
 
       .select("*")
 
-      .eq("checklist_id",checklist.id)
+      .eq(
 
-      .order("created_at");
+        "checklist_id",
+
+        checklist.id
+
+      )
+
+      .order(
+
+        "created_at",
+
+        {
+          ascending:true
+        }
+
+      );
+
+
+
+
+
+
+    console.log(
+
+      "ITEM CHECKLIST:",
+
+      itemsData,
+
+      itemsError
+
+    );
+
+
+
+
+
+
+    setItems(
+
+      itemsData || []
+
+    );
 
 
 
@@ -176,23 +289,43 @@ export default function ChecklistPage(){
 
 
 
-    setItems(itemsData || []);
 
 
+    /*
+      CARICO ATTREZZATURA PERSONALE
+
+    */
 
 
+    const {
 
+      data:equipmentData,
 
+      error:equipmentError
 
-    const {data:equipmentData}=await supabase
+    } = await supabase
 
       .from("equipment")
 
       .select("*")
 
-      .eq("user_id",user.id)
+      .eq(
 
-      .order("created_at");
+        "user_id",
+
+        user.id
+
+      )
+
+      .order(
+
+        "created_at",
+
+        {
+          ascending:true
+        }
+
+      );
 
 
 
@@ -200,7 +333,29 @@ export default function ChecklistPage(){
 
 
 
-    setEquipment(equipmentData || []);
+    console.log(
+
+      "MIA ATTREZZATURA:",
+
+      equipmentData,
+
+      equipmentError
+
+    );
+
+
+
+
+
+
+
+    setEquipment(
+
+      equipmentData || []
+
+    );
+
+
 
 
 
@@ -216,19 +371,26 @@ export default function ChecklistPage(){
 
 
 
-
   async function addItem(){
 
 
+    if(!nome.trim()){
 
-    if(!nome.trim()) return;
+      return;
+
+    }
 
 
 
 
 
 
-    await supabase
+
+    const {
+
+      error
+
+    } = await supabase
 
       .from("checklist_items")
 
@@ -236,9 +398,33 @@ export default function ChecklistPage(){
 
         checklist_id:checklistId,
 
-        nome
+        nome:nome.trim(),
+
+        completato:false
 
       });
+
+
+
+
+
+
+    if(error){
+
+
+      console.log(
+
+        "ERRORE INSERIMENTO ITEM:",
+
+        error
+
+      );
+
+
+      return;
+
+
+    }
 
 
 
@@ -251,17 +437,7 @@ export default function ChecklistPage(){
 
 
   }
-
-
-
-
-
-
-
-
-
-  function toggleEquipment(id:string){
-
+    function toggleEquipment(id:string){
 
 
     if(selectedEquipment.includes(id)){
@@ -292,8 +468,8 @@ export default function ChecklistPage(){
 
     }
 
-  }
 
+  }
 
 
 
@@ -316,7 +492,13 @@ export default function ChecklistPage(){
 
 
 
-    const {error}=await supabase
+
+
+    const {
+
+      error
+
+    } = await supabase
 
       .from("checklist_items")
 
@@ -328,13 +510,24 @@ export default function ChecklistPage(){
 
 
 
+
     if(error){
 
-      console.log(error);
+
+      console.log(
+
+        "ERRORE INSERIMENTO ATTREZZATURA:",
+
+        error
+
+      );
+
 
       return;
 
+
     }
+
 
 
 
@@ -345,7 +538,9 @@ export default function ChecklistPage(){
 
     setShowEquipment(false);
 
+
     loadChecklist();
+
 
 
   }
@@ -364,9 +559,19 @@ export default function ChecklistPage(){
 
     const existingIds = items
 
-      .filter(item=>item.equipment_id)
+      .filter(
 
-      .map(item=>item.equipment_id);
+        item=>item.equipment_id
+
+      )
+
+      .map(
+
+        item=>item.equipment_id
+
+      );
+
+
 
 
 
@@ -390,7 +595,9 @@ export default function ChecklistPage(){
 
 
 
+
     const rows = selected.map(item=>(
+
 
 
       {
@@ -399,9 +606,12 @@ export default function ChecklistPage(){
 
         nome:item.nome,
 
-        equipment_id:item.id
+        equipment_id:item.id,
+
+        completato:false
 
       }
+
 
 
     ));
@@ -412,7 +622,8 @@ export default function ChecklistPage(){
 
 
 
-    addEquipmentRows(rows);
+    await addEquipmentRows(rows);
+
 
 
   }
@@ -431,9 +642,18 @@ export default function ChecklistPage(){
 
     const existingIds = items
 
-      .filter(item=>item.equipment_id)
+      .filter(
 
-      .map(item=>item.equipment_id);
+        item=>item.equipment_id
+
+      )
+
+      .map(
+
+        item=>item.equipment_id
+
+      );
+
 
 
 
@@ -443,13 +663,16 @@ export default function ChecklistPage(){
 
     const rows = equipment
 
-      .filter(item=>
+      .filter(
 
-        !existingIds.includes(item.id)
+        item=>
+
+          !existingIds.includes(item.id)
 
       )
 
       .map(item=>(
+
 
 
         {
@@ -458,9 +681,12 @@ export default function ChecklistPage(){
 
           nome:item.nome,
 
-          equipment_id:item.id
+          equipment_id:item.id,
+
+          completato:false
 
         }
+
 
 
       ));
@@ -471,7 +697,8 @@ export default function ChecklistPage(){
 
 
 
-    addEquipmentRows(rows);
+    await addEquipmentRows(rows);
+
 
 
   }
@@ -486,64 +713,46 @@ export default function ChecklistPage(){
 
   async function toggleItem(
 
-  id:string,
+    id:string,
 
-  value:boolean
+    value:boolean
 
-){
-
-
-  const item = items.find(
-
-    item=>item.id===id
-
-  );
+  ){
 
 
-  if(!item){
 
-    return;
+    const {
 
-  }
+      data:{
+        user
+      }
+
+    } = await supabase.auth.getUser();
 
 
 
 
-  const {
 
-    data:{
-      user
+
+
+    if(!user){
+
+      return;
 
     }
 
-  } = await supabase.auth.getUser();
-
-
-
-
-
-  if(!user){
-
-    return;
-
-  }
 
 
 
 
 
 
-  await supabase
 
-    .from("checklist_items")
+    const item = items.find(
 
-    .update({
+      item=>item.id===id
 
-      completato:value
-
-    })
-
-    .eq("id",id);
+    );
 
 
 
@@ -552,18 +761,93 @@ export default function ChecklistPage(){
 
 
 
+    if(!item){
 
-  if(value){
+      return;
+
+    }
 
 
-    if(item.equipment_id){
 
 
-      await supabase
+
+
+
+
+    const {
+
+      error:updateError
+
+    } = await supabase
+
+      .from("checklist_items")
+
+      .update({
+
+        completato:value
+
+      })
+
+      .eq(
+
+        "id",
+
+        id
+
+      );
+
+
+
+
+
+
+
+    if(updateError){
+
+
+      console.log(
+
+        "ERRORE CHECK ITEM:",
+
+        updateError
+
+      );
+
+
+      return;
+
+
+    }
+
+
+
+
+
+
+
+
+
+    if(
+
+      value
+
+      &&
+
+      item.equipment_id
+
+    ){
+
+
+
+      const {
+
+        error:eventEquipmentError
+
+      } = await supabase
 
         .from("event_equipment")
 
-        .insert({
+        .upsert({
 
           event_id:eventId,
 
@@ -573,20 +857,52 @@ export default function ChecklistPage(){
 
           confermato:true
 
+        },
+
+        {
+
+          onConflict:
+
+          "event_id,equipment_id,assegnato_a"
+
         });
+
+
+
+      if(eventEquipmentError){
+
+
+        console.log(
+
+          "ERRORE EVENT EQUIPMENT:",
+
+          eventEquipmentError
+
+        );
+
+
+      }
 
 
     }
 
 
-  }
 
 
 
-  else{
 
 
-    if(item.equipment_id){
+
+    if(
+
+      !value
+
+      &&
+
+      item.equipment_id
+
+    ){
+
 
 
       await supabase
@@ -595,27 +911,43 @@ export default function ChecklistPage(){
 
         .delete()
 
-        .eq("event_id",eventId)
+        .eq(
 
-        .eq("equipment_id",item.equipment_id)
+          "event_id",
 
-        .eq("assegnato_a",user.id);
+          eventId
+
+        )
+
+        .eq(
+
+          "equipment_id",
+
+          item.equipment_id
+
+        )
+
+        .eq(
+
+          "assegnato_a",
+
+          user.id
+
+        );
 
 
     }
 
 
+
+
+
+
+    loadChecklist();
+
+
+
   }
-
-
-
-
-
-
-  loadChecklist();
-
-
-}
 
 
 
@@ -629,13 +961,46 @@ export default function ChecklistPage(){
 
 
 
-    await supabase
+    const {
+
+      error
+
+    } = await supabase
 
       .from("checklist_items")
 
       .delete()
 
-      .eq("id",id);
+      .eq(
+
+        "id",
+
+        id
+
+      );
+
+
+
+
+
+
+
+    if(error){
+
+
+      console.log(
+
+        "ERRORE DELETE ITEM:",
+
+        error
+
+      );
+
+
+      return;
+
+
+    }
 
 
 
@@ -660,7 +1025,9 @@ export default function ChecklistPage(){
 
     if(eventId){
 
+
       loadChecklist();
+
 
     }
 
@@ -674,8 +1041,8 @@ export default function ChecklistPage(){
 
 
 
-
   if(loading){
+
 
     return (
 
@@ -687,17 +1054,9 @@ export default function ChecklistPage(){
 
     );
 
+
   }
-
-
-
-
-
-
-
-
-
-  const completati = items.filter(
+    const completati = items.filter(
 
     item=>item.completato
 
@@ -707,13 +1066,11 @@ export default function ChecklistPage(){
 
 
 
-
-
   const percentuale = items.length
 
     ? Math.round(
 
-        completati/items.length*100
+        completati / items.length * 100
 
       )
 
@@ -736,7 +1093,12 @@ export default function ChecklistPage(){
       mx-auto
     ">
 
+
       <BackButton label="Evento" />
+
+
+
+
 
       <h1 className="
         text-3xl
@@ -806,48 +1168,30 @@ export default function ChecklistPage(){
 
 
       {
+
+
         showEquipment &&
 
 
-        <div className="
-          bg-white
-          border
-          rounded-2xl
-          p-5
-          mb-5
-        ">
+        (
+
+          <div className="
+            bg-white
+            border
+            rounded-2xl
+            p-5
+            mb-5
+          ">
 
 
-
-          <h2 className="font-bold mb-4">
-
-            La mia attrezzatura
-
-          </h2>
-
-
-
-
-
-          <button
-
-            onClick={addAllEquipmentToChecklist}
-
-            className="
-              w-full
-              bg-green-600
-              text-white
-              rounded-xl
-              p-3
+            <h2 className="
+              font-bold
               mb-4
-            "
+            ">
 
-          >
+              La mia attrezzatura
 
-            ➕ Aggiungi tutto
-
-
-          </button>
+            </h2>
 
 
 
@@ -855,43 +1199,26 @@ export default function ChecklistPage(){
 
 
 
-          {
-            equipment.map(item=>(
+
+            <button
+
+              onClick={addAllEquipmentToChecklist}
+
+              className="
+                w-full
+                bg-green-600
+                text-white
+                rounded-xl
+                p-3
+                mb-4
+              "
+
+            >
+
+              ➕ Aggiungi tutto
 
 
-              <label
-
-                key={item.id}
-
-                className="
-                  flex
-                  gap-3
-                  mb-3
-                "
-
-              >
-
-
-                <input
-
-                  type="checkbox"
-
-                  checked={selectedEquipment.includes(item.id)}
-
-                  onChange={()=>toggleEquipment(item.id)}
-
-                />
-
-
-                {item.nome}
-
-
-              </label>
-
-
-            ))
-
-          }
+            </button>
 
 
 
@@ -899,28 +1226,99 @@ export default function ChecklistPage(){
 
 
 
-          <button
-
-            onClick={addEquipmentToChecklist}
-
-            className="
-              mt-4
-              w-full
-              bg-black
-              text-white
-              rounded-xl
-              p-3
-            "
-
-          >
-
-            Aggiungi selezionati
-
-          </button>
 
 
+            {
 
-        </div>
+
+              equipment.map(item=>(
+
+
+                <label
+
+                  key={item.id}
+
+                  className="
+                    flex
+                    gap-3
+                    mb-3
+                  "
+
+                >
+
+
+                  <input
+
+                    type="checkbox"
+
+                    checked={
+
+                      selectedEquipment.includes(item.id)
+
+                    }
+
+                    onChange={
+
+                      ()=>toggleEquipment(item.id)
+
+                    }
+
+                  />
+
+
+
+                  <span>
+
+                    {item.nome}
+
+                  </span>
+
+
+
+                </label>
+
+
+              ))
+
+
+            }
+
+
+
+
+
+
+
+
+
+            <button
+
+              onClick={addEquipmentToChecklist}
+
+              className="
+                mt-4
+                w-full
+                bg-black
+                text-white
+                rounded-xl
+                p-3
+              "
+
+            >
+
+              Aggiungi selezionati
+
+            </button>
+
+
+
+
+
+          </div>
+
+
+        )
+
 
       }
 
@@ -943,7 +1341,11 @@ export default function ChecklistPage(){
 
           value={nome}
 
-          onChange={(e)=>setNome(e.target.value)}
+          onChange={
+
+            e=>setNome(e.target.value)
+
+          }
 
           placeholder="Aggiungi elemento"
 
@@ -955,6 +1357,8 @@ export default function ChecklistPage(){
           "
 
         />
+
+
 
 
 
@@ -977,6 +1381,7 @@ export default function ChecklistPage(){
         </button>
 
 
+
       </div>
 
 
@@ -995,7 +1400,11 @@ export default function ChecklistPage(){
 
 
 
+
+
         {
+
+
           items.map(item=>(
 
 
@@ -1010,25 +1419,36 @@ export default function ChecklistPage(){
                 p-4
                 flex
                 justify-between
+                items-center
               "
 
             >
 
 
 
+
               <label className="
                 flex
                 gap-3
+                items-center
               ">
+
+
 
 
                 <input
 
                   type="checkbox"
 
-                  checked={item.completato}
+                  checked={
 
-                  onChange={(e)=>
+                    item.completato || false
+
+                  }
+
+                  onChange={
+
+                    e=>
 
                     toggleItem(
 
@@ -1043,7 +1463,34 @@ export default function ChecklistPage(){
                 />
 
 
-                {item.nome}
+
+
+
+
+                <span
+
+                  className={
+
+                    item.completato
+
+                    ?
+
+                    "line-through opacity-50"
+
+                    :
+
+                    ""
+
+                  }
+
+                >
+
+                  {item.nome}
+
+                </span>
+
+
+
 
 
               </label>
@@ -1052,9 +1499,20 @@ export default function ChecklistPage(){
 
 
 
+
+
+
               <button
 
-                onClick={()=>deleteItem(item.id)}
+                onClick={
+
+                  ()=>deleteItem(item.id)
+
+                }
+
+                className="
+                  text-xl
+                "
 
               >
 
@@ -1064,16 +1522,21 @@ export default function ChecklistPage(){
 
 
 
+
+
             </div>
 
 
           ))
 
+
         }
 
 
 
+
       </div>
+
 
 
 

@@ -27,6 +27,7 @@ export default function LoginPage(){
 
         data:{
           session
+
         }
 
       } = await supabase.auth.getSession();
@@ -61,13 +62,14 @@ export default function LoginPage(){
 
       data:{
         subscription
+
       }
 
     } = supabase.auth.onAuthStateChange(
 
 
 
-      (event, session)=>{
+      (event,session)=>{
 
 
 
@@ -151,7 +153,9 @@ export default function LoginPage(){
 
 
         redirectTo:
- "https://supreme-parakeet-xrrj57j94p77cv775-3000.app.github.dev/auth/callback"
+
+        "https://supreme-parakeet-xrrj57j94p77cv775-3000.app.github.dev/auth/callback"
+
 
 
       }
@@ -214,104 +218,203 @@ export default function LoginPage(){
 
 
 
-    <main className="
-      min-h-screen
-      p-6
-      flex
-      items-center
-      justify-center
-    ">
+    <main
 
+      className="
+        relative
+        min-h-screen
+        overflow-hidden
+        flex
+        items-center
+        justify-center
+        p-6
+      "
 
-
-      <div className="
-        text-center
-        max-w-md
-      ">
-
-
-
-
-
-
-        <div className="
-          text-7xl
-          mb-6
-        ">
-
-
-
-          🏕️
-
-
-
-        </div>
+    >
 
 
 
 
 
+      {/* VIDEO BACKGROUND */}
 
 
-        <h1 className="
-          text-5xl
-          font-bold
-          mb-4
-        ">
+      <video
+
+        autoPlay
+
+        muted
+
+        loop
+
+        playsInline
+
+        className="
+          absolute
+          inset-0
+          w-full
+          h-full
+          object-cover
+        "
+
+      >
+
+        <source
+
+          src="/videos/monti-login.mp4"
+
+          type="video/mp4"
+
+        />
+
+      </video>
 
 
 
-          MONTI
-
-
-
-        </h1>
 
 
 
 
 
+      {/* OVERLAY */}
 
 
-        <p className="
-          text-gray-600
-          text-lg
-          leading-relaxed
-          mb-8
-        ">
+      <div
+
+        className="
+          absolute
+          inset-0
+          bg-black/45
+        "
+
+      />
 
 
+
+
+
+
+
+
+
+      {/* CONTENT */}
+
+
+      <div
+
+        className="
+          relative
+          z-10
+          text-center
+          max-w-md
+          flex
+          flex-col
+          items-center
+        "
+
+      >
+
+
+
+
+
+
+
+
+        {/* LOGO */}
+
+
+        <img
+
+          src="/images/logo-monti.png"
+
+          alt="MONTI"
+
+          className="
+            w-70
+            mb-0
+            -translate-y-40
+            drop-shadow-xl
+          "
+
+        />
+
+
+
+
+
+
+
+
+
+        {/* DESCRIZIONE */}
+
+
+        <p
+
+          className="
+            text-[#FFF4E3]
+            text-lg
+            leading-relaxed
+            mb-0
+            -translate-y-36
+            drop-shadow-md
+          "
+
+        >
 
           Perché dopo anni di campeggi improvvisati era ora di fingere di essere organizzati.
 
 
 
+
+
           <br />
 
           <br />
 
 
 
-          <span className="
-            font-semibold
-            italic
-          ">
 
 
+
+          <span
+
+            className="
+              font-semibold
+              italic
+            "
+
+          >
 
             "Il caos era la legge della natura; l'ordine era il sogno dell'uomo."
-
-
 
           </span>
 
 
 
+
+
           <br />
 
 
 
-          Henry Adams
+
+
+          <span
+
+            className="
+              text-sm
+              opacity-80
+            "
+
+          >
+
+            Henry Adams
+
+          </span>
+
+
 
 
 
@@ -325,16 +428,26 @@ export default function LoginPage(){
 
 
 
+        {/* LOGIN */}
+
+
         <Button
 
           onClick={loginWithGoogle}
 
+          className="
+            bg-transparent
+            border
+            border-[#FFF4E3]/70
+            text-[#FFF4E3]
+            backdrop-blur-sm
+            shadow-lg
+            hover:bg-[#FFF4E3]/10
+          "
+
         >
 
-
-
           🐰 Accedi con Google
-
 
 
         </Button>
@@ -345,16 +458,23 @@ export default function LoginPage(){
 
 
 
-        <p className="
-          text-xs
-          text-gray-400
-          mt-6
-        ">
 
 
+        {/* FOOTER */}
 
-          Solo per veri sopravvissuti 
 
+        <p
+
+          className="
+            text-xs
+            text-[#FFF4E3]/100
+            mt-3
+            tracking-wide
+          "
+
+        >
+
+          Solo per veri sopravvissuti
 
 
         </p>
@@ -365,7 +485,10 @@ export default function LoginPage(){
 
 
 
+
       </div>
+
+
 
 
 

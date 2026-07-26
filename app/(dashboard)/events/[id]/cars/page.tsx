@@ -35,10 +35,12 @@ export default function CarsEventPage(){
 
 
 
+
   async function getOrCreateTrip(){
 
 
-    let {data:trip}=await supabase
+
+    const {data:trips,error}=await supabase
 
       .from("trips")
 
@@ -46,7 +48,31 @@ export default function CarsEventPage(){
 
       .eq("event_id",id)
 
-      .maybeSingle();
+      .order("id")
+
+      .limit(1);
+
+
+
+
+
+    if(error){
+
+      console.log("ERRORE TRIP:",error);
+
+      return null;
+
+    }
+
+
+
+
+
+
+
+    let trip = trips?.[0];
+
+
 
 
 
@@ -55,7 +81,7 @@ export default function CarsEventPage(){
     if(!trip){
 
 
-      const {data:newTrip,error}=await supabase
+      const {data:newTrip,error:createError}=await supabase
 
         .from("trips")
 
@@ -67,19 +93,32 @@ export default function CarsEventPage(){
 
         })
 
-        .select()
+        .select("id")
 
         .single();
 
 
 
-      if(error){
 
-        console.log(error);
+
+
+      if(createError){
+
+
+        console.log(
+
+          "ERRORE CREAZIONE TRIP:",
+
+          createError
+
+        );
+
 
         return null;
 
+
       }
+
 
 
 
@@ -87,6 +126,9 @@ export default function CarsEventPage(){
 
 
     }
+
+
+
 
 
 
@@ -184,7 +226,7 @@ export default function CarsEventPage(){
 
           .eq("id",car.car_id)
 
-          .single();
+          .maybeSingle();
 
 
 
@@ -200,7 +242,7 @@ export default function CarsEventPage(){
 
           .eq("id",car.driver_id)
 
-          .single();
+          .maybeSingle();
 
 
 

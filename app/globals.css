@@ -1,6 +1,16 @@
 @import "tailwindcss";
 
+@font-face {
 
+  font-family: "HeyComic";
+
+  src: url("/fonts/HeyComic.ttf") format("truetype");
+
+  font-weight: normal;
+
+  font-style: normal;
+
+}
 :root {
 
   --monti-background: #ebdec8;

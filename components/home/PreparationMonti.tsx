@@ -1,4 +1,3 @@
-// app/components/PreparationMonti.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,14 +8,21 @@ import Card from "@/components/ui/Card";
 
 
 interface PreparationProps {
+
   eventId: string;
+
   userId: string;
+
 }
 
 
+
 export default function PreparationMonti({
+
   eventId,
+
   userId
+
 }: PreparationProps) {
 
 
@@ -49,31 +55,63 @@ export default function PreparationMonti({
 
 
 
+    console.log(
+      "PREPARATION EVENT:",
+      eventId
+    );
 
 
-    // =====================
-    // TENDA
-    // =====================
+
+    console.log(
+      "PREPARATION USER:",
+      userId
+    );
 
 
-    const {data:tentMember}=await supabase
+
+
+
+    /*
+      TENDA
+    */
+
+
+    const {data:tentMember,error:tentError}=await supabase
+
       .from("tent_members")
+
       .select("id")
+
       .eq("user_id",userId);
+
+
+
+    if(tentError){
+
+      console.log(
+        "ERRORE TENDA:",
+        tentError
+      );
+
+    }
+
+
 
 
 
     if(!tentMember || tentMember.length===0){
 
+
       checks.push({
 
         icon:"⛺",
 
-        text:"Scegli la tua tenda",
+        text:"SCEGLI LA TUA TENDA",
 
         link:`/events/${eventId}/tents`
 
       });
+
 
     }
 
@@ -82,16 +120,26 @@ export default function PreparationMonti({
 
 
 
-    // =====================
-    // AUTO
-    // =====================
+
+
+
+    /*
+      MACCHINA
+    */
 
 
     const {data:trip}=await supabase
+
       .from("trips")
+
       .select("id")
+
       .eq("event_id",eventId)
+
+      .limit(1)
       .maybeSingle();
+
+
 
 
 
@@ -99,29 +147,49 @@ export default function PreparationMonti({
 
 
 
+
+
     if(trip){
 
 
       const {data:driverCar}=await supabase
+
         .from("trip_cars")
+
         .select("id")
+
         .eq("trip_id",trip.id)
+
         .eq("driver_id",userId);
 
 
 
+
+
       const {data:passenger}=await supabase
+
         .from("trip_passengers")
+
         .select("id")
+
         .eq("user_id",userId);
 
 
 
+
+
+
       hasCar =
+
         !!driverCar?.length ||
+
         !!passenger?.length;
 
+
     }
+
+
+
 
 
 
@@ -129,60 +197,158 @@ export default function PreparationMonti({
 
     if(!hasCar){
 
+
       checks.push({
 
         icon:"🚗",
 
-        text:"Scegli il tuo passaggio",
+        text:"ORGANIZZA IL VIAGGIO",
 
         link:`/events/${eventId}/cars`
 
       });
 
+
     }
+    /*
+      CHECKLIST PERSONALE
+    */
 
 
 
 
 
+    const {
 
-    // =====================
-    // CHECKLIST
-    // =====================
+      data:myChecklists,
 
+      error:checkError
 
-    const {data:myChecklist}=await supabase
+    } = await supabase
+
       .from("checklists")
+
       .select("id")
+
       .eq("event_id",eventId)
+
       .eq("user_id",userId)
-      .maybeSingle();
+
+      .limit(1);
+
+
+
+
+
+
+
+
+    console.log(
+
+      "CHECKLIST TROVATA:",
+
+      myChecklists,
+
+      checkError
+
+    );
+
+
+
+
+
+
+
+    const myChecklist = myChecklists?.[0];
+
+
+
+
 
 
 
     if(myChecklist){
 
 
-      const {data:checkItems}=await supabase
+
+      const {
+
+        data:checkItems,
+
+        error:itemError
+
+      } = await supabase
+
         .from("checklist_items")
+
         .select("*")
-        .eq("checklist_id",myChecklist.id);
+
+        .eq(
+
+          "checklist_id",
+
+          myChecklist.id
+
+        );
 
 
 
-      const total = checkItems?.length || 0;
+
+
+
+
+      console.log(
+
+        "CHECKLIST ITEMS:",
+
+        checkItems,
+
+        itemError
+
+      );
+
+
+
+
+
+
+
+      const total =
+
+        checkItems?.length || 0;
+
+
+
 
 
       const completed =
+
         checkItems?.filter(
-          item=>item.completato
+
+          item=>item.completato === true
+
         ).length || 0;
 
 
 
+
+
+
+
       const percentage = total
-        ? Math.round(completed / total * 100)
+
+        ? Math.round(
+
+            completed / total * 100
+
+          )
+
         : 0;
+
+
+
+
+
 
 
 
@@ -200,14 +366,23 @@ export default function PreparationMonti({
 
 
 
-      if(total > 0 && completed < total){
+
+
+
+      if(
+
+        total > 0 &&
+
+        completed < total
+
+      ){
 
 
         checks.push({
 
           icon:"🎒",
 
-          text:`Checklist ${completed}/${total} (${percentage}%)`,
+          text:`CHECKLIST ${completed}/${total}`,
 
           link:`/events/${eventId}/checklist`
 
@@ -217,6 +392,7 @@ export default function PreparationMonti({
       }
 
 
+
     }
 
 
@@ -224,17 +400,29 @@ export default function PreparationMonti({
 
 
 
-    // =====================
-    // ATTREZZATURA
-    // =====================
+
+
+
+    /*
+      EQUIPMENT
+    */
+
 
 
     const {data:equipment}=await supabase
+
       .from("event_equipment")
+
       .select("id")
+
       .eq("event_id",eventId)
+
       .eq("assegnato_a",userId)
+
       .eq("confermato",false);
+
+
+
 
 
 
@@ -245,7 +433,7 @@ export default function PreparationMonti({
 
         icon:"🧰",
 
-        text:`Conferma ${equipment.length} oggetti`,
+        text:`CONFERMA ${equipment.length} OGGETTI`,
 
         link:`/events/${eventId}/equipment`
 
@@ -261,19 +449,29 @@ export default function PreparationMonti({
 
 
 
-    // =====================
-    // CARNE
-    // =====================
+
+    /*
+      CARNE
+    */
 
 
     const {data:meatCall}=await supabase
+
       .from("shopping_calls")
+
       .select("*")
+
       .eq("event_id",eventId)
+
       .eq("tipo","carne")
+
       .eq("user_id",userId)
+
       .eq("prenotato",false)
+
       .maybeSingle();
+
+
 
 
 
@@ -286,7 +484,7 @@ export default function PreparationMonti({
 
         icon:"🥩",
 
-        text:"Chiamare per la carne",
+        text:"PRENOTA LA CARNE",
 
         link:`/events/${eventId}/shopping?tab=carne`
 
@@ -301,12 +499,29 @@ export default function PreparationMonti({
 
 
 
+
+    console.log(
+
+      "CHECKS FINALI PREPARATION:",
+
+      checks
+
+    );
+
+
+
+
+
+
+
     setItems(checks);
 
     setLoading(false);
 
 
   }
+
+
 
 
 
@@ -332,30 +547,28 @@ export default function PreparationMonti({
 
 
 
+
+
   if(loading){
 
     return null;
 
   }
+    return (
 
-
-
-
-
-
-
-  return (
-
-    <section className="mt-8">
+    <section className="mt-3">
 
 
       <h2 className="
-        text-xl
-        font-semibold
-        mb-4
+        text-xs
+        font-bold
+        uppercase
+        tracking-widest
+        text-[#FFF4E3]
+        mb-2
       ">
 
-        🏕️ Preparazioni per MONTI
+        PREPARIAMO IL CAMPO
 
       </h2>
 
@@ -368,66 +581,88 @@ export default function PreparationMonti({
 
         {
 
+
           items.length===0
 
+
           ?
+
 
           (
 
             <div className="
               text-center
-              py-4
+              py-3
             ">
 
-              <p className="text-2xl">
+
+              <p className="
+                text-2xl
+              ">
 
                 🎉
 
               </p>
 
 
+
               <p className="
-                font-semibold
                 mt-2
+                font-semibold
+                text-[#1f2041]
               ">
 
-                Sei pronto per il MONTI!
+                Sei pronto per MONTI!
 
               </p>
 
 
             </div>
 
+
           )
+
 
           :
 
+
           (
 
-            <div className="
-              flex
-              flex-col
-              gap-3
-            ">
+            <div>
+
+
 
 
               {
+
                 checklist.total > 0 &&
+
                 checklist.completed === checklist.total &&
+
 
                 (
 
                   <div className="
-                    bg-green-50
                     rounded-xl
-                    p-3
+                    bg-[#6c9a8b]
+                    text-[#ebdec8]
+                    px-3
+                    py-2
+                    font-semibold
+                    text-center
+                    text-sm
+                    mb-3
                   ">
 
-                    🎒 Checklist completata!
+
+                    🎒 CHECKLIST COMPLETATA!
+
 
                   </div>
 
+
                 )
+
 
               }
 
@@ -435,51 +670,159 @@ export default function PreparationMonti({
 
 
 
+              <div
+                className="
+                  flex
+                  gap-3
+                  overflow-x-auto
+                  pb-2
+                  -mx-1
+                  px-1
+                  snap-x
+                  snap-mandatory
+                  scrollbar-hide
+                "
+              >
+
+
+
+
+                {
+
+
+                  items.map(item=>(
+
+
+                    <button
+
+
+                      key={item.text}
+
+
+                      onClick={()=>router.push(item.link)}
+
+
+
+                      className="
+                        flex
+                        items-center
+                        gap-3
+                        min-w-[175px]
+                        h-[58px]
+                        px-4
+                        rounded-2xl
+                        bg-[#ebdec8]/50
+                        hover:bg-[#ebdec8]/80
+                        transition
+                        shadow-sm
+                        snap-start
+                      "
+
+
+                    >
+
+
+
+                      <span
+                        className="
+                          text-xl
+                          shrink-0
+                        "
+                      >
+
+                        {item.icon}
+
+                      </span>
+
+
+
+
+
+                      <span
+                        className="
+                          flex-1
+                          text-left
+                          text-[#1f2041]
+                          text-xs
+                          font-bold
+                          uppercase
+                          leading-tight
+                        "
+                      >
+
+                        {item.text}
+
+                      </span>
+
+
+
+
+
+                      <span
+                        className="
+                          text-[#3D3E62]
+                          text-lg
+                          ml-auto
+                        "
+                      >
+
+                        ›
+
+                      </span>
+
+
+
+
+
+                    </button>
+
+
+                  ))
+
+                }
+
+
+
+              </div>
+
+
+
+
+
               {
-                items.map(item=>(
+
+                items.length > 2 &&
 
 
-                  <button
+                (
 
-                    key={item.text}
-
-                    onClick={()=>router.push(item.link)}
-
+                  <div
                     className="
                       flex
-                      items-center
-                      gap-3
-                      text-left
-                      w-full
+                      justify-center
+                      mt-2
                     "
-
                   >
 
-                    <span className="text-xl">
+                    <span
+                      className="
+                        text-[10px]
+                        uppercase
+                        tracking-[0.2em]
+                        text-[#201E1B]
+                      "
+                    >
 
-                      {item.icon}
-
-                    </span>
-
-
-                    <span>
-
-                      {item.text}
-
-                    </span>
-
-
-                    <span className="ml-auto">
-
-                      ›
+                      SCORRI →
 
                     </span>
 
 
-                  </button>
+                  </div>
 
 
-                ))
+                )
+
 
               }
 
@@ -487,12 +830,18 @@ export default function PreparationMonti({
 
             </div>
 
+
           )
+
 
         }
 
 
+
+
       </Card>
+
+
 
 
     </section>

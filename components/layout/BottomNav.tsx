@@ -1,10 +1,7 @@
 "use client";
 
-
 import Link from "next/link";
-
 import { usePathname } from "next/navigation";
-
 
 
 export default function BottomNav(){
@@ -14,41 +11,38 @@ export default function BottomNav(){
 
 
 
-
   const items = [
 
 
     {
-      name:"Home",
+      name:"HOME",
       icon:"🏕️",
       href:"/"
     },
 
 
     {
-      name:"Storico",
+      name:"MONTI",
       icon:"📚",
       href:"/history"
     },
 
 
     {
-      name:"Curiosità",
+      name:"IDEE",
       icon:"💡",
       href:"/curiosita"
     },
 
 
     {
-      name:"Profilo",
+      name:"IO",
       icon:"👤",
       href:"/profile"
     }
 
 
   ];
-
-
 
 
 
@@ -62,18 +56,19 @@ export default function BottomNav(){
 
       className="
         fixed
-        bottom-4
-        left-4
-        right-4
-        h-20
-        rounded-3xl
-        shadow-lg
+        bottom-5
+        left-5
+        right-5
+        h-[76px]
+        rounded-[28px]
         flex
         items-center
         justify-around
         z-50
+        shadow-xl
         border
-        border-black/5
+        border-[#FFF4E3]/30
+        backdrop-blur-md
       "
 
       style={{
@@ -103,25 +98,31 @@ export default function BottomNav(){
             href={item.href}
 
 
+
             className={`
-              
+
+              relative
+
               flex
               flex-col
               items-center
               justify-center
-              gap-1
+
+              w-[70px]
+              h-[58px]
+
               rounded-2xl
-              px-4
-              py-2
+
               transition-all
-              duration-200
+              duration-300
+
 
               ${
                 pathname === item.href
 
                 ?
 
-                "text-white scale-105"
+                "text-[#FFF4E3]"
 
                 :
 
@@ -132,22 +133,6 @@ export default function BottomNav(){
             `}
 
 
-            style={
-
-              pathname === item.href
-
-              ?
-
-              {
-                background:"#6C9A8B"
-              }
-
-              :
-
-              {}
-
-            }
-
 
           >
 
@@ -155,9 +140,67 @@ export default function BottomNav(){
 
 
 
-            <span className="
-              text-2xl
-            ">
+            {
+
+
+              pathname === item.href &&
+
+
+              (
+
+                <span
+
+                  className="
+                    absolute
+                    inset-0
+                    rounded-2xl
+                    -z-10
+                    shadow-md
+                  "
+
+                  style={{
+
+                    background:"#6C9A8B"
+
+                  }}
+
+                />
+
+
+              )
+
+
+            }
+
+
+
+
+
+
+
+            <span
+
+              className={`
+                text-2xl
+                transition-transform
+                duration-300
+
+                ${
+                  pathname === item.href
+
+                  ?
+
+                  "scale-110 -translate-y-1"
+
+                  :
+
+                  ""
+
+                }
+
+              `}
+
+            >
 
               {item.icon}
 
@@ -168,10 +211,38 @@ export default function BottomNav(){
 
 
 
-            <span className="
-              text-xs
-              font-medium
-            ">
+
+            <span
+
+              className={`
+
+                text-[11px]
+
+                tracking-[0.15em]
+
+                uppercase
+
+                font-extrabold
+
+                leading-none
+
+
+                ${
+                  pathname === item.href
+
+                  ?
+
+                  "mt-1"
+
+                  :
+
+                  "mt-1"
+
+                }
+
+              `}
+
+            >
 
               {item.name}
 
@@ -185,8 +256,6 @@ export default function BottomNav(){
 
 
         ))
-
-
 
       }
 

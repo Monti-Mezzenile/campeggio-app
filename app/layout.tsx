@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Bebas_Neue } from "next/font/google";
 
 import "./globals.css";
 
-import BottomNav from "@/components/layout/BottomNav";
 
 
 const geistSans = Geist({
@@ -26,6 +25,20 @@ const geistMono = Geist_Mono({
 
 
 
+const bebas = Bebas_Neue({
+
+  variable: "--font-bebas",
+
+  weight: "400",
+
+  subsets: ["latin"],
+
+});
+
+
+
+
+
 export const metadata: Metadata = {
 
   title: "MONTI 🏕️",
@@ -33,6 +46,8 @@ export const metadata: Metadata = {
   description: "Organizza campeggi e avventure con gli amici",
 
 };
+
+
 
 
 
@@ -53,7 +68,13 @@ export default function RootLayout({
 
       lang="it"
 
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`
+        ${geistSans.variable}
+        ${geistMono.variable}
+        ${bebas.variable}
+        h-full
+        antialiased
+      `}
 
     >
 

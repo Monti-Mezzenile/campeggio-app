@@ -1,3 +1,5 @@
+ 
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -37,10 +39,7 @@ export default function ProfilePage(){
 
 
 
-
-
   async function loadProfile(){
-
 
 
     const {
@@ -48,8 +47,6 @@ export default function ProfilePage(){
         user
       }
     } = await supabase.auth.getUser();
-
-
 
 
 
@@ -65,8 +62,6 @@ export default function ProfilePage(){
 
 
 
-
-
     const {data}=await supabase
 
       .from("profiles")
@@ -74,11 +69,8 @@ export default function ProfilePage(){
       .select("*")
 
       .eq(
-
         "id",
-
         user.id
-
       )
 
       .single();
@@ -87,33 +79,17 @@ export default function ProfilePage(){
 
 
 
-
-
     setProfile(data);
 
 
-
-
-
     setNomeConiglio(
-
       data?.nome_coniglio || ""
-
     );
-
-
-
 
 
     setPadreFondatore(
-
       data?.padre_fondatore || false
-
     );
-
-
-
-
 
 
 
@@ -136,35 +112,22 @@ export default function ProfilePage(){
       `)
 
       .eq(
-
         "user_id",
-
         user.id
-
       );
 
 
 
 
-
     setMyBadges(
-
       badges || []
-
     );
-
-
-
-
 
 
     setLoading(false);
 
 
-
   }
-
-
 
 
 
@@ -179,13 +142,11 @@ export default function ProfilePage(){
 
 
 
-
     const {
       data:{
         user
       }
     } = await supabase.auth.getUser();
-
 
 
 
@@ -197,7 +158,6 @@ export default function ProfilePage(){
       return;
 
     }
-
 
 
 
@@ -216,14 +176,9 @@ export default function ProfilePage(){
       })
 
       .eq(
-
         "id",
-
         user.id
-
       );
-
-
 
 
 
@@ -243,20 +198,14 @@ export default function ProfilePage(){
 
 
 
-
-
     setSaving(false);
 
     setEditing(false);
 
-
     loadProfile();
 
 
-
   }
-
-
 
 
 
@@ -277,11 +226,15 @@ export default function ProfilePage(){
 
 
 
+
   if(loading){
 
     return (
 
-      <main className="p-6">
+      <main className="
+        min-h-screen
+        p-6
+      ">
 
         Caricamento profilo...
 
@@ -290,9 +243,16 @@ export default function ProfilePage(){
     );
 
   }
-    return (
+
+
+
+
+
+
+  return (
 
     <main className="
+      min-h-screen
       p-6
       pb-28
       max-w-3xl
@@ -301,16 +261,16 @@ export default function ProfilePage(){
 
 
 
-
-
-
       <h1 className="
-        text-3xl
+        text-xs
         font-bold
-        mb-6
+        uppercase
+        tracking-widest
+        text-[#FFF4E3]
+        mb-4
       ">
 
-        👤 Profilo
+        IL MIO PROFILO
 
       </h1>
 
@@ -319,96 +279,143 @@ export default function ProfilePage(){
 
 
 
+      {/* PROFILO HERO */}
 
 
-      <div className="
+
+      <section className="
+        rounded-[32px]
+        bg-[#6C9A8B]
+        p-6
+        shadow-lg
         relative
-        mb-8
-        px-2
+        overflow-hidden
       ">
 
 
-
-
-
+        <div className="
+          absolute
+          inset-0
+          bg-white/5
+        " />
 
 
 
         <div className="
+          relative
           flex
-          items-start
-          justify-between
+          items-center
+          gap-5
         ">
 
 
 
+          {
+
+            profile?.avatar_url &&
 
 
-          <div className="
-            flex
-            items-center
-            gap-4
-          ">
+            <img
 
+              src={profile.avatar_url}
 
+              alt={profile.nome}
 
+              className="
+                w-24
+                h-24
+                rounded-3xl
+                object-cover
+                border
+                border-[#FFF4E3]/40
+              "
 
+            />
 
-            {
-
-
-              profile?.avatar_url &&
-
-
-
-              <img
-
-                src={profile.avatar_url}
-
-                alt={profile.nome}
-
-                className="
-                  w-20
-                  h-20
-                  rounded-full
-                  object-cover
-                "
-
-              />
-
-
-
-            }
+          }
 
 
 
 
 
 
+          <div className="flex-1">
 
 
-            <div>
+
+            <h2 className="
+              text-3xl
+              font-bold
+              text-[#FFF4E3]
+              leading-tight
+            ">
+
+              {profile?.nome}
+
+            </h2>
 
 
-              <h2 className="
-                text-2xl
-                font-bold
+
+
+            <p className="
+              text-sm
+              text-[#FFF4E3]/60
+            ">
+
+              {profile?.email}
+
+            </p>
+
+
+
+
+
+            <div className="
+              mt-3
+              flex
+              flex-wrap
+              gap-2
+            ">
+
+
+              <span className="
+                px-3
+                py-1
+                rounded-full
+                bg-[#FFF4E3]/15
+                text-[#FFF4E3]
+                text-xs
+                font-semibold
               ">
 
-                {profile?.nome}
+                🐰 {nomeConiglio || "Non scelto"}
 
-              </h2>
-
-
+              </span>
 
 
 
-              <p className="text-gray-500">
 
-                {profile?.email}
+              <span className="
+                px-3
+                py-1
+                rounded-full
+                bg-[#FFF4E3]/15
+                text-[#FFF4E3]
+                text-xs
+                font-semibold
+              ">
 
-              </p>
 
+                {
+                  padreFondatore
+                  ?
+                  "🐴 Padre fondatore"
+                  :
+                  "🐇 Non marchiato"
+                }
+
+
+              </span>
 
 
 
@@ -424,36 +431,379 @@ export default function ProfilePage(){
 
 
 
+          <button
+
+            onClick={()=>setEditing(true)}
+
+            className="
+              text-2xl
+              text-[#FFF4E3]
+              active:scale-90
+              transition
+            "
+
+          >
+
+            ✏️
+
+          </button>
 
 
-          {
 
 
-            !editing &&
+
+        </div>
+
+
+
+      </section>
+      
+
+
+
+
+
+      {/* MODIFICA PROFILO */}
+
+
+
+      {
+
+
+        editing &&
+
+
+
+        <section className="
+          mt-5
+          rounded-[28px]
+          bg-[#FFF4E3]/90
+          backdrop-blur-md
+          p-5
+          shadow-md
+        ">
+
+
+
+          <div className="
+            flex
+            flex-col
+            gap-5
+          ">
+
+
+
+
+
+            <div>
+
+              <label className="
+                text-xs
+                uppercase
+                tracking-widest
+                font-bold
+                text-[#1f2041]/60
+              ">
+
+                Nome da coniglio
+
+              </label>
+
+
+
+
+              <input
+
+                value={nomeConiglio}
+
+                onChange={(e)=>
+                  setNomeConiglio(e.target.value)
+                }
+
+                placeholder="Inserisci nome da coniglio"
+
+                className="
+                  mt-2
+                  w-full
+                  rounded-2xl
+                  p-3
+                  bg-white
+                  text-[#1f2041]
+                  font-semibold
+                "
+
+              />
+
+
+            </div>
+
+
+
+
+
+
+
+            <div className="
+              flex
+              items-center
+              justify-between
+            ">
+
+
+
+
+              <span className="
+                text-sm
+                font-bold
+                text-[#1f2041]
+              ">
+
+                Padre fondatore?
+
+              </span>
+
+
+
+
+
+
+              <div className="
+                flex
+                gap-2
+              ">
+
+
+
+
+                <button
+
+                  onClick={()=>
+                    setPadreFondatore(true)
+                  }
+
+                  className={`
+                    px-4
+                    py-2
+                    rounded-full
+                    text-xs
+                    font-bold
+                    transition
+
+                    ${
+                      padreFondatore
+
+                      ?
+
+                      "bg-[#6C9A8B] text-[#FFF4E3]"
+
+                      :
+
+                      "bg-white text-[#1f2041]"
+
+                    }
+
+                  `}
+
+                >
+
+                  SI 🐴
+
+                </button>
+
+
+
+
+
+
+
+                <button
+
+                  onClick={()=>
+                    setPadreFondatore(false)
+                  }
+
+                  className={`
+                    px-4
+                    py-2
+                    rounded-full
+                    text-xs
+                    font-bold
+                    transition
+
+                    ${
+                      !padreFondatore
+
+                      ?
+
+                      "bg-[#a63a50] text-[#FFF4E3]"
+
+                      :
+
+                      "bg-white text-[#1f2041]"
+
+                    }
+
+                  `}
+
+                >
+
+                  NO 🐇
+
+                </button>
+
+
+
+
+
+              </div>
+
+
+
+
+
+            </div>
+
+
+
+
+
+
 
 
 
             <button
 
-              onClick={()=>setEditing(true)}
+              onClick={saveProfile}
 
               className="
-                text-2xl
-                p-1
-                active:scale-90
-                transition
+                w-full
+                rounded-2xl
+                py-3
+                bg-[#1f2041]
+                text-[#FFF4E3]
+                font-bold
+                uppercase
+                tracking-wide
               "
 
             >
 
-              ✏️
+
+
+              {
+
+                saving
+
+                ?
+
+                "SALVATAGGIO..."
+
+                :
+
+                "SALVA PROFILO"
+
+              }
+
+
 
 
             </button>
 
 
 
-          }
+
+
+
+          </div>
+
+
+
+
+
+
+        </section>
+
+
+      }
+
+
+
+
+
+
+
+
+
+
+
+
+
+      {/* MEDAGLIERE */}
+
+
+
+
+
+      <section className="
+        mt-6
+        rounded-[28px]
+        bg-[#F0D5B3]/75
+        backdrop-blur-md
+        p-5
+        shadow-sm
+      ">
+
+
+
+
+
+        <div className="
+          flex
+          justify-between
+          items-center
+          mb-4
+        ">
+
+
+
+
+          <h2 className="
+            text-xs
+            uppercase
+            tracking-[0.2em]
+            font-bold
+            text-[#1f2041]/60
+          ">
+
+            MEDAGLIE
+
+          </h2>
+
+
+
+
+
+
+
+          <button
+
+            onClick={()=>
+              router.push("/profile/badges")
+            }
+
+            className="
+              text-xs
+              font-bold
+              uppercase
+              text-[#a63a50]
+            "
+
+          >
+
+            VEDI TUTTE →
+
+          </button>
+
 
 
 
@@ -467,25 +817,26 @@ export default function ProfilePage(){
 
 
 
-
-        {/* MEDAGLIE PROFILO */}
-
-
-
         {
 
 
-          myBadges.length > 0 &&
+          myBadges.length > 0
+
+
+
+          ?
 
 
 
           <div className="
-            mt-5
             flex
-            gap-2
+            gap-4
             overflow-x-auto
-            pb-2
+            pb-1
           ">
+
+
+
 
 
 
@@ -501,10 +852,11 @@ export default function ProfilePage(){
                   key={item.badge?.id}
 
                   className="
-                    flex-shrink-0
+                    shrink-0
                   "
 
                 >
+
 
 
 
@@ -524,10 +876,12 @@ export default function ProfilePage(){
                       src={item.badge.immagine_url}
 
                       className="
-                        w-10
-                        h-10
-                        rounded-full
+                        w-14
+                        h-14
+                        rounded-2xl
                         object-cover
+                        border
+                        border-[#1f2041]/10
                       "
 
                     />
@@ -539,10 +893,10 @@ export default function ProfilePage(){
 
 
                     <div className="
-                      w-10
-                      h-10
-                      rounded-full
-                      bg-gray-100
+                      w-14
+                      h-14
+                      rounded-2xl
+                      bg-[#FFF4E3]
                       flex
                       items-center
                       justify-center
@@ -558,8 +912,9 @@ export default function ProfilePage(){
 
 
 
-                </div>
 
+
+                </div>
 
 
 
@@ -572,69 +927,7 @@ export default function ProfilePage(){
 
 
 
-
           </div>
-
-
-
-        }
-
-
-
-
-
-
-
-
-
-      <div className="mt-6">
-
-
-
-
-        {
-
-
-          editing
-
-          ?
-
-          <>
-
-
-            <label className="font-semibold">
-
-              Nome da Coniglio:
-
-            </label>
-
-
-
-
-
-            <input
-
-              value={nomeConiglio}
-
-              onChange={(e)=>
-                setNomeConiglio(e.target.value)
-              }
-
-              placeholder="Inserisci nome da Coniglio"
-
-              className="
-                mt-2
-                w-full
-                border
-                rounded-xl
-                p-3
-              "
-
-            />
-
-
-
-          </>
 
 
 
@@ -642,76 +935,15 @@ export default function ProfilePage(){
 
 
 
-          <div>
+          <p className="
+            text-sm
+            font-semibold
+            text-[#1f2041]
+          ">
 
+            Nessuna medaglia ancora 🏅
 
-            <p className="font-semibold">
-
-              Nome da Coniglio:
-
-              <span className="
-                ml-2
-                font-normal
-              ">
-
-                🐰 {nomeConiglio || "Non scelto"}
-
-              </span>
-
-
-
-            </p>
-
-
-
-
-
-            {
-
-
-              padreFondatore
-
-
-
-              ?
-
-
-
-              <p className="
-                mt-2
-                text-gray-600
-              ">
-
-                sono un padre fondatore 🐴
-
-              </p>
-
-
-
-
-
-              :
-
-
-
-              <p className="
-                mt-2
-                text-gray-600
-              ">
-
-                non sono un padre fondatore 🐇
-
-              </p>
-
-
-
-            }
-
-
-
-
-
-          </div>
+          </p>
 
 
 
@@ -720,117 +952,150 @@ export default function ProfilePage(){
 
 
 
-      </div>
-            {
 
 
-        editing &&
+      </section>
+      
+
+
+
+
+
+
+
+      {/* INVENTARIO */}
+
+
+
+
+      <section className="
+        mt-8
+      ">
+
+
+
+        <h2 className="
+          text-xs
+          uppercase
+          tracking-[0.2em]
+          font-bold
+          text-[#FFF4E3]
+          mb-4
+        ">
+
+          IL MIO INVENTARIO
+
+        </h2>
+
+
+
+
 
 
 
         <div className="
-          mt-5
-          flex
-          items-center
-          justify-between
+          grid
+          grid-cols-2
+          gap-5
         ">
 
 
 
 
-          <span className="font-semibold">
-
-            Sei un padre fondatore?
-
-          </span>
 
 
+          {[
+
+            {
+              icon:"⛺",
+              text:"TENDE",
+              link:"/profile/tents"
+            },
+
+            {
+              icon:"🎒",
+              text:"EQUIPMENT",
+              link:"/profile/equipment"
+            },
+
+            {
+              icon:"🏅",
+              text:"BADGE",
+              link:"/profile/badges"
+            },
+
+            {
+              icon:"🚗",
+              text:"MEZZI",
+              link:"/profile/cars"
+            }
 
 
-
-
-
-
-          <div className="
-            flex
-            gap-2
-          ">
-
-
-
-
-
-
-
-            <button
-
-              onClick={()=>
-                setPadreFondatore(true)
-              }
-
-              className={`
-                px-4
-                py-2
-                rounded-xl
-                border
-                ${
-                  padreFondatore
-                  ?
-                  "bg-black text-white"
-                  :
-                  "bg-white"
-                }
-              `}
-
-            >
-
-              Sì
-
-            </button>
-
-
-
-
-
-
+          ].map(item=>(
 
 
 
             <button
 
-              onClick={()=>
-                setPadreFondatore(false)
-              }
+              key={item.text}
 
-              className={`
-                px-4
-                py-2
-                rounded-xl
+              onClick={()=>router.push(item.link)}
+
+              className="
+                aspect-square
+                rounded-[32px]
+                bg-[#FFF4E3]/70
+                backdrop-blur-lg
                 border
-                ${
-                  !padreFondatore
-                  ?
-                  "bg-black text-white"
-                  :
-                  "bg-white"
-                }
-              `}
+                border-white/30
+                shadow-md
+                flex
+                flex-col
+                items-center
+                justify-center
+                transition
+                active:scale-95
+              "
 
             >
 
-              No
+
+
+              <span className="
+                text-6xl
+              ">
+
+                {item.icon}
+
+              </span>
+
+
+
+
+
+
+              <span className="
+                mt-5
+                text-sm
+                font-bold
+                uppercase
+                tracking-wider
+                text-[#1f2041]
+              ">
+
+                {item.text}
+
+              </span>
+
+
+
+
 
             </button>
 
 
 
-
-
-
-
-
-          </div>
-
+          ))}
 
 
 
@@ -840,297 +1105,27 @@ export default function ProfilePage(){
 
 
 
-      }
+
+
+
+      </section>
 
 
 
 
-
-
-
-
-      {
-
-
-        editing &&
-
-
-
-        <button
-
-          onClick={saveProfile}
-
-          className="
-            mt-6
-            w-full
-            bg-black
-            text-white
-            rounded-xl
-            p-3
-          "
-
-        >
-
-
-
-          {
-
-
-            saving
-
-            ?
-
-            "Salvataggio..."
-
-            :
-
-            "Salva modifiche"
-
-
-
-          }
-
-
-
-        </button>
-
-
-
-      }
-
-
-
-
-
-
-
-
-
-      </div>
-
-
-
-
-
-
-
-
-
-      {/* TAB PROFILO */}
 
 
 
 
 
       <div className="
-        grid
-        grid-cols-2
-        gap-4
+        mt-12
       ">
-
-
-
-
-
-
-        <button
-
-          onClick={()=>
-            router.push("/profile/tents")
-          }
-
-          className="
-            aspect-square
-            rounded-3xl
-            bg-orange-50
-            flex
-            flex-col
-            items-center
-            justify-center
-            active:scale-95
-            transition
-          "
-
-        >
-
-          <span className="text-5xl">
-
-            ⛺
-
-          </span>
-
-
-
-          <span className="
-            mt-3
-            font-semibold
-          ">
-
-            Le mie tende
-
-          </span>
-
-
-
-        </button>
-
-
-
-
-
-
-
-
-
-        <button
-
-          onClick={()=>
-            router.push("/profile/equipment")
-          }
-
-          className="
-            aspect-square
-            rounded-3xl
-            bg-green-50
-            flex
-            flex-col
-            items-center
-            justify-center
-            active:scale-95
-            transition
-          "
-
-        >
-
-          <span className="text-5xl">
-
-            🎒
-
-          </span>
-
-
-
-          <span className="
-            mt-3
-            font-semibold
-          ">
-
-            Attrezzatura
-
-          </span>
-
-
-
-        </button>
-                <button
-
-          onClick={()=>
-            router.push("/profile/badges")
-          }
-
-          className="
-            aspect-square
-            rounded-3xl
-            bg-yellow-50
-            flex
-            flex-col
-            items-center
-            justify-center
-            active:scale-95
-            transition
-          "
-
-        >
-
-          <span className="text-5xl">
-
-            🏅
-
-          </span>
-
-
-
-          <span className="
-            mt-3
-            font-semibold
-          ">
-
-            Medagliere
-
-          </span>
-
-
-
-        </button>
-
-
-
-
-
-
-
-
-        <button
-
-          onClick={()=>
-            router.push("/profile/cars")
-          }
-
-          className="
-            aspect-square
-            rounded-3xl
-            bg-blue-50
-            flex
-            flex-col
-            items-center
-            justify-center
-            active:scale-95
-            transition
-          "
-
-        >
-
-          <span className="text-5xl">
-
-            🚗
-
-          </span>
-
-
-
-          <span className="
-            mt-3
-            font-semibold
-          ">
-
-            I miei mezzi
-
-          </span>
-
-
-
-        </button>
-
-
-
-
-
-
-
-      </div>
-
-
-
-
-
-
-
-
-      <div className="mt-8">
 
         <LogoutButton />
 
       </div>
+
 
 
 

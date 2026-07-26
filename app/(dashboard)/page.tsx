@@ -10,7 +10,6 @@ import Header from "@/components/home/Header";
 import NextEventCard from "@/components/home/NextEventCard";
 import MyStuff from "@/components/home/MyStuff";
 import MyEvents from "@/components/home/MyEvents";
-import Curiosity from "@/components/home/Curiosity";
 
 
 
@@ -27,6 +26,9 @@ export default function Home(){
 
 
   const [events,setEvents] = useState<any[]>([]);
+
+
+  const [nextEvent,setNextEvent] = useState<any>(null);
 
 
   const [daysLeft,setDaysLeft] = useState<number | null>(null);
@@ -47,9 +49,7 @@ export default function Home(){
 
     today.setHours(0,0,0,0);
 
-
     eventDate.setHours(0,0,0,0);
-
 
 
 
@@ -74,13 +74,23 @@ export default function Home(){
 
 
   }
-    async function loadData(){
+
+
+
+
+
+
+
+
+  async function loadData(){
 
 
     try{
 
 
-      console.log("INIZIO LOAD DATA");
+      console.log(
+        "CARICO HOME"
+      );
 
 
 
@@ -89,33 +99,9 @@ export default function Home(){
         data:{
           session
 
-        },
-
-        error:sessionError
+        }
 
       } = await supabase.auth.getSession();
-
-
-
-
-
-      console.log(
-        "SESSIONE:",
-        session
-      );
-
-
-
-
-
-      if(sessionError){
-
-        console.log(
-          "ERRORE SESSIONE:",
-          sessionError
-        );
-
-      }
 
 
 
@@ -139,20 +125,13 @@ export default function Home(){
 
 
 
-
       setUser(session.user);
-
-
-
-
 
 
 
       const {
 
-        data:profileData,
-
-        error:profileError
+        data:profileData
 
       } = await supabase
 
@@ -161,11 +140,8 @@ export default function Home(){
         .select("*")
 
         .eq(
-
           "id",
-
           session.user.id
-
         )
 
         .maybeSingle();
@@ -173,22 +149,9 @@ export default function Home(){
 
 
 
-
-
-      console.log(
-
-        "PROFILO:",
-        profileData,
-        profileError
-
-      );
-
-
-
-
-
-
       setProfile(profileData);
+
+
 
 
 
@@ -225,27 +188,18 @@ export default function Home(){
 
 
 
-      console.log(
-
-        "EVENTI:",
-        eventsData,
-        eventsError
-
-      );
-
-
-
-
-
 
       if(eventsError){
+
 
         console.log(
 
           "ERRORE EVENTI:",
+
           eventsError
 
         );
+
 
       }
 
@@ -254,11 +208,12 @@ export default function Home(){
 
 
 
+
+
+
       const {
 
-        data:membersData,
-
-        error:membersError
+        data:membersData
 
       } = await supabase
 
@@ -283,37 +238,21 @@ export default function Home(){
 
 
 
-      console.log(
-
-        "MEMBRI:",
-        membersData,
-        membersError
-
-      );
-
-
-
-
 
 
       const participationMap = Object.fromEntries(
 
 
-
         (membersData || []).map(member=>[
-
 
 
           member.event_id,
 
 
-
           member.stato
 
 
-
         ])
-
 
 
       );
@@ -323,14 +262,15 @@ export default function Home(){
 
 
 
-      const eventsWithStatus = (eventsData || [])
 
-        .map(event=>({
 
+
+      const eventsWithStatus =
+
+        (eventsData || []).map(event=>({
 
 
           ...event,
-
 
 
           participation:
@@ -338,14 +278,14 @@ export default function Home(){
             participationMap[event.id] || null,
 
 
-
           joined:
 
             participationMap[event.id] === "partecipo"
 
 
-
         }));
+
+
 
 
 
@@ -359,33 +299,182 @@ export default function Home(){
 
 
 
-      if(eventsWithStatus.length > 0){
 
 
 
-        const date =
+      /*
+      
+      CERCA EVENTO HOME
 
-          eventsWithStatus[0].data_evento;
+      NON FILTRIAMO PIÙ SOLO I PARTECIPANTI
+
+      perché un evento appena creato
+      potrebbe non avere ancora
+      event_members.
+
+      Prendiamo:
+
+      1) evento in corso
+      2) primo evento futuro
+
+      */
+
+
+
+
+      const now = new Date();
+
+
+      now.setHours(
+
+        0,
+
+        0,
+
+        0,
+
+        0
+
+      );
 
 
 
 
 
 
-        if(date){
+      let selectedEvent:any = null;
 
 
 
-          setDaysLeft(
 
-            calculateDays(date)
+
+
+
+
+
+      // EVENTO IN CORSO
+
+      selectedEvent = eventsWithStatus.find(event=>{
+
+
+        const start = new Date(
+
+          event.data_inizio ||
+
+          event.data_evento
+
+        );
+
+
+
+
+        const end = new Date(
+
+          event.data_fine ||
+
+          event.data_inizio ||
+
+          event.data_evento
+
+        );
+
+
+
+
+
+        start.setHours(
+
+          0,
+
+          0,
+
+          0,
+
+          0
+
+        );
+
+
+
+
+        end.setHours(
+
+          23,
+
+          59,
+
+          59,
+
+          999
+
+        );
+
+
+
+
+
+
+
+        return (
+
+          now >= start
+
+          &&
+
+          now <= end
+
+        );
+
+
+      });
+
+
+
+
+
+
+
+
+
+      // EVENTO FUTURO
+
+      if(!selectedEvent){
+
+
+        selectedEvent = eventsWithStatus.find(event=>{
+
+
+          const date = new Date(
+
+            event.data_inizio ||
+
+            event.data_evento
 
           );
 
 
 
-        }
 
+          date.setHours(
+
+            0,
+
+            0,
+
+            0,
+
+            0
+
+          );
+
+
+
+
+
+          return date >= now;
+
+
+        });
 
 
       }
@@ -395,45 +484,102 @@ export default function Home(){
 
 
 
-    }
-
-    catch(error){
 
 
 
       console.log(
 
-        "ERRORE GENERALE LOAD DATA:",
+        "EVENTO HOME SELEZIONATO:",
+
+        selectedEvent
+
+      );
+
+
+
+
+
+
+
+
+
+      setNextEvent(
+
+        selectedEvent || null
+
+      );
+
+
+
+
+
+
+
+
+
+      if(selectedEvent){
+
+
+        const date =
+
+          selectedEvent.data_inizio ||
+
+          selectedEvent.data_evento;
+
+
+
+
+
+        setDaysLeft(
+
+          calculateDays(date)
+
+        );
+
+
+      }
+
+      else{
+
+
+        setDaysLeft(null);
+
+
+      }
+          }
+
+    catch(error){
+
+
+      console.log(
+
+        "ERRORE HOME:",
 
         error
 
       );
 
 
-
     }
 
+
     finally{
-
-
-
-      console.log(
-
-        "FINE LOAD DATA"
-
-      );
-
 
 
       setCheckingSession(false);
 
 
-
     }
 
 
-
   }
+
+
+
+
+
+
+
 
 
   useEffect(()=>{
@@ -443,6 +589,8 @@ export default function Home(){
 
 
   },[]);
+
+
 
 
 
@@ -460,7 +608,6 @@ export default function Home(){
 
 
     }
-
 
 
 
@@ -512,9 +659,7 @@ export default function Home(){
         p-6
       ">
 
-
         Caricamento...
-
 
       </main>
 
@@ -573,6 +718,8 @@ export default function Home(){
 
 
 
+
+
       <Header
 
         name={profile?.nome}
@@ -583,9 +730,12 @@ export default function Home(){
 
 
 
+
+
+
       <NextEventCard
 
-        event={events[0]}
+        event={nextEvent}
 
         daysLeft={daysLeft}
 
@@ -595,13 +745,20 @@ export default function Home(){
 
 
 
+
+
+
+
       {
 
-        events[0] && (
+
+        nextEvent &&
+
+        (
 
           <PreparationMonti
 
-            eventId={events[0].id}
+            eventId={nextEvent.id}
 
             userId={user.id}
 
@@ -609,13 +766,19 @@ export default function Home(){
 
         )
 
+
       }
 
 
 
 
 
+
+
+
       <MyStuff />
+
+
 
 
 
@@ -632,8 +795,6 @@ export default function Home(){
 
 
 
-
-      {/* <Curiosity /> */}
 
 
 
