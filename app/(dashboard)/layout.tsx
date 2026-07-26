@@ -1,46 +1,15 @@
+import BackgroundManager from "@/components/layout/BackgroundManager";
 import BottomNav from "@/components/layout/BottomNav";
 
-
 export default function DashboardLayout({
-
   children,
-
 }: {
-
   children: React.ReactNode;
-
 }) {
-
-
   return (
-
-    <main
-
-      className="
-        min-h-screen
-        bg-cover
-        bg-center
-        bg-fixed
-      "
-
-      style={{
-
-        backgroundImage:
-          "url('/monti/background.jpg')"
-
-      }}
-
-    >
-
-
+    <BackgroundManager>
       {children}
-
-
       <BottomNav />
-
-
-    </main>
-
+    </BackgroundManager>
   );
-
 }

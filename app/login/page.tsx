@@ -154,7 +154,7 @@ export default function LoginPage(){
 
         redirectTo:
 
-        "https://supreme-parakeet-xrrj57j94p77cv775-3000.app.github.dev/auth/callback"
+        `${window.location.origin}/auth/callback`,
 
 
 
