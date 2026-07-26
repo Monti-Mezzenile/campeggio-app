@@ -1,1264 +1,385 @@
 "use client";
 
-
 import { useEffect, useState } from "react";
-
 import { useParams, useRouter } from "next/navigation";
-
 import { supabase } from "@/lib/supabase";
+import CustomIcon from "@/components/ui/CustomIcon";
 
-import Button from "@/components/ui/Button";
-
-
-
-
-
-
-
-export default function JoinEventPage(){
-
-
-
+export default function JoinEventPage() {
   const params = useParams();
-
   const router = useRouter();
-
-
-
   const id = params.id as string;
 
+  const [event, setEvent] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-
-
-
-
-  const [event,setEvent] = useState<any>(null);
-
-  const [user,setUser] = useState<any>(null);
-
-
-  const [loading,setLoading] = useState(true);
-
-
-
-  const [scelta,setScelta] = useState<
-
+  const [scelta, setScelta] = useState<
     "partecipo" | "forse" | "non_posso" | null
-
   >(null);
 
+  const [arrivoData, setArrivoData] = useState("");
+  const [arrivoOra, setArrivoOra] = useState("");
+  const [partenzaData, setPartenzaData] = useState("");
+  const [partenzaOra, setPartenzaOra] = useState("");
 
-
-
-
-  const [arrivoData,setArrivoData] = useState("");
-
-  const [arrivoOra,setArrivoOra] = useState("");
-
-
-
-  const [partenzaData,setPartenzaData] = useState("");
-
-  const [partenzaOra,setPartenzaOra] = useState("");
-
-
-
-
-
-
-
-
-
-  async function loadData(){
-
-
-
+  async function loadData() {
+    setLoading(true);
     const {
-
-      data:{
-        user
-      }
-
+      data: { user },
     } = await supabase.auth.getUser();
 
-
-
-
-
-    if(user){
-
+    if (user) {
       setUser(user);
-
     }
 
-
-
-
-
-
-
-
-
-    const {data:eventData,error}=await supabase
-
+    const { data: eventData, error } = await supabase
       .from("events")
-
       .select("*")
-
-      .eq("id",id)
-
+      .eq("id", id)
       .single();
 
-
-
-
-
-
-
-    if(error){
-
+    if (error) {
       console.log(error);
-
       return;
-
     }
-
-
-
-
-
 
     setEvent(eventData);
-
-
-
-
-
-
-
     setLoading(false);
-
-
   }
 
-
-
-
-
-
-
-
-
-  useEffect(()=>{
-
-
-    if(id){
-
+  useEffect(() => {
+    if (id) {
       loadData();
-
     }
+  }, [id]);
 
-
-  },[id]);
-
-
-
-
-
-
-
-
-
-  function formatDate(date:string){
-
-
-    if(!date){
-
-      return "";
-
-    }
-
-
+  function formatDate(date: string) {
+    if (!date) return "";
     return date.split("T")[0];
-
-
   }
 
-
-
-
-
-
-
-
-  function generateHours(){
-
-
-    return Array.from({length:30}).map((_,i)=>{
-
-
-      const totaleMinuti =
-
-        (9 * 60)
-
-        +
-
-        (i * 30);
-
-
-
+  function generateHours() {
+    return Array.from({ length: 30 }).map((_, i) => {
+      const totaleMinuti = (9 * 60) + (i * 30);
       const ore = Math.floor(totaleMinuti / 60)
-
         .toString()
-
-        .padStart(2,"0");
-
-
-
+        .padStart(2, "0");
       const minuti = (totaleMinuti % 60)
-
         .toString()
-
-        .padStart(2,"0");
-
-
-
+        .padStart(2, "0");
       return `${ore}:${minuti}`;
-
-
     });
-
-
   }
 
-
-
-
-
-  if(loading){
-
-
+  if (loading) {
     return (
-
-      <main className="p-6">
-
-        Caricamento...
-
+      <main className="min-h-screen p-6 max-w-md mx-auto flex flex-col items-center justify-center">
+        <div className="w-16 h-16 rounded-full bg-white/50 backdrop-blur-md flex items-center justify-center shadow-lg animate-pulse mb-3 border border-white">
+          <CustomIcon name="coniglio" size={36} />
+        </div>
+        <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#1b2b25]">
+          Caricamento RSVP...
+        </p>
       </main>
-
     );
-
-
   }
 
-
-
-
-
-
-
-
-
-  if(!event){
-
-
+  if (!event) {
     return (
-
-      <main className="p-6">
-
-        Evento non trovato
-
+      <main className="min-h-screen p-6 max-w-md mx-auto flex flex-col items-center justify-center text-center">
+        <div className="bg-white/60 backdrop-blur-xl border border-white p-8 rounded-[2rem] shadow-sm space-y-3 relative overflow-hidden">
+          <CustomIcon name="tenda-grossa" size={60} className="mx-auto opacity-60" />
+          <h2 className="text-xl font-black text-[#1b2b25]">
+            Evento non trovato
+          </h2>
+          <button
+            onClick={() => router.push("/")}
+            className="mt-4 px-5 py-2.5 rounded-xl bg-[#1b2b25] text-[#ebdec8] text-xs font-black uppercase tracking-wider shadow-md"
+          >
+            Torna alla Home
+          </button>
+        </div>
       </main>
-
     );
-
-
   }
 
+  const isWinter = event.titolo?.toLowerCase().includes("winter");
 
+  const minDate = formatDate(event.data_inizio || event.data_evento);
+  const maxDate = formatDate(event.data_fine || event.data_inizio || event.data_evento);
 
-
-
-
-
-
-  const isWinter = event.titolo
-
-    ?.toLowerCase()
-
-    .includes("winter");
-
-
-
-
-
-
-
-
-
-  const minDate = formatDate(
-
-    event.data_inizio ||
-
-    event.data_evento
-
-  );
-
-
-
-
-
-  const maxDate = formatDate(
-
-    event.data_fine ||
-
-    event.data_inizio ||
-
-    event.data_evento
-
-  );
-
-
-
-
-
-
-
-
-
-
-
-
+  const choices = [
+    {
+      id: "partecipo",
+      status: "🟢",
+      title: "CI SARÒ",
+      description: "Il richiamo di Monti è troppo forte.",
+    },
+    {
+      id: "forse",
+      status: "🟡",
+      title: "FORSE",
+      description: "Il mio cervello dice sì, il calendario dice boh.",
+    },
+    {
+      id: "non_posso",
+      status: "🔴",
+      title: "NON POSSO",
+      description: "Sono un soffice batuffolo con le orecchie lunghe.",
+    },
+  ];
 
   return (
-
-    <main className="
-      min-h-screen
-      p-6
-      pb-28
-      max-w-3xl
-      mx-auto
-    ">
-
-
-
-
-
-
-      <div className="
-        text-center
-        mb-8
-      ">
-
-
-
-        <div className="
-          text-6xl
-          mb-4
-        ">
-
-          {
-            isWinter
-
-            ?
-
-            "⛺️❅"
-
-            :
-
-            "🏕️"
-
-          }
-
+    <main className="min-h-screen p-4 sm:p-6 pb-36 max-w-md mx-auto flex flex-col gap-4 select-none">
+      
+      {/* 🚀 HEADER TOP BAR & BACK */}
+      <header className="flex items-center justify-between pt-1">
+        <button
+          onClick={() => router.push(`/events/${id}`)}
+          className="w-10 h-10 rounded-full bg-white/80 text-[#1b2b25] flex items-center justify-center font-black text-lg shadow-sm backdrop-blur-md active:scale-90 transition border border-white"
+        >
+          ←
+        </button>
+        
+        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-white shadow-sm">
+          <span className="text-xs font-black text-[#1b2b25] tracking-tight uppercase">
+            Conferma Presenza
+          </span>
         </div>
 
-
-
-
-
-
-        <h1 className="
-          text-3xl
-          font-bold
-        ">
-
-          {
-            isWinter
-
-            ?
-
-            "Si vede che sei pronto alle grandi sfide"
-
-            :
-
-            "Vedo che anche tu hai sentito il richiamo di Monti"
-
-          }
-
-        </h1>
-
-
-
-
-
-
-
-        <p className="
-          text-gray-500
-          mt-3
-        ">
-
-          {event.titolo}
-
-        </p>
-
-
-
-      </div>
-
-
-
-
-
-
-
-
-
-      <div className="
-        flex
-        flex-col
-        gap-4
-      ">
-
-
-        <button
-
-          onClick={()=>setScelta("partecipo")}
-
-          className={`
-
-            border
-
-            rounded-3xl
-
-            p-5
-
-            text-left
-
-            transition
-
-
-            ${
-              scelta==="partecipo"
-
-              ?
-
-              "bg-black text-white scale-[1.02] shadow-lg"
-
-              :
-
-              "bg-white"
-
-            }
-
-          `}
-
-        >
-
-
-          <div className="
-            text-3xl
-            mb-2
-          ">
-
-            🟢
-
-          </div>
-
-
-
-
-
-          <h2 className="
-            text-xl
-            font-bold
-          ">
-
-            CI SARÒ
-
-          </h2>
-
-
-
-
-
-          <p className="
-            mt-2
-            opacity-80
-          ">
-
-            Il richiamo di Monti è troppo forte.
-
-          </p>
-
-
-
-        </button>
-                <button
-
-          onClick={()=>setScelta("forse")}
-
-          className={`
-
-            border
-
-            rounded-3xl
-
-            p-5
-
-            text-left
-
-            transition
-
-
-            ${
-              scelta==="forse"
-
-              ?
-
-              "bg-black text-white scale-[1.02] shadow-lg"
-
-              :
-
-              "bg-white"
-
-            }
-
-          `}
-
-        >
-
-
-          <div className="
-            text-3xl
-            mb-2
-          ">
-
-            🟡
-
-          </div>
-
-
-
-
-
-          <h2 className="
-            text-xl
-            font-bold
-          ">
-
-            FORSE
-
-          </h2>
-
-
-
-
-
-          <p className="
-            mt-2
-            opacity-80
-          ">
-
-            Il mio cervello dice sì, il calendario dice boh.
-
-          </p>
-
-
-
-        </button>
-
-
-
-
-
-
-
-
-
-        <button
-
-          onClick={()=>setScelta("non_posso")}
-
-          className={`
-
-            border
-
-            rounded-3xl
-
-            p-5
-
-            text-left
-
-            transition
-
-
-            ${
-              scelta==="non_posso"
-
-              ?
-
-              "bg-black text-white scale-[1.02] shadow-lg"
-
-              :
-
-              "bg-white"
-
-            }
-
-          `}
-
-        >
-
-
-          <div className="
-            text-3xl
-            mb-2
-          ">
-
-            🔴
-
-          </div>
-
-
-
-
-
-          <h2 className="
-            text-xl
-            font-bold
-          ">
-
-            NON POSSO
-
-          </h2>
-
-
-
-
-
-          <p className="
-            mt-2
-            opacity-80
-          ">
-
-            Sono un soffice batuffolo con le orecchie lunghe.
-
-          </p>
-
-
-
-        </button>
-
-
-
-
-
-
-
-
-      </div>
-
-
-
-
-
-
-
-      {
-
-
-        scelta==="partecipo" &&
-
-
-        <div className="
-          bg-white
-          border
-          rounded-3xl
-          p-5
-          mt-6
-        ">
-
-
-
-          <h2 className="
-            text-xl
-            font-bold
-            mb-4
-          ">
-
-            🏕️ Organizza il viaggio
-
-          </h2>
-
-
-
-
-
-
-
-
-          <label className="
-            block
-            mb-3
-          ">
-
-            📅 Arrivo
-
-
-            <input
-
-              type="date"
-
-              min={minDate}
-
-              max={maxDate}
-
-              value={arrivoData}
-
-              onChange={(e)=>
-                setArrivoData(e.target.value)
-              }
-
-              className="
-                w-full
-                border
-                rounded-xl
-                p-3
-                mt-1
-              "
-
-            />
-
-
-          </label>
-
-
-
-
-
-
-
-
-          <label className="
-            block
-            mb-3
-          ">
-
-            🕘 Ora arrivo
-
-
-            <select
-
-              value={arrivoOra}
-
-              onChange={(e)=>
-                setArrivoOra(e.target.value)
-              }
-
-              className="
-                w-full
-                border
-                rounded-xl
-                p-3
-                mt-1
-              "
-
-            >
-
-
-              <option value="">
-
-                Seleziona ora
-
-              </option>
-
-
-
-              {
-
-                generateHours().map((ora)=>(
-
-
-                  <option
-
-                    key={ora}
-
-                    value={ora}
-
-                  >
-
-                    {ora}
-
-                  </option>
-
-
-                ))
-
-              }
-
-
-
-            </select>
-
-
-          </label>
-
-
-
-
-
-
-
-
-
-          <label className="
-            block
-            mb-3
-          ">
-
-            📅 Partenza
-
-
-            <input
-
-              type="date"
-
-              min={minDate}
-
-              max={maxDate}
-
-              value={partenzaData}
-
-              onChange={(e)=>
-                setPartenzaData(e.target.value)
-              }
-
-              className="
-                w-full
-                border
-                rounded-xl
-                p-3
-                mt-1
-              "
-
-            />
-
-
-          </label>
-
-
-
-
-
-
-
-
-          <label className="
-            block
-          ">
-
-            🕘 Ora partenza
-
-
-            <select
-
-              value={partenzaOra}
-
-              onChange={(e)=>
-                setPartenzaOra(e.target.value)
-              }
-
-              className="
-                w-full
-                border
-                rounded-xl
-                p-3
-                mt-1
-              "
-
-            >
-
-
-              <option value="">
-
-                Seleziona ora
-
-              </option>
-
-
-
-              {
-
-                generateHours().map((ora)=>(
-
-
-                  <option
-
-                    key={ora}
-
-                    value={ora}
-
-                  >
-
-                    {ora}
-
-                  </option>
-
-
-                ))
-
-              }
-
-
-
-            </select>
-
-
-          </label>
-
-
-
-
-
+        <div className="w-10" />
+      </header>
+
+      {/* 🏕️ HERO RSVP CARD (COMPATTA E PULITA) */}
+      <section className="bg-white/90 backdrop-blur-2xl rounded-[2rem] p-5 border border-white shadow-sm text-center space-y-2 relative overflow-hidden">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#1b2b25] text-[#ebdec8] text-2xl shadow-xs border border-white/20">
+          {isWinter ? "❄️" : "🏕️"}
         </div>
 
+        <div className="space-y-1">
+          <h1 className="text-base sm:text-lg font-black text-[#1b2b25] tracking-tight leading-snug max-w-xs mx-auto">
+            {isWinter
+              ? "Si vede che sei pronto alle grandi sfide"
+              : "Vedo che anche tu hai sentito il richiamo di Monti"}
+          </h1>
+          <p className="text-xs font-bold text-[#1b2b25]/50 uppercase tracking-wider">
+            {event.titolo}
+          </p>
+        </div>
+      </section>
 
-      }
+      {/* 🟢🟡🔴 CHOICE CARDS TATTILI */}
+      <section className="flex flex-col gap-2.5">
+        {choices.map((choice) => (
+          <button
+            key={choice.id}
+            onClick={() => setScelta(choice.id as any)}
+            className={`
+              rounded-[1.8rem] p-4 text-left border transition-all duration-200 active:scale-[0.98] shadow-2xs
+              ${
+                scelta === choice.id
+                  ? "bg-[#1b2b25] text-[#ebdec8] border-[#ebdec8]/20 shadow-md scale-[1.01]"
+                  : "bg-white/80 backdrop-blur-xl border-white hover:bg-white"
+              }
+            `}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl shrink-0">{choice.status}</span>
+              <div className="min-w-0">
+                <h2
+                  className={`text-sm font-black uppercase tracking-tight ${
+                    scelta === choice.id ? "text-white" : "text-[#1b2b25]"
+                  }`}
+                >
+                  {choice.title}
+                </h2>
+                <p
+                  className={`text-[11px] font-semibold leading-tight mt-0.5 ${
+                    scelta === choice.id ? "text-white/80" : "text-[#1b2b25]/60"
+                  }`}
+                >
+                  {choice.description}
+                </p>
+              </div>
+            </div>
+          </button>
+        ))}
+      </section>
 
+      {/* 🏕️ ORGANIZZA IL VIAGGIO (CONDIZIONALE) */}
+      {scelta === "partecipo" && (
+        <section className="bg-white/90 backdrop-blur-2xl rounded-[2rem] p-5 shadow-sm border border-white space-y-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl">🏕️</span>
+            <div>
+              <h2 className="text-xs font-black text-[#1b2b25] leading-none uppercase tracking-wide">
+                Logistica Viaggio
+              </h2>
+              <p className="text-[10px] text-[#1b2b25]/60 font-semibold mt-0.5">
+                Specifica orari e date approssimative
+              </p>
+            </div>
+          </div>
 
+          <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-[#1b2b25]/10">
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1">
+                📅 Data Arrivo
+              </label>
+              <input
+                type="date"
+                min={minDate}
+                max={maxDate}
+                value={arrivoData}
+                onChange={(e) => setArrivoData(e.target.value)}
+                className="w-full bg-white/80 backdrop-blur-md border border-white rounded-xl px-3 py-2.5 text-xs font-black text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
+              />
+            </div>
 
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1">
+                🕘 Ora Arrivo
+              </label>
+              <select
+                value={arrivoOra}
+                onChange={(e) => setArrivoOra(e.target.value)}
+                className="w-full bg-white/80 backdrop-blur-md border border-white rounded-xl px-3 py-2.5 text-xs font-black text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
+              >
+                <option value="">Seleziona ora</option>
+                {generateHours().map((ora) => (
+                  <option key={ora} value={ora}>
+                    {ora}
+                  </option>
+                ))}
+              </select>
+            </div>
 
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1">
+                📅 Data Partenza
+              </label>
+              <input
+                type="date"
+                min={minDate}
+                max={maxDate}
+                value={partenzaData}
+                onChange={(e) => setPartenzaData(e.target.value)}
+                className="w-full bg-white/80 backdrop-blur-md border border-white rounded-xl px-3 py-2.5 text-xs font-black text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
+              />
+            </div>
 
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1">
+                🕘 Ora Partenza
+              </label>
+              <select
+                value={partenzaOra}
+                onChange={(e) => setPartenzaOra(e.target.value)}
+                className="w-full bg-white/80 backdrop-blur-md border border-white rounded-xl px-3 py-2.5 text-xs font-black text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
+              >
+                <option value="">Seleziona ora</option>
+                {generateHours().map((ora) => (
+                  <option key={ora} value={ora}>
+                    {ora}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </section>
+      )}
 
-
-
-      <div className="
-        mt-8
-      ">
-
-
-
-        <Button
-
+      {/* ✅ PULSANTE DI CONFERMA */}
+      <div className="mt-4 flex justify-center">
+        <button
           onClick={saveParticipation}
-
+          disabled={saving}
+          className="w-full py-4 px-8 rounded-2xl bg-[#1b2b25] text-[#ebdec8] text-xs font-black uppercase tracking-wider shadow-md active:scale-95 transition disabled:opacity-50 text-center flex items-center justify-center gap-2"
         >
-
-          Conferma
-
-        </Button>
-
-
-
+          {saving ? (
+            <span className="animate-pulse">Salvataggio...</span>
+          ) : (
+            "🚀 Conferma Presenza"
+          )}
+        </button>
       </div>
-
-
-
-
-
-
 
     </main>
-
   );
 
-
-
-
-
-
-
-
-
-  async function saveParticipation(){
-
-
-
-    if(!user || !scelta){
-
-
+  async function saveParticipation() {
+    if (!user || !scelta) {
       alert("Scegli come parteciperai");
-
-
       return;
-
-
     }
-
-
-
-
-
-
+    setSaving(true);
 
     const payload = {
-
-
-      event_id:id,
-
-
-      user_id:user.id,
-
-
-      stato:scelta,
-
-
-
-      arrivo_data:
-
-        scelta==="partecipo"
-
-        ?
-
-        arrivoData || null
-
-        :
-
-        null,
-
-
-
-      arrivo_ora:
-
-        scelta==="partecipo"
-
-        ?
-
-        arrivoOra || null
-
-        :
-
-        null,
-
-
-
-      partenza_data:
-
-        scelta==="partecipo"
-
-        ?
-
-        partenzaData || null
-
-        :
-
-        null,
-
-
-
-      partenza_ora:
-
-        scelta==="partecipo"
-
-        ?
-
-        partenzaOra || null
-
-        :
-
-        null,
-
-
+      event_id: id,
+      user_id: user.id,
+      stato: scelta,
+      arrivo_data: scelta === "partecipo" ? arrivoData || null : null,
+      arrivo_ora: scelta === "partecipo" ? arrivoOra || null : null,
+      partenza_data: scelta === "partecipo" ? partenzaData || null : null,
+      partenza_ora: scelta === "partecipo" ? partenzaOra || null : null,
     };
 
-
-
-
-
-
-
-    const {data:existing,error:checkError}=await supabase
-
+    const { data: existing, error: checkError } = await supabase
       .from("event_members")
-
       .select("id")
-
-      .eq("event_id",id)
-
-      .eq("user_id",user.id)
-
+      .eq("event_id", id)
+      .eq("user_id", user.id)
       .maybeSingle();
 
-
-
-
-
-
-
-    if(checkError){
-
-
+    if (checkError) {
       console.log(checkError);
-
-
       alert(checkError.message);
-
-
+      setSaving(false);
       return;
-
-
     }
-
-
-
-
-
-
-
 
     let error;
-
-
-
-
-
-
-
-    if(existing){
-
-
+    if (existing) {
       const result = await supabase
-
         .from("event_members")
-
         .update(payload)
-
-        .eq("id",existing.id);
-
-
-      error=result.error;
-
-
-    }
-
-    else {
-
-
+        .eq("id", existing.id);
+      error = result.error;
+    } else {
       const result = await supabase
-
         .from("event_members")
-
         .insert(payload);
-
-
-      error=result.error;
-
-
+      error = result.error;
     }
 
-
-
-
-
-
-
-
-    if(error){
-
-
+    if (error) {
       console.log(error);
-
-
       alert(error.message);
-
-
+      setSaving(false);
       return;
-
-
     }
 
-
-
-
-
-
-
-
-    /*
-      CREA CHECKLIST PERSONALE AUTOMATICA
-    */
-
-
-    if(
-
-      scelta==="partecipo" ||
-
-      scelta==="forse"
-
-    ){
-
-
-
-      const {data:existingChecklist}=await supabase
-
+    /* CREA CHECKLIST PERSONALE AUTOMATICA */
+    if (scelta === "partecipo" || scelta === "forse") {
+      const { data: existingChecklist } = await supabase
         .from("checklists")
-
         .select("id")
-
-        .eq("event_id",id)
-
-        .eq("user_id",user.id)
-
+        .eq("event_id", id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
-
-
-
-
-
-      if(!existingChecklist){
-
-
-
+      if (!existingChecklist) {
         await supabase
-
           .from("checklists")
-
           .insert({
-
-            event_id:id,
-
-            user_id:user.id
-
+            event_id: id,
+            user_id: user.id
           });
-
-
-
       }
-
-
-
     }
-
-
-
-
-
-
-
-
+    setSaving(false);
     router.push(`/events/${id}`);
-
-
-
   }
-
-
-
-
-
-
-
-
 }

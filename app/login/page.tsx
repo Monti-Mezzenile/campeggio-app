@@ -1,504 +1,131 @@
 "use client";
 
-
-import { useEffect } from "react";
-
-
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Button from "@/components/ui/Button";
 
+export default function LoginPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
-
-
-export default function LoginPage(){
-
-
-
-  useEffect(()=>{
-
-
-
-    async function checkSession(){
-
-
-
+  useEffect(() => {
+    // ⚡ 1. Controllo immediato sessione
+    async function checkSession() {
       const {
-
-        data:{
-          session
-
-        }
-
+        data: { session },
       } = await supabase.auth.getSession();
 
-
-
-
-
-      console.log(
-
-        "SESSIONE LOGIN:",
-
-        session
-
-      );
-
-
-
+      if (session) {
+        // Se già loggato, via diretti agli eventi!
+        router.replace("/events");
+      } else {
+        setLoading(false);
+      }
     }
-
-
-
 
     checkSession();
 
-
-
-
-
-
+    // ⚡ 2. Listener per OAuth Callback
     const {
-
-      data:{
-        subscription
-
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        router.replace("/events");
       }
-
-    } = supabase.auth.onAuthStateChange(
-
-
-
-      (event,session)=>{
-
-
-
-        console.log(
-
-          "AUTH EVENT:",
-
-          event,
-
-          session
-
-        );
-
-
-
-      }
-
-
-
-    );
-
-
-
-
-
-
-
-    return ()=>{
-
-
-
-      subscription.unsubscribe();
-
-
-
-    };
-
-
-
-
-  },[]);
-
-
-
-
-
-
-
-
-
-  async function loginWithGoogle(){
-
-
-
-    console.log(
-
-      "CLIC LOGIN GOOGLE"
-
-    );
-
-
-
-
-
-    const {
-
-      data,
-
-      error
-
-    } = await supabase.auth.signInWithOAuth({
-
-
-
-      provider:"google",
-
-
-
-      options:{
-
-
-
-        redirectTo:
-
-        `${window.location.origin}/auth/callback`,
-
-
-
-      }
-
-
-
     });
 
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router]);
 
+  async function loginWithGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
 
-
-
-
-
-
-    console.log(
-
-      "RISPOSTA GOOGLE:",
-
-      data,
-
-      error
-
-    );
-
-
-
-
-
-
-
-
-    if(error){
-
-
-
-      console.log(error);
-
-
-
+    if (error) {
       alert(error.message);
-
-
-
     }
-
-
-
   }
 
-
-
-
-
-
-
-
+  // Loader ultraleggero durante il check sessione iniziale
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#1b2b25] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+      </main>
+    );
+  }
 
   return (
-
-
-
-    <main
-
-      className="
-        relative
-        min-h-screen
-        overflow-hidden
-        flex
-        items-center
-        justify-center
-        p-6
-      "
-
-    >
-
-
-
-
-
-      {/* VIDEO BACKGROUND */}
-
-
+    <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 select-none">
+      
+      {/* 🎬 VIDEO BACKGROUND OTTIMIZZATO */}
       <video
-
         autoPlay
-
         muted
-
         loop
-
         playsInline
-
-        className="
-          absolute
-          inset-0
-          w-full
-          h-full
-          object-cover
-        "
-
+        preload="metadata"
+        className="absolute inset-0 w-full h-full object-cover scale-105"
       >
-
-        <source
-
-          src="/videos/monti-login.mp4"
-
-          type="video/mp4"
-
-        />
-
+        <source src="/videos/monti-login.mp4" type="video/mp4" />
       </video>
 
+      {/* OVERLAY GLASS */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
 
-
-
-
-
-
-
-      {/* OVERLAY */}
-
-
-      <div
-
-        className="
-          absolute
-          inset-0
-          bg-black/45
-        "
-
-      />
-
-
-
-
-
-
-
-
-
-      {/* CONTENT */}
-
-
-      <div
-
-        className="
-          relative
-          z-10
-          text-center
-          max-w-md
-          flex
-          flex-col
-          items-center
-        "
-
-      >
-
-
-
-
-
-
-
-
-        {/* LOGO */}
-
-
-        <img
-
-          src="/images/logo-monti.png"
-
-          alt="MONTI"
-
-          className="
-            w-70
-            mb-0
-            -translate-y-40
-            drop-shadow-xl
-          "
-
-        />
-
-
-
-
-
-
-
-
+      {/* 📦 CONTENT CONTAINER */}
+      <div className="relative z-10 text-center max-w-sm w-full flex flex-col items-center justify-center gap-6 px-4 py-8">
+        
+        {/* LOGO OTTIMIZZATO */}
+        <div className="relative w-64 h-24 flex items-center justify-center">
+          <Image
+            src="/images/logo-monti.png"
+            alt="MONTI Logo"
+            width={260}
+            height={100}
+            priority
+            className="object-contain drop-shadow-2xl"
+          />
+        </div>
 
         {/* DESCRIZIONE */}
+        <div className="space-y-3">
+          <p className="text-[#FFF4E3] text-sm leading-relaxed drop-shadow-md font-medium">
+            Perché dopo anni di campeggi improvvisati era ora di fingere di essere organizzati.
+          </p>
 
-
-        <p
-
-          className="
-            text-[#FFF4E3]
-            text-lg
-            leading-relaxed
-            mb-0
-            -translate-y-36
-            drop-shadow-md
-          "
-
-        >
-
-          Perché dopo anni di campeggi improvvisati era ora di fingere di essere organizzati.
-
-
-
-
-
-          <br />
-
-          <br />
-
-
-
-
-
-
-          <span
-
-            className="
-              font-semibold
-              italic
-            "
-
-          >
-
+          <p className="text-[#FFF4E3]/90 text-xs italic font-medium border-l-2 border-[#FFF4E3]/30 pl-3 text-left">
             "Il caos era la legge della natura; l'ordine era il sogno dell'uomo."
+            <span className="block text-[10px] text-[#FFF4E3]/60 not-italic mt-0.5 font-normal">
+              — Henry Adams
+            </span>
+          </p>
+        </div>
 
-          </span>
-
-
-
-
-
-          <br />
-
-
-
-
-
-          <span
-
-            className="
-              text-sm
-              opacity-80
-            "
-
+        {/* BOTTONE LOGIN */}
+        <div className="w-full space-y-2 pt-2">
+          <Button
+            onClick={loginWithGoogle}
+            className="w-full bg-white/15 border border-[#FFF4E3]/40 text-[#FFF4E3] backdrop-blur-md shadow-lg hover:bg-white/25 active:scale-98 transition py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
           >
+            <span>🐰</span>
+            <span>Accedi con Google</span>
+          </Button>
 
-            Henry Adams
-
-          </span>
-
-
-
-
-
-        </p>
-
-
-
-
-
-
-
-
-
-        {/* LOGIN */}
-
-
-        <Button
-
-          onClick={loginWithGoogle}
-
-          className="
-            bg-transparent
-            border
-            border-[#FFF4E3]/70
-            text-[#FFF4E3]
-            backdrop-blur-sm
-            shadow-lg
-            hover:bg-[#FFF4E3]/10
-          "
-
-        >
-
-          🐰 Accedi con Google
-
-
-        </Button>
-
-
-
-
-
-
-
-
-
-        {/* FOOTER */}
-
-
-        <p
-
-          className="
-            text-xs
-            text-[#FFF4E3]/100
-            mt-3
-            tracking-wide
-          "
-
-        >
-
-          Solo per veri sopravvissuti
-
-
-        </p>
-
-
-
-
-
-
-
+          <p className="text-[10px] text-[#FFF4E3]/70 tracking-wider uppercase font-bold">
+            Solo per veri sopravvissuti
+          </p>
+        </div>
 
       </div>
-
-
-
-
-
-
-
-
     </main>
-
-
   );
-
-
 }
