@@ -8,8 +8,7 @@
 }
 
 :root {
-  /* Sfondo base scuro per evitare le fasce chiare in alto/basso su Safari iOS */
-  --monti-background: #121614; 
+  --monti-background: #ebdec8;
   --monti-card: #F0D5B3;
 
   --monti-primary: #1F2041;
@@ -22,7 +21,7 @@
   --monti-logo: #FFF4DD;
 
   --background: var(--monti-background);
-  --foreground: #ffffff;
+  --foreground: var(--monti-primary);
 }
 
 html, body {
@@ -32,10 +31,11 @@ html, body {
   padding: 0;
   overflow: hidden;
   overscroll-behavior: none;
-  background-color: #121614 !important;
+  background-color: var(--background);
 }
 
 body {
+  background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -61,7 +61,7 @@ body {
     display: none;
   }
   .no-scrollbar {
-    -ms-overflow-style: none;  /* IE e Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

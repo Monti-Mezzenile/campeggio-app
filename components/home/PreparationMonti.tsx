@@ -222,8 +222,8 @@ export default function PreparationMonti({
           <CustomIcon name="coniglio" size={68} className="shrink-0" />
         </div>
       ) : (
-        /* Tab Strette, Colorate e con Icona Grande (size={68}) */
-        <div className="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1 snap-x snap-mandatory scrollbar-hide">
+        /* Carousel Full-Bleed Edge-to-Edge */
+        <div className="flex gap-3 overflow-x-auto pb-3 -mx-4 px-4 snap-x snap-mandatory no-scrollbar">
           {items.map((item) => (
             <button
               key={item.id}
