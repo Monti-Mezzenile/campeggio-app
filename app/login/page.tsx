@@ -1,381 +1,219 @@
 "use client";
 
-
-import { useEffect } from "react";
-
-
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Button from "@/components/ui/Button";
 
+export default function LoginPage() {
+  const router = useRouter();
+  const videoRef = useRef<HTMLVideoElement>(null);
 
+  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false); // Switch tra Login e Registrazione
+  const [authLoading, setAuthLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  useEffect(() => {
+    let isMounted = true;
 
-export default function LoginPage(){
+    async function initAuth() {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-
-
-  useEffect(()=>{
-
-
-
-    async function checkSession(){
-
-
-
-      const {
-
-        data:{
-          session
+        if (session && isMounted) {
+          router.replace("/");
+          return;
         }
-
-      } = await supabase.auth.getSession();
-
-
-
-
-
-      console.log(
-
-        "SESSIONE LOGIN:",
-
-        session
-
-      );
-
-
-
+      } catch (e) {
+        console.error("Errore sessione:", e);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     }
 
-
-
-
-    checkSession();
-
-
-
-
-
+    initAuth();
 
     const {
-
-      data:{
-        subscription
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session && isMounted) {
+        router.replace("/");
       }
-
-    } = supabase.auth.onAuthStateChange(
-
-
-
-      (event, session)=>{
-
-
-
-        console.log(
-
-          "AUTH EVENT:",
-
-          event,
-
-          session
-
-        );
-
-
-
-      }
-
-
-
-    );
-
-
-
-
-
-
-
-    return ()=>{
-
-
-
-      subscription.unsubscribe();
-
-
-
-    };
-
-
-
-
-  },[]);
-
-
-
-
-
-
-
-
-
-  async function loginWithGoogle(){
-
-
-
-    console.log(
-
-      "CLIC LOGIN GOOGLE"
-
-    );
-
-
-
-
-
-    const {
-
-      data,
-
-      error
-
-    } = await supabase.auth.signInWithOAuth({
-
-
-
-      provider:"google",
-
-
-
-      options:{
-
-
-
-        redirectTo:
- "https://supreme-parakeet-xrrj57j94p77cv775-3000.app.github.dev/auth/callback"
-
-
-      }
-
-
-
     });
 
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [router]);
 
-
-
-
-
-
-
-    console.log(
-
-      "RISPOSTA GOOGLE:",
-
-      data,
-
-      error
-
-    );
-
-
-
-
-
-
-
-
-    if(error){
-
-
-
-      console.log(error);
-
-
-
-      alert(error.message);
-
-
-
+  // Gestione del cambio video quando si passa a "Crea Account"
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.load(); // Ricarica la sorgente del video
+      videoRef.current.play();
     }
+  }, [isSignUp]);
 
+  // Gestione Submit (Login / SignUp)
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setAuthLoading(true);
+    setErrorMsg(null);
 
+    if (isSignUp) {
+      // REGISTRAZIONE
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
 
+      if (error) {
+        setErrorMsg("Errore registrazione: " + error.message);
+        setAuthLoading(false);
+      } else {
+        router.replace("/profile"); // Reindirizza al profilo per completare i dati
+      }
+    } else {
+      // LOGIN
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setErrorMsg("Credenziali non valide o utente non trovato.");
+        setAuthLoading(false);
+      }
+    }
   }
 
-
-
-
-
-
-
-
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#1b2b25] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+      </main>
+    );
+  }
 
   return (
+    <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 select-none">
+      {/* 🎬 VIDEO BACKGROUND DINAMICO */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        loop={!isSignUp} // In loop per il login, NO loop per la registrazione
+        preload="metadata"
+        className="absolute inset-0 w-full h-full object-cover scale-105 transition-all duration-700"
+      >
+        <source
+          src={isSignUp ? "/videos/monti-crea.mp4" : "/videos/monti-login.mp4"}
+          type="video/mp4"
+        />
+      </video>
 
+      {/* OVERLAY GLASS */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
 
-
-    <main className="
-      min-h-screen
-      p-6
-      flex
-      items-center
-      justify-center
-    ">
-
-
-
-      <div className="
-        text-center
-        max-w-md
-      ">
-
-
-
-
-
-
-        <div className="
-          text-7xl
-          mb-6
-        ">
-
-
-
-          🏕️
-
-
-
+      {/* 📦 CONTENT CONTAINER */}
+      <div className="relative z-10 text-center max-w-sm w-full flex flex-col items-center justify-center gap-6 px-4 py-8">
+        {/* LOGO */}
+        <div className="relative w-64 h-24 flex items-center justify-center">
+          <Image
+            src="/images/logo-monti.png"
+            alt="MONTI Logo"
+            width={260}
+            height={100}
+            priority
+            className="object-contain drop-shadow-2xl"
+          />
         </div>
 
+        {/* DESCRIZIONE */}
+        <div className="space-y-3">
+          <p className="text-[#FFF4E3] text-sm leading-relaxed drop-shadow-md font-medium">
+            {isSignUp
+              ? "Unisciti alla spedizione. Crea le tue credenziali da campo."
+              : "Perché dopo anni di campeggi improvvisati era ora di fingere di essere organizzati."}
+          </p>
 
-
-
-
-
-
-        <h1 className="
-          text-5xl
-          font-bold
-          mb-4
-        ">
-
-
-
-          MONTI
-
-
-
-        </h1>
-
-
-
-
-
-
-
-        <p className="
-          text-gray-600
-          text-lg
-          leading-relaxed
-          mb-8
-        ">
-
-
-
-          Perché dopo anni di campeggi improvvisati era ora di fingere di essere organizzati.
-
-
-
-          <br />
-
-          <br />
-
-
-
-          <span className="
-            font-semibold
-            italic
-          ">
-
-
-
+          <p className="text-[#FFF4E3]/90 text-xs italic font-medium border-l-2 border-[#FFF4E3]/30 pl-3 text-left">
             "Il caos era la legge della natura; l'ordine era il sogno dell'uomo."
+            <span className="block text-[10px] text-[#FFF4E3]/60 not-italic mt-0.5 font-normal">
+              — Henry Adams
+            </span>
+          </p>
+        </div>
 
+        {/* FORM LOGIN / REGISTRAZIONE */}
+        <form onSubmit={handleSubmit} className="w-full space-y-3 pt-2">
+          <input
+            type="email"
+            placeholder="Email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-3 bg-white/10 border border-[#FFF4E3]/30 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/50 focus:outline-none focus:border-[#FFF4E3] backdrop-blur-md text-sm"
+          />
 
+          <input
+            type="password"
+            placeholder="Password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-3 bg-white/10 border border-[#FFF4E3]/30 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/50 focus:outline-none focus:border-[#FFF4E3] backdrop-blur-md text-sm"
+          />
 
-          </span>
+          {errorMsg && (
+            <p className="text-red-400 text-xs text-center font-medium bg-red-950/40 py-1.5 rounded-lg border border-red-500/30">
+              {errorMsg}
+            </p>
+          )}
 
+          <Button
+            type="submit"
+            disabled={authLoading}
+            className="w-full bg-white/20 border border-[#FFF4E3]/40 text-[#FFF4E3] backdrop-blur-md shadow-lg hover:bg-white/30 active:scale-98 transition py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+          >
+            <span>
+              {authLoading
+                ? "Elaborazione..."
+                : isSignUp
+                ? "Crea Account"
+                : "Accedi"}
+            </span>
+          </Button>
+        </form>
 
+        {/* LINK SWITCH LOGIN / REGISTRAZIONE */}
+        <div className="pt-1 border-t border-[#FFF4E3]/10 w-full">
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setErrorMsg(null);
+            }}
+            className="text-xs text-[#FFF4E3]/80 hover:text-white underline font-medium transition"
+          >
+            {isSignUp
+              ? "Hai già un account? Accedi qui"
+              : "Non hai un account? Registrati"}
+          </button>
+        </div>
 
-          <br />
-
-
-
-          Henry Adams
-
-
-
+        <p className="text-[10px] text-[#FFF4E3]/70 tracking-wider uppercase font-bold">
+          Solo per veri sopravvissuti
         </p>
-
-
-
-
-
-
-
-
-
-        <Button
-
-          onClick={loginWithGoogle}
-
-        >
-
-
-
-          🐰 Accedi con Google
-
-
-
-        </Button>
-
-
-
-
-
-
-
-        <p className="
-          text-xs
-          text-gray-400
-          mt-6
-        ">
-
-
-
-          Solo per veri sopravvissuti 
-
-
-
-        </p>
-
-
-
-
-
-
-
       </div>
-
-
-
-
-
-
     </main>
-
-
   );
-
-
 }

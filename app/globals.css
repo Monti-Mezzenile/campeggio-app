@@ -1,8 +1,13 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "HeyComic";
+  src: url("/fonts/HeyComic.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
 
 :root {
-
   --monti-background: #ebdec8;
   --monti-card: #F0D5B3;
 
@@ -15,20 +20,40 @@
 
   --monti-logo: #FFF4DD;
 
-
   --background: var(--monti-background);
   --foreground: var(--monti-primary);
-
 }
 
-
-
 body {
-
   background: var(--background);
-
   color: var(--foreground);
-
   font-family: Arial, Helvetica, sans-serif;
+}
 
+/* 🏔️ SFONDI DINAMICI SPEDIZIONI */
+.background-day {
+  background-color: #ebdec8;
+  /* Se hai un'immagine di sfondo per il giorno dentro la cartella public/, scommenta queste righe: */
+  /* background-image: url('/background-day.png'); */
+  /* background-size: cover; */
+  /* background-position: center; */
+}
+
+.background-snow {
+  background-color: #dbeafe; /* Azzurro freddo neve */
+  /* Se hai un'immagine di sfondo per la neve dentro la cartella public/, scommenta queste righe: */
+  /* background-image: url('/background-snow.png'); */
+  /* background-size: cover; */
+  /* background-position: center; */
+}
+
+/* 🚀 Utility per nascondere le scrollbar mantenendo lo scorrimento */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE e Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
 }

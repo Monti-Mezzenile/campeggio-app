@@ -13,6 +13,8 @@ interface ButtonProps {
 
   variant?: "primary" | "secondary";
 
+  className?: string;
+
 }
 
 
@@ -28,6 +30,8 @@ export default function Button({
   type = "button",
 
   variant = "primary",
+
+  className = "",
 
 }: ButtonProps) {
 
@@ -78,6 +82,7 @@ export default function Button({
       className={`
         ${baseStyle}
         ${variants[variant]}
+        ${className}
       `}
 
     >

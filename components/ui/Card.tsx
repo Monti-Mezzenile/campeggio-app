@@ -1,7 +1,6 @@
 import React from "react";
 
 
-
 interface CardProps {
 
   children: React.ReactNode;
@@ -13,8 +12,11 @@ interface CardProps {
 
 
 export default function Card({
+
   children,
+
   className = "",
+
 }: CardProps) {
 
 
@@ -23,12 +25,13 @@ export default function Card({
     <div
 
       className={`
-        bg-white
-        rounded-2xl
+        bg-[#FFF4E3]/85
+        backdrop-blur-md
+        rounded-[1.5rem]
         border
-        border-gray-200
-        shadow-sm
-        p-5
+        border-[#fcf9f4]/60
+        shadow-md
+        p-3
         ${className}
       `}
 
