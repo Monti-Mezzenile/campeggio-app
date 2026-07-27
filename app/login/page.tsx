@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -8,53 +8,92 @@ import Button from "@/components/ui/Button";
 
 export default function LoginPage() {
   const router = useRouter();
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false); // Switch tra Login e Registrazione
+  const [authLoading, setAuthLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    // ⚡ 1. Controllo immediato sessione
-    async function checkSession() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    let isMounted = true;
 
-      if (session) {
-        // Se già loggato, via diretti agli eventi!
-        router.replace("/events");
-      } else {
-        setLoading(false);
+    async function initAuth() {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session && isMounted) {
+          router.replace("/");
+          return;
+        }
+      } catch (e) {
+        console.error("Errore sessione:", e);
+      } finally {
+        if (isMounted) setLoading(false);
       }
     }
 
-    checkSession();
+    initAuth();
 
-    // ⚡ 2. Listener per OAuth Callback
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        router.replace("/events");
+      if (event === "SIGNED_IN" && session && isMounted) {
+        router.replace("/");
       }
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [router]);
 
-  async function loginWithGoogle() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+  // Gestione del cambio video quando si passa a "Crea Account"
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.load(); // Ricarica la sorgente del video
+      videoRef.current.play();
+    }
+  }, [isSignUp]);
 
-    if (error) {
-      alert(error.message);
+  // Gestione Submit (Login / SignUp)
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setAuthLoading(true);
+    setErrorMsg(null);
+
+    if (isSignUp) {
+      // REGISTRAZIONE
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        setErrorMsg("Errore registrazione: " + error.message);
+        setAuthLoading(false);
+      } else {
+        router.replace("/profile"); // Reindirizza al profilo per completare i dati
+      }
+    } else {
+      // LOGIN
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setErrorMsg("Credenziali non valide o utente non trovato.");
+        setAuthLoading(false);
+      }
     }
   }
 
-  // Loader ultraleggero durante il check sessione iniziale
   if (loading) {
     return (
       <main className="min-h-screen bg-[#1b2b25] flex items-center justify-center">
@@ -65,17 +104,20 @@ export default function LoginPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 select-none">
-      
-      {/* 🎬 VIDEO BACKGROUND OTTIMIZZATO */}
+      {/* 🎬 VIDEO BACKGROUND DINAMICO */}
       <video
+        ref={videoRef}
         autoPlay
         muted
-        loop
         playsInline
+        loop={!isSignUp} // In loop per il login, NO loop per la registrazione
         preload="metadata"
-        className="absolute inset-0 w-full h-full object-cover scale-105"
+        className="absolute inset-0 w-full h-full object-cover scale-105 transition-all duration-700"
       >
-        <source src="/videos/monti-login.mp4" type="video/mp4" />
+        <source
+          src={isSignUp ? "/videos/monti-crea.mp4" : "/videos/monti-login.mp4"}
+          type="video/mp4"
+        />
       </video>
 
       {/* OVERLAY GLASS */}
@@ -83,8 +125,7 @@ export default function LoginPage() {
 
       {/* 📦 CONTENT CONTAINER */}
       <div className="relative z-10 text-center max-w-sm w-full flex flex-col items-center justify-center gap-6 px-4 py-8">
-        
-        {/* LOGO OTTIMIZZATO */}
+        {/* LOGO */}
         <div className="relative w-64 h-24 flex items-center justify-center">
           <Image
             src="/images/logo-monti.png"
@@ -99,7 +140,9 @@ export default function LoginPage() {
         {/* DESCRIZIONE */}
         <div className="space-y-3">
           <p className="text-[#FFF4E3] text-sm leading-relaxed drop-shadow-md font-medium">
-            Perché dopo anni di campeggi improvvisati era ora di fingere di essere organizzati.
+            {isSignUp
+              ? "Unisciti alla spedizione. Crea le tue credenziali da campo."
+              : "Perché dopo anni di campeggi improvvisati era ora di fingere di essere organizzati."}
           </p>
 
           <p className="text-[#FFF4E3]/90 text-xs italic font-medium border-l-2 border-[#FFF4E3]/30 pl-3 text-left">
@@ -110,21 +153,66 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* BOTTONE LOGIN */}
-        <div className="w-full space-y-2 pt-2">
-          <Button
-            onClick={loginWithGoogle}
-            className="w-full bg-white/15 border border-[#FFF4E3]/40 text-[#FFF4E3] backdrop-blur-md shadow-lg hover:bg-white/25 active:scale-98 transition py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
-          >
-            <span>🐰</span>
-            <span>Accedi con Google</span>
-          </Button>
+        {/* FORM LOGIN / REGISTRAZIONE */}
+        <form onSubmit={handleSubmit} className="w-full space-y-3 pt-2">
+          <input
+            type="email"
+            placeholder="Email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-3 bg-white/10 border border-[#FFF4E3]/30 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/50 focus:outline-none focus:border-[#FFF4E3] backdrop-blur-md text-sm"
+          />
 
-          <p className="text-[10px] text-[#FFF4E3]/70 tracking-wider uppercase font-bold">
-            Solo per veri sopravvissuti
-          </p>
+          <input
+            type="password"
+            placeholder="Password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-3 bg-white/10 border border-[#FFF4E3]/30 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/50 focus:outline-none focus:border-[#FFF4E3] backdrop-blur-md text-sm"
+          />
+
+          {errorMsg && (
+            <p className="text-red-400 text-xs text-center font-medium bg-red-950/40 py-1.5 rounded-lg border border-red-500/30">
+              {errorMsg}
+            </p>
+          )}
+
+          <Button
+            type="submit"
+            disabled={authLoading}
+            className="w-full bg-white/20 border border-[#FFF4E3]/40 text-[#FFF4E3] backdrop-blur-md shadow-lg hover:bg-white/30 active:scale-98 transition py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+          >
+            <span>
+              {authLoading
+                ? "Elaborazione..."
+                : isSignUp
+                ? "Crea Account"
+                : "Accedi"}
+            </span>
+          </Button>
+        </form>
+
+        {/* LINK SWITCH LOGIN / REGISTRAZIONE */}
+        <div className="pt-1 border-t border-[#FFF4E3]/10 w-full">
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setErrorMsg(null);
+            }}
+            className="text-xs text-[#FFF4E3]/80 hover:text-white underline font-medium transition"
+          >
+            {isSignUp
+              ? "Hai già un account? Accedi qui"
+              : "Non hai un account? Registrati"}
+          </button>
         </div>
 
+        <p className="text-[10px] text-[#FFF4E3]/70 tracking-wider uppercase font-bold">
+          Solo per veri sopravvissuti
+        </p>
       </div>
     </main>
   );

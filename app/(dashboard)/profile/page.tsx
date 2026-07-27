@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import LogoutButton from "@/components/ui/LogoutButton";
 import { supabase } from "@/lib/supabase";
-import CustomIcon, { IconName } from "@/components/ui/CustomIcon";
+import CustomIcon from "@/components/ui/CustomIcon";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -13,10 +13,16 @@ export default function ProfilePage() {
   const [myBadges, setMyBadges] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
 
+  // Campi del Profilo
+  const [nome, setNome] = useState("");
+  const [titoloCampo, setTitoloCampo] = useState("");
+  const [motto, setMotto] = useState("");
   const [nomeConiglio, setNomeConiglio] = useState("");
   const [padreFondatore, setPadreFondatore] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   async function loadProfile() {
     const {
@@ -35,8 +41,12 @@ export default function ProfilePage() {
       .single();
 
     setProfile(data);
+    setNome(data?.nome || "");
+    setTitoloCampo(data?.titolo_campo || "Mastro Fuochista");
+    setMotto(data?.motto || "Sempre pronto alla grigliata.");
     setNomeConiglio(data?.nome_coniglio || "");
     setPadreFondatore(data?.padre_fondatore || false);
+    setAvatarUrl(data?.avatar_url || null);
 
     const { data: badges } = await supabase
       .from("user_badges")
@@ -53,6 +63,35 @@ export default function ProfilePage() {
     setLoading(false);
   }
 
+  // 📷 CARICAMENTO NUOVA FOTO SU SUPABASE STORAGE
+  async function handleAvatarUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    try {
+      setUploading(true);
+      if (!event.target.files || event.target.files.length === 0) return;
+
+      const file = event.target.files[0];
+      const fileExt = file.name.split(".").pop();
+      const filePath = `avatars/${Math.random()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+      setAvatarUrl(publicUrl);
+    } catch (error: any) {
+      alert("Errore nel caricamento dell'immagine: " + error.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  // 💾 SALVATAGGIO COMPLETO PROFILO
   async function saveProfile() {
     setSaving(true);
     const {
@@ -67,8 +106,12 @@ export default function ProfilePage() {
     const { error } = await supabase
       .from("profiles")
       .update({
+        nome: nome,
+        titolo_campo: titoloCampo,
+        motto: motto,
         nome_coniglio: nomeConiglio,
         padre_fondatore: padreFondatore,
+        avatar_url: avatarUrl,
       })
       .eq("id", user.id);
 
@@ -94,15 +137,18 @@ export default function ProfilePage() {
           <CustomIcon name="coniglio" size={32} />
         </div>
         <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#1b2b25]">
-          Caricamento...
+          Ispezione Tesserino...
         </p>
       </main>
     );
   }
 
+  // Calcolo Livello da Campo e Matricola Unica
+  const levelNumber = Math.max(1, myBadges.length);
+  const matricola = profile?.id ? `#MNT-${profile.id.slice(0, 4).toUpperCase()}` : "#MNT-0000";
+
   return (
     <main className="min-h-screen p-4 sm:p-6 pb-28 max-w-md mx-auto flex flex-col gap-6 select-none">
-      
       {/* 🚀 HEADER CON BADGE STATO E ICONA CUSTOM */}
       <header className="flex items-center justify-between pt-2">
         <button
@@ -112,7 +158,7 @@ export default function ProfilePage() {
           ←
         </button>
 
-        {/* Badge Creativo con CustomIcon "tenda-grossa" */}
+        {/* Badge Creativo */}
         <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/60 backdrop-blur-md border border-white shadow-sm">
           <span className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -135,16 +181,21 @@ export default function ProfilePage() {
         </button>
       </header>
 
-      {/* 🪪 1. CARD PROFILO */}
-      <section className="relative rounded-[2.5rem] bg-white/70 backdrop-blur-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-white text-center">
+      {/* 🪪 1. CARD PROFILO (TESSERINO DA CAMPO) */}
+      <section className="relative rounded-[2.5rem] bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-white text-center overflow-hidden">
         
-        {/* Foto Profilo + Icona Sovrapposta Senza Riquadro (Più grande) */}
-        <div className="relative mx-auto w-24 h-24 mb-4">
-          {profile?.avatar_url ? (
+        {/* Matricola identificativa in alto a destra */}
+        <div className="absolute top-4 right-4 bg-[#1b2b25]/10 px-2.5 py-1 rounded-full text-[9px] font-mono font-bold text-[#1b2b25]/60 tracking-wider uppercase border border-black/5">
+          {matricola}
+        </div>
+
+        {/* Foto Profilo con Gestione Immagine Custom */}
+        <div className="relative mx-auto w-24 h-24 mb-3 mt-1">
+          {avatarUrl ? (
             <img
-              src={profile.avatar_url}
-              alt={profile.nome || "Avatar"}
-              className="w-full h-full rounded-[2rem] object-cover border-4 border-white shadow-md"
+              src={avatarUrl}
+              alt={nome || "Avatar"}
+              className="w-full h-full rounded-[2rem] object-cover border-4 border-white shadow-md ring-1 ring-black/5"
             />
           ) : (
             <div className="w-full h-full rounded-[2rem] bg-[#ebdec8] flex items-center justify-center border-4 border-white shadow-md">
@@ -152,49 +203,130 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Icona libera senza box bianco e più grande */}
+          {/* Icona status nell'angolo */}
           <div className="absolute -bottom-2 -right-2 drop-shadow-md transform hover:scale-110 transition-transform">
             <CustomIcon name={padreFondatore ? "cavallo" : "coniglio"} size={36} />
           </div>
         </div>
 
-        {/* Info Principali */}
-        <h2 className="text-2xl font-black text-[#1b2b25] tracking-tight leading-none">
-          {profile?.nome || "Esploratore"}
+        {/* NOME COMPLETO */}
+        <h2 className="text-2xl font-black text-[#1b2b25] tracking-tight leading-tight">
+          {profile?.nome || "Esploratore Ignoto"}
         </h2>
-        <p className="text-xs font-mono text-[#1b2b25]/50 mt-1.5 mb-4">
-          {profile?.email}
+
+        {/* RUOLO / TITOLO DA CAMPO (Sostituisce l'email!) */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#1b2b25]/10 text-[#1b2b25] font-black text-[10px] uppercase tracking-widest mt-1 mb-2">
+          <span>⛺</span> {profile?.titolo_campo || "Mastro Fuochista"}
+        </div>
+
+        {/* MOTTO PERSONALE */}
+        <p className="text-xs italic font-medium text-[#1b2b25]/75 max-w-xs mx-auto mb-4 bg-white/40 py-1.5 px-3 rounded-xl border border-white/60">
+          "{profile?.motto || "Sempre pronto alla grigliata."}"
         </p>
 
-        {/* Badges di Identità */}
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <span className="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-900 border border-amber-200/50 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+        {/* BADGES DI IDENTITÀ & LIVELLO */}
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-1 border-t border-[#1b2b25]/10">
+          {/* Livello di Sopravvivenza */}
+          <span className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
+            <span>🔥</span> Lvl. {levelNumber} Vet.
+          </span>
+
+          {/* Soprannome Coniglio */}
+          <span className="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-900 border border-amber-200/50 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
             <span>🐰</span> {nomeConiglio || "Nessun soprannome"}
           </span>
-          <span className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 ${
-            padreFondatore ? "bg-emerald-100 text-emerald-900 border-emerald-200" : "bg-white text-zinc-500 border-zinc-200"
-          }`}>
+
+          {/* Padre Fondatore */}
+          <span
+            className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 ${
+              padreFondatore
+                ? "bg-purple-100 text-purple-900 border-purple-200"
+                : "bg-white/80 text-zinc-500 border-zinc-200"
+            }`}
+          >
             <CustomIcon name={padreFondatore ? "cavallo" : "coniglio"} size={14} />
             {padreFondatore ? "Padre Fondatore" : "Non Marchiato"}
           </span>
         </div>
 
-        {/* FORM MODIFICA FLUIDO */}
+        {/* ✏️ FORM MODIFICA FLUIDO E COMPLETO */}
         {editing && (
           <div className="mt-6 pt-5 border-t border-[#1b2b25]/10 space-y-4 animate-in fade-in slide-in-from-top-2 text-left">
+            <h3 className="text-[11px] font-black uppercase tracking-widest text-[#1b2b25]/60 text-center mb-1">
+              Modifica Dati Tesserino
+            </h3>
+
+            {/* CARICAMENTO FOTO */}
             <div>
-              <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1.5">
+              <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">
+                Foto Profilo
+              </label>
+              <label className="flex items-center justify-center gap-2 w-full rounded-2xl px-4 py-3 bg-white/90 text-[#1b2b25] font-bold text-xs shadow-inner border border-white cursor-pointer hover:bg-white transition">
+                <span>{uploading ? "Caricamento in corso..." : "📷 Scegli o Scatta Foto"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  disabled={uploading}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* NOME COMPLETO */}
+            <div>
+              <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">
+                Nome & Cognome
+              </label>
+              <input
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Es. Mario Rossi"
+                className="w-full rounded-2xl px-4 py-2.5 bg-white/90 text-[#1b2b25] font-bold text-xs shadow-inner border border-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+            </div>
+
+            {/* RANGO / TITOLO DA CAMPO */}
+            <div>
+              <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">
+                Ruolo / Mansione da Campo
+              </label>
+              <input
+                value={titoloCampo}
+                onChange={(e) => setTitoloCampo(e.target.value)}
+                placeholder="Es. Mastro Fuochista, Luppolo Sommelier..."
+                className="w-full rounded-2xl px-4 py-2.5 bg-white/90 text-[#1b2b25] font-bold text-xs shadow-inner border border-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+            </div>
+
+            {/* MOTTO PERSONALE */}
+            <div>
+              <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">
+                Motto / Frase d'Ordinanza
+              </label>
+              <input
+                value={motto}
+                onChange={(e) => setMotto(e.target.value)}
+                placeholder="Es. Chi dorme non piglia salsicce..."
+                className="w-full rounded-2xl px-4 py-2.5 bg-white/90 text-[#1b2b25] font-bold text-xs shadow-inner border border-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+            </div>
+
+            {/* NOME CONIGLIO */}
+            <div>
+              <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">
                 Nome da Coniglio
               </label>
               <input
                 value={nomeConiglio}
                 onChange={(e) => setNomeConiglio(e.target.value)}
                 placeholder="Inserisci soprannome..."
-                className="w-full rounded-2xl px-4 py-3 bg-white/80 text-[#1b2b25] font-bold text-sm shadow-inner border border-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full rounded-2xl px-4 py-2.5 bg-white/90 text-[#1b2b25] font-bold text-xs shadow-inner border border-white focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
 
-            <div className="flex items-center justify-between bg-white/50 p-3 rounded-2xl border border-white">
+            {/* PADRE FONDATORE */}
+            <div className="flex items-center justify-between bg-white/60 p-3 rounded-2xl border border-white">
               <span className="text-xs font-black text-[#1b2b25]">
                 Padre Fondatore?
               </span>
@@ -203,7 +335,9 @@ export default function ProfilePage() {
                   type="button"
                   onClick={() => setPadreFondatore(true)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 ${
-                    padreFondatore ? "bg-[#1b2b25] text-white shadow-md" : "bg-transparent text-[#1b2b25]/50 hover:bg-white"
+                    padreFondatore
+                      ? "bg-[#1b2b25] text-white shadow-md"
+                      : "bg-transparent text-[#1b2b25]/50 hover:bg-white"
                   }`}
                 >
                   <CustomIcon name="cavallo" size={14} /> SI
@@ -212,7 +346,9 @@ export default function ProfilePage() {
                   type="button"
                   onClick={() => setPadreFondatore(false)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 ${
-                    !padreFondatore ? "bg-red-500 text-white shadow-md" : "bg-transparent text-[#1b2b25]/50 hover:bg-white"
+                    !padreFondatore
+                      ? "bg-red-500 text-white shadow-md"
+                      : "bg-transparent text-[#1b2b25]/50 hover:bg-white"
                   }`}
                 >
                   <CustomIcon name="coniglio" size={14} /> NO
@@ -223,19 +359,17 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={saveProfile}
-              disabled={saving}
+              disabled={saving || uploading}
               className="w-full rounded-2xl py-3.5 bg-gradient-to-r from-amber-400 to-amber-500 text-amber-950 font-black text-xs uppercase tracking-wider active:scale-95 transition shadow-md border border-amber-300"
             >
-              {saving ? "Salvataggio..." : "Salva Profilo"}
+              {saving ? "Aggiornamento Tesserino..." : "Salva Tesserino"}
             </button>
           </div>
         )}
       </section>
 
-      {/* ⛺ 2. HUB RISORSE (Bento Grid Pulita) */}
+      {/* ⛺ 2. HUB RISORSE (Bento Grid) */}
       <section className="rounded-[2.5rem] bg-white/40 backdrop-blur-xl p-5 shadow-sm border border-white space-y-5">
-        
-        {/* Onorificenze */}
         <div>
           <div className="flex justify-between items-center mb-3 px-1">
             <h2 className="text-[10px] font-black uppercase tracking-widest text-[#1b2b25]/60 flex items-center gap-1.5">
@@ -278,8 +412,6 @@ export default function ProfilePage() {
 
         {/* Griglia Bento */}
         <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/60">
-          
-          {/* 1. Le tue tende */}
           <button
             onClick={() => router.push("/profile/tents")}
             className="col-span-2 group h-24 bg-gradient-to-br from-[#ebdec8] to-[#e0cca9] rounded-[1.5rem] p-4 flex items-center justify-between border border-white shadow-sm active:scale-[0.98] transition-all overflow-hidden relative"
@@ -300,7 +432,6 @@ export default function ProfilePage() {
             </div>
           </button>
 
-          {/* 2. I Miei Mezzi */}
           <button
             onClick={() => router.push("/profile/cars")}
             className="group h-28 bg-white/70 rounded-[1.5rem] p-4 flex flex-col justify-end border border-white shadow-sm active:scale-[0.95] transition-all text-left relative overflow-hidden"
@@ -318,7 +449,6 @@ export default function ProfilePage() {
             </div>
           </button>
 
-          {/* 3. Equipaggiamenti */}
           <button
             onClick={() => router.push("/profile/equipment")}
             className="group h-28 bg-[#1b2b25] text-[#ebdec8] rounded-[1.5rem] p-4 flex flex-col justify-end border border-[#1b2b25]/20 shadow-sm active:scale-[0.95] transition-all text-left relative overflow-hidden"
@@ -335,7 +465,6 @@ export default function ProfilePage() {
               </p>
             </div>
           </button>
-
         </div>
       </section>
 
@@ -345,12 +474,11 @@ export default function ProfilePage() {
           <p className="text-xs font-bold text-red-950">Account & Sessione</p>
           <p className="text-[10px] text-red-900/60">Disconnetti il tuo profilo</p>
         </div>
-        
+
         <div className="shrink-0">
           <LogoutButton />
         </div>
       </section>
-
     </main>
   );
 }

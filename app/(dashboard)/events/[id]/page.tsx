@@ -30,6 +30,47 @@ export default function EventPage() {
     shoppingCount: 0,
   });
 
+  // Check se l'evento è "Winter"
+  const isWinter = event?.titolo?.toLowerCase().includes("winter");
+
+  // --- HELPER BADGE PASS DINAMICO ---
+  function renderPassBadge(stato: string | undefined) {
+    switch (stato) {
+      case "partecipo":
+      case "ci_saro":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            Confermato
+          </span>
+        );
+      case "forse":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+            In Dubbio
+          </span>
+        );
+      case "non_partecipo":
+      case "non_ci_saro":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-900 border border-rose-200 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+            Non Partecipo
+          </span>
+        );
+      default:
+        return (
+          <span className="px-3 py-1 rounded-full bg-zinc-100 text-zinc-700 border border-zinc-200 text-[10px] font-black uppercase tracking-wider">
+            In Attesa
+          </span>
+        );
+    }
+  }
+
   function formatArrivalDeparture(date: string, time: string, label: string) {
     if (!date) return null;
 
@@ -316,8 +357,11 @@ export default function EventPage() {
       : 0;
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 pb-40 max-w-md mx-auto flex flex-col gap-5 select-none">
-      
+    <main
+      className={`min-h-screen p-4 sm:p-6 pb-40 max-w-md mx-auto flex flex-col gap-5 select-none ${
+        isWinter ? "background_snow" : "background_day"
+      }`}
+    >
       {/* 🚀 BARRA TOP & ACTIONS */}
       <header className="flex items-center justify-between pt-1">
         <button
@@ -356,7 +400,15 @@ export default function EventPage() {
       {/* 🏕️ HERO EVENTO */}
       <section className="relative rounded-[2.5rem] bg-white/90 backdrop-blur-2xl p-6 shadow-sm border border-white overflow-hidden">
         <div className="absolute -right-2 -bottom-2 pointer-events-none">
-          <CustomIcon name="tenda-grossa" size={110} />
+          {isWinter ? (
+            <img
+              src="/icons/tenda-snow.png"
+              alt="Tenda Snow"
+              className="w-[110px] h-[110px] object-contain drop-shadow-sm"
+            />
+          ) : (
+            <CustomIcon name="tenda-grossa" size={110} />
+          )}
         </div>
 
         <div className="relative z-10 space-y-3">
@@ -391,35 +443,26 @@ export default function EventPage() {
             </h2>
           </div>
 
-          {myParticipation ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200 text-[10px] font-black uppercase tracking-wider shadow-2xs">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              Confermato
-            </span>
-          ) : (
-            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-black uppercase tracking-wider">
-              In Attesa
-            </span>
-          )}
+          {/* BADGE STATO DINAMICO */}
+          {renderPassBadge(myParticipation?.stato)}
         </div>
 
         {myParticipation ? (
           <div className="space-y-3">
-            <div className="space-y-2">
-              {formatArrivalDeparture(
-                myParticipation.arrivo_data,
-                myParticipation.arrivo_ora,
-                "🏕️ Arrivo:"
-              )}
-              {formatArrivalDeparture(
-                myParticipation.partenza_data,
-                myParticipation.partenza_ora,
-                "🚗 Partenza:"
-              )}
-            </div>
+            {(myParticipation.arrivo_data || myParticipation.partenza_data) && (
+              <div className="space-y-2">
+                {formatArrivalDeparture(
+                  myParticipation.arrivo_data,
+                  myParticipation.arrivo_ora,
+                  "🏕️ Arrivo:"
+                )}
+                {formatArrivalDeparture(
+                  myParticipation.partenza_data,
+                  myParticipation.partenza_ora,
+                  "🚗 Partenza:"
+                )}
+              </div>
+            )}
 
             <div className="flex gap-2 pt-1">
               <button
@@ -431,8 +474,8 @@ export default function EventPage() {
 
               <button
                 onClick={removeParticipation}
-                className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-600 border border-red-200 text-sm font-black active:scale-90 transition flex items-center justify-center hover:bg-red-500 hover:text-white"
-                title="Rinuncia"
+                className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-600 border border-red-200 text-sm font-black active:scale-90 transition flex items-center justify-center hover:bg-red-500 hover:text-white shrink-0"
+                title="Annulla o Elimina Iscrizione"
               >
                 ❌
               </button>

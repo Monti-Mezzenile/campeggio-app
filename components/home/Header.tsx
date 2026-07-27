@@ -19,7 +19,11 @@ const PALINSESTO = [
   { text: "Guardare il fuoco del falò di notte abbassa la pressione e azzera lo stress. 🔥", category: "💡 Curiosità di Campo" },
 ];
 
-export default function Header() {
+interface HeaderProps {
+  name?: string;
+}
+
+export default function Header({ name }: HeaderProps) {
   const [currentIndex, setCurrentIndex] = useState<number | null>(null);
 
   const tuneInToRadio = () => {
@@ -30,27 +34,29 @@ export default function Header() {
   const activeItem = currentIndex !== null ? PALINSESTO[currentIndex] : null;
 
   return (
-    <header className="w-full px-4 py-3 flex items-center justify-between border-b border-[#ebdec8]/20 bg-black/60 backdrop-blur-xl sticky top-0 z-40 shadow-md">
-      {/* 🚀 SINISTRA: Logo MONTI + Saluto "Ciao Coniglietto\a" */}
-      <div className="flex items-center gap-3 sm:gap-4">
-        {/* Logo MONTI (Dimensione leggermente aumentata) */}
+    // Sfondo Glassmorphism elegante
+    <header className="w-full px-4 py-3 flex items-center justify-between rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 shadow-sm sticky top-4 z-40 mx-auto mt-2">
+      
+      {/* 🚀 SINISTRA: Logo MONTI + Saluto */}
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        {/* Logo MONTI */}
         <img
           src="/monti/logo.png"
           alt="MONTI"
-          className="h-9 md:h-11 w-auto object-contain drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]"
+          className="h-8 md:h-10 w-auto object-contain drop-shadow-md"
         />
 
-        {/* Separatore orizzontale */}
-        <div className="h-5 w-[1px] bg-[#ebdec8]/30" />
+        {/* Separatore orizzontale ammorbidito */}
+        <div className="h-4 w-[1px] bg-[#ebdec8]/20" />
 
-        {/* Saluto */}
+        {/* Saluto (MODIFICATO: dimensione ridotta a text-xs sm:text-sm) */}
         <div
-          className="flex items-center gap-1.5 text-[#ebdec8] text-lg sm:text-xl font-semibold leading-none tracking-wide"
+          className="flex items-center gap-1 text-[#ebdec8] text-xs sm:text-sm font-medium leading-none tracking-wide drop-shadow-sm opacity-90"
           style={{ fontFamily: "var(--font-caveat)" }}
         >
-          <span>Ciao Coniglietto\a</span>
-          <div className="flex items-center">
-            <CustomIcon name="coniglio" size={32} />
+          <span>Ciao coniglietto/a</span>
+          <div className="flex items-center drop-shadow-md shrink-0">
+            <CustomIcon name="coniglio" size={18} />
           </div>
         </div>
       </div>
@@ -60,26 +66,26 @@ export default function Header() {
         <button
           onClick={tuneInToRadio}
           type="button"
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#ebdec8]/20 to-[#ebdec8]/10 hover:from-[#ebdec8]/30 hover:to-[#ebdec8]/20 border border-[#ebdec8]/35 text-xs sm:text-sm text-[#ebdec8] font-medium transition-all active:scale-95 shadow-sm"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/30 text-xs text-[#ebdec8] font-medium transition-all active:scale-95 shadow-sm backdrop-blur-sm"
         >
-          <span className="animate-pulse">📻</span>
-          <span className="font-semibold">Radio MONTI</span>
+          <span className="animate-pulse drop-shadow-sm">📻</span>
+          <span className="font-semibold drop-shadow-sm">Radio MONTI</span>
         </button>
 
         {/* Pop-up trasmissioni */}
         {activeItem && (
           <div 
             onClick={() => setCurrentIndex(null)}
-            className="absolute right-0 top-11 w-72 p-3.5 rounded-2xl bg-zinc-950/95 border border-[#ebdec8]/40 shadow-2xl backdrop-blur-2xl z-50 cursor-pointer animate-in fade-in slide-in-from-top-2 duration-200"
+            className="absolute right-0 top-12 w-72 p-4 rounded-2xl bg-[#1b2b25]/95 border border-[#ebdec8]/20 shadow-2xl backdrop-blur-2xl z-50 cursor-pointer animate-in fade-in slide-in-from-top-2 duration-200"
           >
-            <div className="flex justify-between items-center mb-1.5">
-              <span className="text-amber-300 font-bold text-[10px] uppercase tracking-wider">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[#ebdec8] font-black text-[10px] uppercase tracking-wider">
                 {activeItem.category}
               </span>
-              <span className="text-[10px] text-zinc-500">clicca per chiudere</span>
+              <span className="text-[10px] text-[#ebdec8]/50">chiudi ✕</span>
             </div>
             
-            <p className="text-sm font-medium text-zinc-100 leading-relaxed italic">
+            <p className="text-sm font-medium text-white leading-relaxed italic">
               "{activeItem.text}"
             </p>
           </div>

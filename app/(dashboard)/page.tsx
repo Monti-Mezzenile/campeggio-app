@@ -174,17 +174,24 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen p-6 pb-28">
+    <main className="min-h-screen p-6 pb-28 space-y-6">
+      {/* Header con salutino */}
       <Header name={profile?.nome} />
 
+      {/* Card prossimo evento */}
       <NextEventCard event={nextEvent} daysLeft={daysLeft} />
 
-      {nextEvent && (
-        <PreparationMonti eventId={nextEvent.id} userId={user.id} />
+      {/* PreparationMonti: Staccato con margini dedicati mt-5 mb-5 */}
+      {nextEvent && nextEvent.joined && (
+        <section className="my-5">
+          <PreparationMonti eventId={nextEvent.id} userId={user.id} />
+        </section>
       )}
 
+      {/* Le mie cose */}
       <MyStuff />
 
+      {/* Lista Eventi */}
       <MyEvents events={events} isAdmin={profile?.ruolo === "admin"} />
     </main>
   );
