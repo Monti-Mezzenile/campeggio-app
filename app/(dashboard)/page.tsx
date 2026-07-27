@@ -40,7 +40,6 @@ export default function Home() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      // 🔴 SE NON C'È SESSIONE: Reindirizza a /login
       if (!session) {
         setUser(null);
         setCheckingSession(false);
@@ -51,7 +50,6 @@ export default function Home() {
       setUser(session.user);
       const userId = session.user.id;
 
-      // ⚡ CARICAMENTO PARALLELO (Profilo, Eventi e Partecipazioni)
       const [profileRes, eventsRes, membersRes] = await Promise.all([
         supabase
           .from("profiles")
@@ -80,7 +78,6 @@ export default function Home() {
       const eventsData = eventsRes.data || [];
       const membersData = membersRes.data || [];
 
-      // Mappa dello stato partecipazioni
       const participationMap = Object.fromEntries(
         membersData.map((member) => [member.event_id, member.stato])
       );
@@ -93,13 +90,11 @@ export default function Home() {
 
       setEvents(eventsWithStatus);
 
-      // Calcola Evento Home (in corso o futuro)
       const now = new Date();
       now.setHours(0, 0, 0, 0);
 
       let selectedEvent: any = null;
 
-      // 1. EVENTO IN CORSO
       selectedEvent = eventsWithStatus.find((event) => {
         const startDateStr = event.data_inizio || event.data_evento;
         const endDateStr = event.data_fine || startDateStr;
@@ -115,7 +110,6 @@ export default function Home() {
         return now >= start && now <= end;
       });
 
-      // 2. EVENTO FUTURO
       if (!selectedEvent) {
         selectedEvent = eventsWithStatus.find((event) => {
           const dateStr = event.data_inizio || event.data_evento;
@@ -164,24 +158,25 @@ export default function Home() {
     };
   }, []);
 
-  // Durante la verifica della sessione
   if (checkingSession || !user) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6 text-neutral-400">
-        Caricamento...
+      <main className="min-h-dvh flex items-center justify-center p-6 text-[#1B2B25] bg-transparent">
+        <div className="bg-[#FFF4E3]/80 backdrop-blur-md px-6 py-3 rounded-2xl font-bold shadow-sm">
+          Caricamento...
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen p-6 pb-28 space-y-6">
+    <main className="min-h-dvh p-6 pb-36 space-y-6 bg-transparent">
       {/* Header con salutino */}
       <Header name={profile?.nome} />
 
       {/* Card prossimo evento */}
       <NextEventCard event={nextEvent} daysLeft={daysLeft} />
 
-      {/* PreparationMonti: Staccato con margini dedicati mt-5 mb-5 */}
+      {/* PreparationMonti */}
       {nextEvent && nextEvent.joined && (
         <section className="my-5">
           <PreparationMonti eventId={nextEvent.id} userId={user.id} />

@@ -68,8 +68,8 @@ export default function MyEvents({ events, isAdmin }: MyEventsProps) {
           )}
         </div>
       ) : (
-        /* Carousel delle Schede Evento */
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
+        /* Carousel delle Schede Evento (QUI LA MODIFICA: -mx-6 px-6) */
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory -mx-6 px-6">
           {events.slice(0, 5).map((event, index) => {
             const eventDate = event.data_inizio || event.data_evento || "TBA";
             const isFirst = index === 0;
@@ -94,7 +94,7 @@ export default function MyEvents({ events, isAdmin }: MyEventsProps) {
                       : "bg-[#a63a50] border-white/20 text-white"
                   }`}
                 >
-                  {/* Filigrana Icona in Background (Trasparenza regolata a opacity-35) */}
+                  {/* Filigrana Icona in Background */}
                   <div className="absolute -right-3 -bottom-3 opacity-35 pointer-events-none group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
                     <CustomIcon name={bgIconName} size={100} />
                   </div>
