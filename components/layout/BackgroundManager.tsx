@@ -2,12 +2,12 @@
 
 import { usePathname } from "next/navigation";
 
+// Array con i percorsi corretti (senza la sottocartella /background/ se sono in /public)
 const BACKGROUNDS = [
-  { src: "/background/background_day.png" },
-  { src: "/background/background_gold.png" },
-  { src: "/background/background.jpg" },
-  { src: "/background/background.png" },
-  { src: "/background/background_winter.png" },
+  { src: "/background_day.png" },
+  { src: "/background_gold.png" },
+  { src: "/background.png" },
+  { src: "/background_winter.png" },
 ];
 
 export default function BackgroundManager({
@@ -20,33 +20,33 @@ export default function BackgroundManager({
   const getActiveSrc = () => {
     // Storico -> background_gold.png
     if (pathname?.startsWith("/history") || pathname?.startsWith("/storico")) {
-      return "/background/background_gold.png";
+      return "/background_gold.png";
     }
-    // Idee -> background_day.png (GIORNO)
+    // Curiosità / Idee -> background_day.png
     if (pathname?.startsWith("/curiosita") || pathname?.startsWith("/idee")) {
-      return "/background/background_day.png";
+      return "/background_day.png";
     }
     // IO / Profilo -> background_winter.png
     if (pathname?.startsWith("/profile") || pathname?.startsWith("/io")) {
-      return "/background/background_winter.png";
+      return "/background_winter.png";
     }
-    // Home ed Eventi -> background.jpg (o background.png se usi quello)
-    return "/background/background.jpg"; 
+    // Home ed Eventi -> background.png
+    return "/background.png"; 
   };
 
   const activeSrc = getActiveSrc();
 
   return (
-    <div className="relative min-h-dvh overflow-x-hidden">
+    <div className="relative min-h-dvh w-full overflow-x-hidden">
       {/* LIVELLO DEGLI SFONDI IN DISSOLVENZA */}
-      <div className="fixed inset-0 -z-10 bg-[#1f2041]">
+      <div className="fixed inset-0 z-0 bg-[#ebdec8]">
         {BACKGROUNDS.map((bg) => {
           const isActive = activeSrc === bg.src;
           return (
             <div
               key={bg.src}
-              className={`absolute inset-0 transition-all duration-700 ease-in-out ${
-                isActive ? "opacity-100 scale-100" : "opacity-0 scale-105 pointer-events-none"
+              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                isActive ? "opacity-100" : "opacity-0 pointer-events-none"
               }`}
             >
               <img
@@ -54,14 +54,16 @@ export default function BackgroundManager({
                 alt="Background MONTI"
                 className="w-full h-full object-cover object-center"
               />
-              <div className="absolute inset-0 bg-black/15" />
+              <div className="absolute inset-0 bg-black/10" />
             </div>
           );
         })}
       </div>
 
-      {/* CONTENUTO DELLA PAGINA */}
-      <div className="relative z-10 min-h-dvh">{children}</div>
+      {/* CONTENUTO DELLA PAGINA (Sopra lo sfondo) */}
+      <div className="relative z-10 min-h-dvh bg-transparent">
+        {children}
+      </div>
     </div>
   );
 }
