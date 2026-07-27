@@ -36,12 +36,20 @@ export default function HistoryAndVideosPage() {
     async function loadData() {
       setLoading(true);
       const [eventsRes, videosRes] = await Promise.all([
-        supabase.from("events").select("*").order("data_inizio", { ascending: true }),
-        supabase.from("videos").select("*").order("created_at", { ascending: false }),
+        supabase
+          .from("events")
+          .select("*")
+          .order("data_inizio", { ascending: true }),
+        supabase
+          .from("videos")
+          .select("*")
+          .order("created_at", { ascending: false }),
       ]);
 
-      if (eventsRes.error) console.error("Errore eventi:", eventsRes.error.message || eventsRes.error);
-      if (videosRes.error) console.error("Errore video:", videosRes.error.message || videosRes.error);
+      if (eventsRes.error)
+        console.error("Errore eventi:", eventsRes.error.message || eventsRes.error);
+      if (videosRes.error)
+        console.error("Errore video:", videosRes.error.message || videosRes.error);
 
       setEvents(eventsRes.data || []);
       setVideos(videosRes.data || []);
@@ -65,7 +73,7 @@ export default function HistoryAndVideosPage() {
   const getPlatformInfo = (url: string) => {
     if (!url) return { name: "Video", bg: "bg-amber-500/90 text-zinc-950", icon: "🔗" };
     const l = url.toLowerCase();
-    
+
     if (l.includes("youtube.com") || l.includes("youtu.be")) {
       return { name: "YouTube", bg: "bg-red-600 text-white", icon: "▶" };
     }
@@ -75,7 +83,7 @@ export default function HistoryAndVideosPage() {
     if (l.includes("frame.io")) {
       return { name: "Frame.io", bg: "bg-purple-600 text-white", icon: "🎞️" };
     }
-    
+
     return { name: "Link", bg: "bg-amber-400 text-zinc-950", icon: "🌐" };
   };
 
@@ -96,14 +104,13 @@ export default function HistoryAndVideosPage() {
   }, [videos, searchQuery]);
 
   return (
-    <main className="min-h-screen p-4 md:p-6 pb-28 max-w-4xl mx-auto space-y-6 select-none">
-      
-      {/* 📖 HEADER CON ICONA LIBRO CORRETTA (/icons/libro.png) */}
+    <main className="min-h-dvh p-4 md:p-6 pb-36 max-w-4xl mx-auto space-y-6 select-none bg-transparent">
+      {/* 📖 HEADER CON ICONA LIBRO */}
       <div className="text-center space-y-3 pt-2">
         <div className="relative inline-block group">
           {/* Effetto Glow Dorato dietro l'icona */}
           <div className="absolute inset-0 bg-amber-400/25 rounded-full blur-2xl scale-150 transition-all duration-500 group-hover:scale-175 group-hover:bg-amber-400/40" />
-          
+
           <img
             src="/icons/libro.png"
             alt="Il Libro dei Ricordi"
@@ -119,7 +126,7 @@ export default function HistoryAndVideosPage() {
             Il Libro dei Ricordi
           </h1>
           <p className="text-xs text-amber-100/80 mt-1 font-medium max-w-md mx-auto">
-            Perchè di cazzate ne abbiamo fatte tante e devono essere ricordate. 
+            Perché di cazzate ne abbiamo fatte tante e devono essere ricordate.
           </p>
         </div>
       </div>
@@ -273,7 +280,6 @@ export default function HistoryAndVideosPage() {
                         className="block group"
                       >
                         <Card className="p-0 overflow-hidden bg-black/70 border border-amber-400/25 hover:border-amber-300/80 backdrop-blur-xl transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_8px_20px_rgba(251,191,36,0.15)] shadow-md relative rounded-xl">
-                          
                           <div className="relative aspect-video bg-zinc-950 overflow-hidden">
                             {vid.thumbnail_url ? (
                               <img

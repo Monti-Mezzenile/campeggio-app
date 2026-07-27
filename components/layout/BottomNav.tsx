@@ -37,26 +37,27 @@ export default function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto pointer-events-none pb-[env(safe-area-inset-bottom)]">
+    <div className="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto pointer-events-none">
       <nav
         className="
           pointer-events-auto
-          h-[84px]
           rounded-t-[32px]
           flex
           items-center
           justify-around
           px-2.5
-          shadow-2xl
+          pt-2
+          pb-[calc(env(safe-area-inset-bottom)+8px)]
+          shadow-[0_-8px_25px_rgba(0,0,0,0.15)]
           border-t
           border-x
-          border-[#FFF4E3]/40
-          backdrop-blur-md
+          border-[#FFF4E3]/50
+          backdrop-blur-xl
           relative
           overflow-hidden
         "
         style={{
-          background: "#F0D5B3",
+          backgroundColor: "rgba(240, 213, 179, 0.92)", // Trasparenza per consentire il blur
         }}
       >
         {items.map((item) => {
@@ -75,7 +76,7 @@ export default function BottomNav() {
                 items-center
                 justify-center
                 w-[82px]
-                h-[72px]
+                h-[68px]
                 rounded-2xl
                 transition-all
                 duration-300
@@ -98,7 +99,7 @@ export default function BottomNav() {
                     -z-10
                     shadow-md
                     border
-                    border-white/20
+                    border-white/30
                     transition-all
                     duration-300
                   "
@@ -108,7 +109,7 @@ export default function BottomNav() {
                 />
               )}
 
-              {/* Icona Super Ingrandita */}
+              {/* Icona Ingrandita */}
               <div
                 className={`
                   transition-transform
@@ -123,7 +124,7 @@ export default function BottomNav() {
                   }
                 `}
               >
-                <CustomIcon name={item.icon} size={42} className="drop-shadow-sm" />
+                <CustomIcon name={item.icon} size={38} className="drop-shadow-sm" />
               </div>
 
               {/* Etichetta di testo */}

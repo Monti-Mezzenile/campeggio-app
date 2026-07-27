@@ -132,7 +132,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-6 max-w-md mx-auto flex flex-col items-center justify-center">
+      <main className="min-h-dvh p-6 max-w-md mx-auto flex flex-col items-center justify-center bg-transparent">
         <div className="w-16 h-16 rounded-full bg-white/50 backdrop-blur-md flex items-center justify-center shadow-lg animate-pulse mb-3 border border-white">
           <CustomIcon name="coniglio" size={32} />
         </div>
@@ -148,7 +148,7 @@ export default function ProfilePage() {
   const matricola = profile?.id ? `#MNT-${profile.id.slice(0, 4).toUpperCase()}` : "#MNT-0000";
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 pb-28 max-w-md mx-auto flex flex-col gap-6 select-none">
+    <main className="min-h-dvh p-4 sm:p-6 pb-36 max-w-md mx-auto flex flex-col gap-6 select-none bg-transparent">
       {/* 🚀 HEADER CON BADGE STATO E ICONA CUSTOM */}
       <header className="flex items-center justify-between pt-2">
         <button
@@ -214,7 +214,7 @@ export default function ProfilePage() {
           {profile?.nome || "Esploratore Ignoto"}
         </h2>
 
-        {/* RUOLO / TITOLO DA CAMPO (Sostituisce l'email!) */}
+        {/* RUOLO / TITOLO DA CAMPO */}
         <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#1b2b25]/10 text-[#1b2b25] font-black text-[10px] uppercase tracking-widest mt-1 mb-2">
           <span>⛺</span> {profile?.titolo_campo || "Mastro Fuochista"}
         </div>

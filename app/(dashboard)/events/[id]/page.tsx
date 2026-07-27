@@ -321,7 +321,7 @@ export default function EventPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-6 max-w-md mx-auto flex flex-col items-center justify-center">
+      <main className="min-h-dvh p-6 max-w-md mx-auto flex flex-col items-center justify-center bg-transparent">
         <div className="w-16 h-16 rounded-full bg-white/50 backdrop-blur-md flex items-center justify-center shadow-lg animate-pulse mb-3 border border-white">
           <CustomIcon name="tenda-grossa" size={36} />
         </div>
@@ -334,7 +334,7 @@ export default function EventPage() {
 
   if (!event) {
     return (
-      <main className="min-h-screen p-6 max-w-md mx-auto flex flex-col items-center justify-center text-center">
+      <main className="min-h-dvh p-6 max-w-md mx-auto flex flex-col items-center justify-center text-center bg-transparent">
         <div className="bg-white/70 backdrop-blur-2xl border border-white p-8 rounded-[2.5rem] shadow-sm">
           <CustomIcon name="tenda-grossa" size={76} className="mx-auto mb-3 opacity-60" />
           <h2 className="text-xl font-black text-[#1b2b25]">
@@ -357,11 +357,7 @@ export default function EventPage() {
       : 0;
 
   return (
-    <main
-      className={`min-h-screen p-4 sm:p-6 pb-40 max-w-md mx-auto flex flex-col gap-5 select-none ${
-        isWinter ? "background_snow" : "background_day"
-      }`}
-    >
+    <main className="min-h-dvh p-4 sm:p-6 pb-40 max-w-md mx-auto flex flex-col gap-5 select-none bg-transparent">
       {/* 🚀 BARRA TOP & ACTIONS */}
       <header className="flex items-center justify-between pt-1">
         <button
@@ -493,7 +489,7 @@ export default function EventPage() {
         )}
       </section>
 
-      {/* 🧩 BENTO GRID - ICONE GIGANTI (60px - 76px) */}
+      {/* 🧩 BENTO GRID - ICONE GIGANTI */}
       <section className="grid grid-cols-2 gap-3 items-stretch">
         
         {/* 1. PARTECIPANTI */}
@@ -710,7 +706,6 @@ export default function EventPage() {
         </button>
 
       </section>
-
     </main>
   );
 }

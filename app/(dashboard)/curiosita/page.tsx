@@ -122,7 +122,7 @@ export default function CuriositaPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-4 md:p-6 pb-28 max-w-3xl mx-auto space-y-6">
+      <main className="min-h-dvh p-4 md:p-6 pb-36 max-w-3xl mx-auto space-y-6 bg-transparent">
         <div className="flex justify-center pt-6">
           <div className="h-12 w-48 bg-white/50 animate-pulse rounded-full backdrop-blur-md border border-white" />
         </div>
@@ -136,7 +136,7 @@ export default function CuriositaPage() {
   }
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 pb-32 max-w-3xl mx-auto select-none space-y-7 text-zinc-900">
+    <main className="min-h-dvh p-4 sm:p-6 pb-36 max-w-3xl mx-auto select-none space-y-7 text-zinc-900 bg-transparent">
       
       {/* 💡 HERO HEADER COMPATTO CON GLOW GLASS */}
       <header className="relative overflow-hidden bg-white/80 border border-white/90 rounded-3xl p-6 sm:p-7 shadow-xl backdrop-blur-md text-center">

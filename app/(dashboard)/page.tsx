@@ -71,7 +71,7 @@ export default function Home() {
       }
       setProfile(profileRes.data || null);
 
-      if (eventsError(eventsRes.error)) {
+      if (eventsRes.error) {
         console.error("ERRORE EVENTI:", eventsRes.error);
       }
 
@@ -135,11 +135,6 @@ export default function Home() {
     } finally {
       setCheckingSession(false);
     }
-  }
-
-  function eventsError(error: any) {
-    if (error) console.log("ERRORE EVENTI:", error);
-    return false;
   }
 
   useEffect(() => {
