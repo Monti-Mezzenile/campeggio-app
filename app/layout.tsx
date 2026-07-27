@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const viewport: Viewport = {
-  themeColor: "#121614",
+  themeColor: "#ebdec8",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -31,8 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="it" className="bg-[#121614] overscroll-none h-full select-none">
-      <body className="bg-[#121614] text-white antialiased overscroll-none min-h-screen w-full overflow-x-hidden touch-pan-y">
+    <html lang="it" className="h-full overflow-hidden select-none">
+      <body className="h-full w-full overflow-hidden text-[#1F2041] antialiased touch-none">
         {children}
       </body>
     </html>
