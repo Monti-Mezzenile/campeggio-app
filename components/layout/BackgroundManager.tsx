@@ -6,6 +6,7 @@ const BACKGROUNDS = [
   { src: "/background/background_day.png" },
   { src: "/background/background_gold.png" },
   { src: "/background/background.jpg" },
+  { src: "/background/background.png" },
   { src: "/background/background_winter.png" },
 ];
 
@@ -18,7 +19,7 @@ export default function BackgroundManager({
 
   const getActiveSrc = () => {
     // Storico -> background_gold.png
-    if (pathname?.startsWith("/history")) {
+    if (pathname?.startsWith("/history") || pathname?.startsWith("/storico")) {
       return "/background/background_gold.png";
     }
     // Idee -> background_day.png (GIORNO)
@@ -29,14 +30,14 @@ export default function BackgroundManager({
     if (pathname?.startsWith("/profile") || pathname?.startsWith("/io")) {
       return "/background/background_winter.png";
     }
-    // Home -> background.jpg (NOTTE - Default)
-    return "/background/background.jpg";
+    // Home ed Eventi -> background.jpg (o background.png se usi quello)
+    return "/background/background.jpg"; 
   };
 
   const activeSrc = getActiveSrc();
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden">
+    <div className="relative min-h-dvh overflow-x-hidden">
       {/* LIVELLO DEGLI SFONDI IN DISSOLVENZA */}
       <div className="fixed inset-0 -z-10 bg-[#1f2041]">
         {BACKGROUNDS.map((bg) => {
@@ -53,7 +54,6 @@ export default function BackgroundManager({
                 alt="Background MONTI"
                 className="w-full h-full object-cover object-center"
               />
-              {/* Overlay scuro per migliorare la leggibilità */}
               <div className="absolute inset-0 bg-black/15" />
             </div>
           );
@@ -61,7 +61,7 @@ export default function BackgroundManager({
       </div>
 
       {/* CONTENUTO DELLA PAGINA */}
-      <div className="relative z-10">{children}</div>
+      <div className="relative z-10 min-h-dvh">{children}</div>
     </div>
   );
 }

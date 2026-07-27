@@ -37,18 +37,19 @@ export default function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-6 left-0 right-0 z-50 px-5 max-w-md mx-auto pointer-events-none">
+    <div className="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto pointer-events-none pb-[env(safe-area-inset-bottom)]">
       <nav
         className="
           pointer-events-auto
-          h-[96px]
-          rounded-[32px]
+          h-[84px]
+          rounded-t-[32px]
           flex
           items-center
           justify-around
           px-2.5
           shadow-2xl
-          border
+          border-t
+          border-x
           border-[#FFF4E3]/40
           backdrop-blur-md
           relative
@@ -74,7 +75,7 @@ export default function BottomNav() {
                 items-center
                 justify-center
                 w-[82px]
-                h-[80px]
+                h-[72px]
                 rounded-2xl
                 transition-all
                 duration-300
@@ -107,7 +108,7 @@ export default function BottomNav() {
                 />
               )}
 
-              {/* Icona Super Ingrandita (48px) */}
+              {/* Icona Super Ingrandita */}
               <div
                 className={`
                   transition-transform
@@ -117,12 +118,12 @@ export default function BottomNav() {
                   justify-center
                   ${
                     isActive
-                      ? "scale-110 -translate-y-1"
+                      ? "scale-105 -translate-y-0.5"
                       : "scale-100 opacity-80"
                   }
                 `}
               >
-                <CustomIcon name={item.icon} size={48} className="drop-shadow-sm" />
+                <CustomIcon name={item.icon} size={42} className="drop-shadow-sm" />
               </div>
 
               {/* Etichetta di testo */}
@@ -133,7 +134,7 @@ export default function BottomNav() {
                   leading-none
                   transition-all
                   duration-200
-                  ${isActive ? "mt-1.5" : "mt-1"}
+                  ${isActive ? "mt-1" : "mt-0.5"}
                 `}
               >
                 {item.name}

@@ -9,8 +9,11 @@ export default function DashboardLayout({
   return (
     <BackgroundManager>
       <div className="relative h-dvh w-full flex flex-col justify-between overflow-hidden">
-        {/* Area dei contenuti con scroll interno */}
-        <main className="flex-1 overflow-y-auto overscroll-contain pt-4 pb-28 touch-pan-y h-full">
+        {/* 
+          Area dei contenuti con scroll interno:
+          pt-[calc(env(safe-area-inset-top)+12px)] assicura che nulla finisca sotto la fotocamera/notch
+        */}
+        <main className="flex-1 overflow-y-auto overscroll-contain pt-[calc(env(safe-area-inset-top)+12px)] pb-28 touch-pan-y h-full">
           {children}
         </main>
 
