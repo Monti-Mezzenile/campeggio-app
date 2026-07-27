@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import "./globals.css";
 
 export const viewport: Viewport = {
   themeColor: "#121614", // Mantiene la barra di stato iOS scura come lo sfondo dell'app
@@ -25,7 +24,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
