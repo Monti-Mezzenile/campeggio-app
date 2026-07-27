@@ -8,7 +8,8 @@
 }
 
 :root {
-  --monti-background: #ebdec8;
+  /* Sfondo base scuro per evitare le fasce chiare in alto/basso su Safari iOS */
+  --monti-background: #121614; 
   --monti-card: #F0D5B3;
 
   --monti-primary: #1F2041;
@@ -21,11 +22,20 @@
   --monti-logo: #FFF4DD;
 
   --background: var(--monti-background);
-  --foreground: var(--monti-primary);
+  --foreground: #ffffff;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background-color: #121614 !important;
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -33,18 +43,16 @@ body {
 /* 🏔️ SFONDI DINAMICI SPEDIZIONI */
 .background-day {
   background-color: #ebdec8;
-  /* Se hai un'immagine di sfondo per il giorno dentro la cartella public/, scommenta queste righe: */
-  /* background-image: url('/background-day.png'); */
-  /* background-size: cover; */
-  /* background-position: center; */
+  background-image: url('/background-day.png');
+  background-size: cover;
+  background-position: center;
 }
 
 .background-snow {
-  background-color: #dbeafe; /* Azzurro freddo neve */
-  /* Se hai un'immagine di sfondo per la neve dentro la cartella public/, scommenta queste righe: */
-  /* background-image: url('/background-snow.png'); */
-  /* background-size: cover; */
-  /* background-position: center; */
+  background-color: #dbeafe;
+  background-image: url('/background-snow.png');
+  background-size: cover;
+  background-position: center;
 }
 
 /* 🚀 Utility per nascondere le scrollbar mantenendo lo scorrimento */
