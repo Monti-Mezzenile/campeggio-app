@@ -62,15 +62,83 @@ export default function JoinEventPage() {
 
   function generateHours() {
     return Array.from({ length: 30 }).map((_, i) => {
-      const totaleMinuti = (9 * 60) + (i * 30);
+      const totaleMinuti = 9 * 60 + i * 30;
       const ore = Math.floor(totaleMinuti / 60)
         .toString()
         .padStart(2, "0");
-      const minuti = (totaleMinuti % 60)
-        .toString()
-        .padStart(2, "0");
+      const minuti = (totaleMinuti % 60).toString().padStart(2, "0");
       return `${ore}:${minuti}`;
     });
+  }
+
+  async function saveParticipation() {
+    if (!user || !scelta) {
+      alert("Scegli come parteciperai");
+      return;
+    }
+    setSaving(true);
+
+    const payload = {
+      event_id: id,
+      user_id: user.id,
+      stato: scelta,
+      arrivo_data: scelta === "partecipo" ? arrivoData || null : null,
+      arrivo_ora: scelta === "partecipo" ? arrivoOra || null : null,
+      partenza_data: scelta === "partecipo" ? partenzaData || null : null,
+      partenza_ora: scelta === "partecipo" ? partenzaOra || null : null,
+    };
+
+    const { data: existing, error: checkError } = await supabase
+      .from("event_members")
+      .select("id")
+      .eq("event_id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (checkError) {
+      console.log(checkError);
+      alert(checkError.message);
+      setSaving(false);
+      return;
+    }
+
+    let error;
+    if (existing) {
+      const result = await supabase
+        .from("event_members")
+        .update(payload)
+        .eq("id", existing.id);
+      error = result.error;
+    } else {
+      const result = await supabase.from("event_members").insert(payload);
+      error = result.error;
+    }
+
+    if (error) {
+      console.log(error);
+      alert(error.message);
+      setSaving(false);
+      return;
+    }
+
+    /* CREA CHECKLIST PERSONALE AUTOMATICA */
+    if (scelta === "partecipo" || scelta === "forse") {
+      const { data: existingChecklist } = await supabase
+        .from("checklists")
+        .select("id")
+        .eq("event_id", id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!existingChecklist) {
+        await supabase.from("checklists").insert({
+          event_id: id,
+          user_id: user.id,
+        });
+      }
+    }
+    setSaving(false);
+    router.push(`/events/${id}`);
   }
 
   if (loading) {
@@ -108,7 +176,9 @@ export default function JoinEventPage() {
   const isWinter = event.titolo?.toLowerCase().includes("winter");
 
   const minDate = formatDate(event.data_inizio || event.data_evento);
-  const maxDate = formatDate(event.data_fine || event.data_inizio || event.data_evento);
+  const maxDate = formatDate(
+    event.data_fine || event.data_inizio || event.data_evento
+  );
 
   const choices = [
     {
@@ -133,7 +203,6 @@ export default function JoinEventPage() {
 
   return (
     <main className="min-h-screen p-4 sm:p-6 pb-36 max-w-md mx-auto flex flex-col gap-4 select-none">
-      
       {/* 🚀 HEADER TOP BAR & BACK */}
       <header className="flex items-center justify-between pt-1">
         <button
@@ -142,7 +211,7 @@ export default function JoinEventPage() {
         >
           ←
         </button>
-        
+
         <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-white shadow-sm">
           <span className="text-xs font-black text-[#1b2b25] tracking-tight uppercase">
             Conferma Presenza
@@ -152,7 +221,7 @@ export default function JoinEventPage() {
         <div className="w-10" />
       </header>
 
-      {/* 🏕️ HERO RSVP CARD (COMPATTA E PULITA) */}
+      {/* 🏕️ HERO RSVP CARD */}
       <section className="bg-white/90 backdrop-blur-2xl rounded-[2rem] p-5 border border-white shadow-sm text-center space-y-2 relative overflow-hidden">
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#1b2b25] text-[#ebdec8] text-2xl shadow-xs border border-white/20">
           {isWinter ? "❄️" : "🏕️"}
@@ -197,7 +266,9 @@ export default function JoinEventPage() {
                 </h2>
                 <p
                   className={`text-[11px] font-semibold leading-tight mt-0.5 ${
-                    scelta === choice.id ? "text-white/80" : "text-[#1b2b25]/60"
+                    scelta === choice.id
+                      ? "text-white/80"
+                      : "text-[#1b2b25]/60"
                   }`}
                 >
                   {choice.description}
@@ -224,8 +295,9 @@ export default function JoinEventPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-[#1b2b25]/10">
-            <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1">
+            {/* DATA ARRIVO */}
+            <div className="space-y-1 min-w-0">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1 block truncate">
                 📅 Data Arrivo
               </label>
               <input
@@ -234,18 +306,19 @@ export default function JoinEventPage() {
                 max={maxDate}
                 value={arrivoData}
                 onChange={(e) => setArrivoData(e.target.value)}
-                className="w-full bg-white/80 backdrop-blur-md border border-white rounded-xl px-3 py-2.5 text-xs font-black text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
+                className="w-full h-11 block min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-xl px-2.5 text-[11px] sm:text-xs font-extrabold text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs [color-scheme:light]"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1">
+            {/* ORA ARRIVO */}
+            <div className="space-y-1 min-w-0">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1 block truncate">
                 🕘 Ora Arrivo
               </label>
               <select
                 value={arrivoOra}
                 onChange={(e) => setArrivoOra(e.target.value)}
-                className="w-full bg-white/80 backdrop-blur-md border border-white rounded-xl px-3 py-2.5 text-xs font-black text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
+                className="w-full h-11 block min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-xl px-2.5 text-[11px] sm:text-xs font-extrabold text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs [color-scheme:light]"
               >
                 <option value="">Seleziona ora</option>
                 {generateHours().map((ora) => (
@@ -256,8 +329,9 @@ export default function JoinEventPage() {
               </select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1">
+            {/* DATA PARTENZA */}
+            <div className="space-y-1 min-w-0">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1 block truncate">
                 📅 Data Partenza
               </label>
               <input
@@ -266,18 +340,19 @@ export default function JoinEventPage() {
                 max={maxDate}
                 value={partenzaData}
                 onChange={(e) => setPartenzaData(e.target.value)}
-                className="w-full bg-white/80 backdrop-blur-md border border-white rounded-xl px-3 py-2.5 text-xs font-black text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
+                className="w-full h-11 block min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-xl px-2.5 text-[11px] sm:text-xs font-extrabold text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs [color-scheme:light]"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1">
+            {/* ORA PARTENZA */}
+            <div className="space-y-1 min-w-0">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1 block truncate">
                 🕘 Ora Partenza
               </label>
               <select
                 value={partenzaOra}
                 onChange={(e) => setPartenzaOra(e.target.value)}
-                className="w-full bg-white/80 backdrop-blur-md border border-white rounded-xl px-3 py-2.5 text-xs font-black text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
+                className="w-full h-11 block min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-xl px-2.5 text-[11px] sm:text-xs font-extrabold text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs [color-scheme:light]"
               >
                 <option value="">Seleziona ora</option>
                 {generateHours().map((ora) => (
@@ -305,81 +380,6 @@ export default function JoinEventPage() {
           )}
         </button>
       </div>
-
     </main>
   );
-
-  async function saveParticipation() {
-    if (!user || !scelta) {
-      alert("Scegli come parteciperai");
-      return;
-    }
-    setSaving(true);
-
-    const payload = {
-      event_id: id,
-      user_id: user.id,
-      stato: scelta,
-      arrivo_data: scelta === "partecipo" ? arrivoData || null : null,
-      arrivo_ora: scelta === "partecipo" ? arrivoOra || null : null,
-      partenza_data: scelta === "partecipo" ? partenzaData || null : null,
-      partenza_ora: scelta === "partecipo" ? partenzaOra || null : null,
-    };
-
-    const { data: existing, error: checkError } = await supabase
-      .from("event_members")
-      .select("id")
-      .eq("event_id", id)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (checkError) {
-      console.log(checkError);
-      alert(checkError.message);
-      setSaving(false);
-      return;
-    }
-
-    let error;
-    if (existing) {
-      const result = await supabase
-        .from("event_members")
-        .update(payload)
-        .eq("id", existing.id);
-      error = result.error;
-    } else {
-      const result = await supabase
-        .from("event_members")
-        .insert(payload);
-      error = result.error;
-    }
-
-    if (error) {
-      console.log(error);
-      alert(error.message);
-      setSaving(false);
-      return;
-    }
-
-    /* CREA CHECKLIST PERSONALE AUTOMATICA */
-    if (scelta === "partecipo" || scelta === "forse") {
-      const { data: existingChecklist } = await supabase
-        .from("checklists")
-        .select("id")
-        .eq("event_id", id)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!existingChecklist) {
-        await supabase
-          .from("checklists")
-          .insert({
-            event_id: id,
-            user_id: user.id
-          });
-      }
-    }
-    setSaving(false);
-    router.push(`/events/${id}`);
-  }
 }

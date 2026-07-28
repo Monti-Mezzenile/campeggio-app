@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import CustomIcon from "@/components/ui/CustomIcon";
-import Button from "@/components/ui/Button";
 
 export default function EventPage() {
   const params = useParams();
@@ -38,32 +37,32 @@ export default function EventPage() {
       case "partecipo":
       case "ci_saro":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-[10px] font-black uppercase tracking-wider shadow-2xs backdrop-blur-md">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
             </span>
             Confermato
           </span>
         );
       case "forse":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-black uppercase tracking-wider shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 text-[10px] font-black uppercase tracking-wider shadow-2xs backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
             In Dubbio
           </span>
         );
       case "non_partecipo":
       case "non_ci_saro":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-900 border border-rose-200 text-[10px] font-black uppercase tracking-wider shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/40 text-[10px] font-black uppercase tracking-wider shadow-2xs backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-rose-400"></span>
             Non Partecipo
           </span>
         );
       default:
         return (
-          <span className="px-3 py-1 rounded-full bg-zinc-100 text-zinc-700 border border-zinc-200 text-[10px] font-black uppercase tracking-wider">
+          <span className="px-3 py-1 rounded-full bg-white/10 text-[#ebdec8]/80 border border-[#ebdec8]/30 text-[10px] font-black uppercase tracking-wider backdrop-blur-md">
             In Attesa
           </span>
         );
@@ -94,20 +93,20 @@ export default function EventPage() {
     }
 
     return (
-      <div className="flex items-center justify-between bg-white/80 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+      <div className="flex items-center justify-between bg-white/10 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-[#ebdec8]/30 shadow-xs">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-black text-[#1b2b25]/70">{label}</span>
-          <span className="text-xs font-extrabold text-[#1b2b25]">
+          <span className="text-xs font-black text-[#ebdec8]/80">{label}</span>
+          <span className="text-xs font-extrabold text-[#ebdec8]">
             {isNaN(data.getDay()) ? date : giorni[data.getDay()]}
           </span>
           {momento && (
-            <span className="text-[10px] font-bold text-[#1b2b25]/50 capitalize">
+            <span className="text-[10px] font-bold text-[#ebdec8]/60 capitalize">
               ({momento})
             </span>
           )}
         </div>
         {time && (
-          <span className="font-mono text-xs font-black bg-[#1b2b25] text-[#ebdec8] px-2.5 py-1 rounded-xl shadow-sm">
+          <span className="font-mono text-xs font-black bg-[#ebdec8] text-[#1b2b25] px-2.5 py-1 rounded-xl shadow-sm">
             {String(time).slice(0, 5)}
           </span>
         )}
@@ -160,7 +159,7 @@ export default function EventPage() {
 
       setEvent(eventData);
 
-      // 3. Esecuzione Parallela di tutte le Query Statistiche
+      // 3. Esecuzione Parallela delle Query Statistiche
       const [
         partecipantiRes,
         eventTentsRes,
@@ -403,12 +402,12 @@ export default function EventPage() {
         </div>
       </section>
 
-      {/* 🪪 PASS PARTECIPANTE */}
-      <section className="rounded-[2.5rem] bg-white/80 backdrop-blur-2xl p-5 shadow-sm border border-white space-y-4">
+      {/* 🪪 PASS PARTECIPANTE - GLASS & PANNA OUTLINE */}
+      <section className="rounded-[2.5rem] bg-white/10 backdrop-blur-md p-5 shadow-lg border-2 border-[#ebdec8] space-y-4">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2.5">
             <CustomIcon name="libro" size={24} className="shrink-0" />
-            <h2 className="text-[11px] font-black uppercase tracking-wider text-[#1b2b25]">
+            <h2 className="text-[11px] font-black uppercase tracking-wider text-[#ebdec8]">
               IL TUO PASS SPEDIZIONE
             </h2>
           </div>
@@ -436,14 +435,14 @@ export default function EventPage() {
             <div className="flex gap-2 pt-1">
               <button
                 onClick={() => router.push(`/events/${id}/join`)}
-                className="flex-1 py-3 px-4 rounded-2xl bg-[#1b2b25] text-[#ebdec8] text-xs font-black uppercase tracking-wider active:scale-95 transition shadow-md flex items-center justify-center gap-2"
+                className="flex-1 py-3 px-4 rounded-2xl bg-[#ebdec8] text-[#1b2b25] text-xs font-black uppercase tracking-wider active:scale-95 transition shadow-md flex items-center justify-center gap-2"
               >
                 ✏️ Modifica Dettagli
               </button>
 
               <button
                 onClick={removeParticipation}
-                className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-600 border border-red-200 text-sm font-black active:scale-90 transition flex items-center justify-center hover:bg-red-500 hover:text-white shrink-0"
+                className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-300 border border-rose-400/40 text-sm font-black active:scale-90 transition flex items-center justify-center hover:bg-rose-500 hover:text-white shrink-0"
                 title="Annulla Iscrizione"
               >
                 ❌
@@ -452,12 +451,16 @@ export default function EventPage() {
           </div>
         ) : (
           <div className="text-center py-4 px-2 space-y-3">
-            <p className="text-xs font-semibold text-[#1b2b25]/70">
+            <p className="text-xs font-semibold text-[#ebdec8]/80 mb-2">
               Pronto a unirti al gruppo per questa avventura?
             </p>
-            <Button onClick={() => router.push(`/events/${id}/join`)}>
-              Entra Nella Spedizione ⛺
-            </Button>
+            <button
+              onClick={() => router.push(`/events/${id}/join`)}
+              className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-2xl bg-[#ebdec8] text-[#1b2b25] text-xs font-black uppercase tracking-wider active:scale-95 transition shadow-md"
+            >
+              <CustomIcon name="tenda-grossa" size={20} />
+              Entra Nella Spedizione
+            </button>
           </div>
         )}
       </section>
@@ -580,51 +583,51 @@ export default function EventPage() {
         {/* 5. EQUIPAGGIAMENTO */}
         <button
           onClick={() => router.push(`/events/${id}/equipment`)}
-          className="group h-32 bg-[#1b2b25] text-[#ebdec8] rounded-[2rem] p-4 border border-[#1b2b25]/20 shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
+          className="group h-32 bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-white border-l-4 border-l-[#9a5328] shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
         >
           <div className="flex flex-col justify-between h-full">
             <div>
-              <span className="text-[8px] font-black uppercase tracking-widest text-[#ebdec8]/50 block">
+              <span className="text-[8px] font-black uppercase tracking-widest text-[#9a5328] block">
                 MATERIALE
               </span>
-              <h3 className="text-xs font-black uppercase tracking-wide">
+              <h3 className="text-xs font-black uppercase text-[#1b2b25] tracking-wide">
                 Attrezzatura
               </h3>
             </div>
 
             <div>
-              <span className="font-mono text-xs font-black bg-white/20 text-white px-2 py-0.5 rounded-lg backdrop-blur-md">
+              <span className="font-mono text-xs font-black bg-[#9a5328]/10 text-[#9a5328] px-2 py-0.5 rounded-lg border border-[#9a5328]/20">
                 {stats.attrezzatura} oggetti
               </span>
-              <p className="text-[9px] font-bold text-[#ebdec8]/70 mt-1 leading-tight">
+              <p className="text-[9px] font-bold text-[#1b2b25]/60 mt-1 leading-tight">
                 Kit & campo
               </p>
             </div>
           </div>
 
-          <CustomIcon name="zaino" size={76} className="shrink-0 drop-shadow-md group-hover:scale-105 transition-transform" />
+          <CustomIcon name="zaino" size={76} className="shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
         </button>
 
         {/* 6. CIBO & SPESA */}
         <button
           onClick={() => router.push(`/events/${id}/shopping`)}
-          className="group h-32 bg-[#ebdec8] text-[#1b2b25] rounded-[2rem] p-4 border border-white/80 shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
+          className="group h-32 bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-white border-l-4 border-l-orange-500 shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
         >
           <div className="flex flex-col justify-between h-full">
             <div>
-              <span className="text-[8px] font-black uppercase tracking-widest text-[#1b2b25]/50 block">
+              <span className="text-[8px] font-black uppercase tracking-widest text-orange-700 block">
                 ALIMENTI
               </span>
-              <h3 className="text-xs font-black uppercase tracking-wide">
+              <h3 className="text-xs font-black uppercase text-[#1b2b25] tracking-wide">
                 Cibo & Spesa
               </h3>
             </div>
 
             <div>
-              <span className="font-mono text-xs font-black bg-white/80 px-2 py-0.5 rounded-lg">
+              <span className="font-mono text-xs font-black bg-orange-100 text-orange-900 px-2 py-0.5 rounded-lg border border-orange-200">
                 {stats.shoppingCount} voci
               </span>
-              <p className="text-[9px] font-extrabold text-[#1b2b25]/70 mt-1 leading-tight">
+              <p className="text-[9px] font-extrabold text-[#1b2b25]/60 mt-1 leading-tight">
                 Grigliata & menu
               </p>
             </div>

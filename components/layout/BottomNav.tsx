@@ -74,17 +74,17 @@ export default function BottomNav() {
 
   const isEventActive = pathname.startsWith("/events");
 
-  // Dimensione icone
-  const ICON_SIZE = 60;
+  // Dimensione icone impostata a 50px
+  const ICON_SIZE = 50;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 px-2 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] max-w-fit mx-auto pointer-events-none">
-      <div className="bg-[#ebdec8]/95 backdrop-blur-xl border border-white/70 rounded-[2.5rem] px-3 py-1.5 shadow-2xl flex items-center justify-center gap-1 sm:gap-2 pointer-events-auto overflow-x-auto max-w-full">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 w-full bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-2xl pb-[env(safe-area-inset-bottom)]">
+      <div className="flex items-center justify-around w-full px-2 py-1.5">
         
         {/* 1. HOME */}
         <button
           onClick={() => router.push("/")}
-          className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-2xl transition-all active:scale-90 shrink-0 ${
+          className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all active:scale-90 shrink-0 ${
             pathname === "/" ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
           }`}
         >
@@ -92,15 +92,15 @@ export default function BottomNav() {
           <span className="text-[9px] font-black uppercase tracking-tight">Home</span>
         </button>
 
-        {/* 2. EVENTO CORRENTE (ICONA FUOCO - 60px) */}
+        {/* 2. EVENTO CORRENTE (ICONA FUOCO - 50px) */}
         <button
           onClick={handleEventClick}
           disabled={loadingEvent}
-          className={`relative flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-2xl transition-all active:scale-90 shrink-0 ${
+          className={`relative flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all active:scale-90 shrink-0 ${
             isEventActive ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
           }`}
         >
-          <div className="w-[60px] h-[60px] flex items-center justify-center relative">
+          <div className="w-[50px] h-[50px] flex items-center justify-center relative">
             <img
               src="/icons/fuoco.png"
               alt="Campo Fuoco"
@@ -111,14 +111,14 @@ export default function BottomNav() {
 
           {/* Indicatorino verde */}
           {activeEventId && (
-            <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse border border-white" />
+            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse border border-white" />
           )}
         </button>
 
         {/* 3. STORICO */}
         <button
           onClick={() => router.push("/history")}
-          className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-2xl transition-all active:scale-90 shrink-0 ${
+          className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all active:scale-90 shrink-0 ${
             pathname === "/history" ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
           }`}
         >
@@ -129,7 +129,7 @@ export default function BottomNav() {
         {/* 4. CURIOSITÀ */}
         <button
           onClick={() => router.push("/curiosita")}
-          className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-2xl transition-all active:scale-90 shrink-0 ${
+          className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all active:scale-90 shrink-0 ${
             pathname === "/curiosita" ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
           }`}
         >
@@ -140,7 +140,7 @@ export default function BottomNav() {
         {/* 5. PROFILO (IO) */}
         <button
           onClick={() => router.push("/profile")}
-          className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-2xl transition-all active:scale-90 shrink-0 ${
+          className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all active:scale-90 shrink-0 ${
             pathname === "/profile" ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
           }`}
         >
