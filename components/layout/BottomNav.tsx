@@ -11,11 +11,13 @@ export default function BottomNav() {
 
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
+  
+  // Stato per nascondere brutalmente la barra
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
-  // 1. Gestione apertura tastiera su iOS/Android
+  // 1. Intercettazione ISTANTANEA della tastiera (senza visualViewport)
   useEffect(() => {
-    const handleFocus = (e: FocusEvent) => {
+    const handleFocusIn = (e: FocusEvent) => {
       const target = e.target as HTMLElement;
       if (
         target &&
@@ -27,30 +29,17 @@ export default function BottomNav() {
       }
     };
 
-    const handleBlur = () => {
+    const handleFocusOut = () => {
       setIsKeyboardOpen(false);
     };
 
-    const handleResize = () => {
-      if (window.visualViewport) {
-        const isKeyboard = window.innerHeight - window.visualViewport.height > 150;
-        setIsKeyboardOpen(isKeyboard);
-      }
-    };
-
-    window.addEventListener("focusin", handleFocus);
-    window.addEventListener("focusout", handleBlur);
-    
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", handleResize);
-    }
+    // Usiamo focusin/focusout perché sono fulminei rispetto al resize
+    window.addEventListener("focusin", handleFocusIn);
+    window.addEventListener("focusout", handleFocusOut);
 
     return () => {
-      window.removeEventListener("focusin", handleFocus);
-      window.removeEventListener("focusout", handleBlur);
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener("resize", handleResize);
-      }
+      window.removeEventListener("focusin", handleFocusIn);
+      window.removeEventListener("focusout", handleFocusOut);
     };
   }, []);
 
@@ -114,22 +103,26 @@ export default function BottomNav() {
   const isEventActive = pathname.startsWith("/events");
   const ICON_SIZE = 50;
 
+  // Se la tastiera è aperta, NON renderizziamo proprio la UI per evitare conflitti con iOS
+  if (isKeyboardOpen) {
+    return null;
+  }
+
   return (
     <nav
-      className={`fixed bottom-0 left-0 right-0 z-50 w-full pointer-events-none transition-all duration-300 ease-in-out ${
-        isKeyboardOpen
-          ? "translate-y-full opacity-0"
-          : "translate-y-0 opacity-100"
-      }`}
+      className="fixed bottom-0 left-0 right-0 z-50 w-full pointer-events-none"
     >
-      {/* Il contenitore visivo con i pointer-events attivati solo sui contenuti */}
-      <div className="w-full bg-[#ebdec8]/95 backdrop-blur-md border-t border-x border-white/60 rounded-t-[2rem] shadow-2xl pb-[env(safe-area-inset-bottom)] pointer-events-auto">
-        <div className="flex items-center justify-around w-full px-2 py-1.5">
+      {/* 
+        Rimossi transform-gpu e transizioni. 
+        Aggiunto un calc() per il padding bottom così non si schiaccia mai contro il bordo.
+      */}
+      <div className="w-full bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-1.5 pointer-events-auto">
+        <div className="flex items-center justify-around w-full px-2">
           
           {/* 1. HOME */}
           <button
             onClick={() => router.push("/")}
-            className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all active:scale-90 shrink-0 ${
+            className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl active:scale-90 shrink-0 ${
               pathname === "/" ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
             }`}
           >
@@ -141,7 +134,7 @@ export default function BottomNav() {
           <button
             onClick={handleEventClick}
             disabled={loadingEvent}
-            className={`relative flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all active:scale-90 shrink-0 ${
+            className={`relative flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl active:scale-90 shrink-0 ${
               isEventActive ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
             }`}
           >
@@ -162,7 +155,7 @@ export default function BottomNav() {
           {/* 3. STORICO */}
           <button
             onClick={() => router.push("/history")}
-            className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all active:scale-90 shrink-0 ${
+            className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl active:scale-90 shrink-0 ${
               pathname === "/history" ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
             }`}
           >
@@ -173,7 +166,7 @@ export default function BottomNav() {
           {/* 4. CURIOSITÀ */}
           <button
             onClick={() => router.push("/curiosita")}
-            className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all active:scale-90 shrink-0 ${
+            className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl active:scale-90 shrink-0 ${
               pathname === "/curiosita" ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
             }`}
           >
@@ -184,7 +177,7 @@ export default function BottomNav() {
           {/* 5. PROFILO (IO) */}
           <button
             onClick={() => router.push("/profile")}
-            className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all active:scale-90 shrink-0 ${
+            className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl active:scale-90 shrink-0 ${
               pathname === "/profile" ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
             }`}
           >
