@@ -26,7 +26,7 @@ body {
   padding: 0;
   overflow-x: hidden;
   overscroll-behavior: none;
-  background-color: #121816 !important; 
+  background-color: #ebdec8 !important; /* CORRETTO: Cambiato da #121816 al beige */
 }
 
 body {

@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import BackgroundManager from "@/components/layout/BackgroundManager";
 
 export const viewport: Viewport = {
-  themeColor: "#F0D5B3",
+  themeColor: "#ebdec8",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default", // FONDAMENTALE: "default" usa il themeColor (#F0D5B3) ed elimina la striscia scura
+    statusBarStyle: "black-translucent",
     title: "MONTI",
   },
   icons: {
@@ -31,9 +32,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="it" className="h-full w-full bg-[#F0D5B3] overflow-x-hidden">
-      <body className="h-full w-full bg-[#F0D5B3] text-[#1F2041] antialiased overscroll-none overflow-x-hidden">
-        {children}
+    <html lang="it" className="h-full w-full bg-[#ebdec8]">
+      <body className="min-h-dvh w-full bg-[#ebdec8] text-[#1F2041] antialiased">
+        <BackgroundManager>
+          {children}
+        </BackgroundManager>
       </body>
     </html>
   );
