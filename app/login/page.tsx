@@ -8,7 +8,8 @@ import Button from "@/components/ui/Button";
 
 export default function LoginPage() {
   const router = useRouter();
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const signupVideoRef = useRef<HTMLVideoElement>(null);
+
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,6 +35,7 @@ export default function LoginPage() {
       }
     }
     initAuth();
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -41,16 +43,18 @@ export default function LoginPage() {
         router.replace("/");
       }
     });
+
     return () => {
       isMounted = false;
       subscription.unsubscribe();
     };
   }, [router]);
 
+  // Quando si passa alla registrazione, fa ripartire il video dal secondo 0
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.load();
-      videoRef.current.play();
+    if (isSignUp && signupVideoRef.current) {
+      signupVideoRef.current.currentTime = 0;
+      signupVideoRef.current.play().catch(() => {});
     }
   }, [isSignUp]);
 
@@ -91,24 +95,37 @@ export default function LoginPage() {
 
   return (
     <main className="relative min-h-[100dvh] w-full overflow-hidden flex items-center justify-center px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] bg-[#0d1b1e] select-none">
-      {/* VIDEO BACKGROUND - Ancorato fisicamente allo schermo intero */}
+      
+      {/* 🎥 VIDEO 1: LOGIN (Loop continuo) */}
       <video
-        ref={videoRef}
         autoPlay
         muted
         playsInline
-        loop={!isSignUp}
-        preload="metadata"
-        className="fixed inset-0 w-full h-full object-cover scale-105 transition-all duration-700 pointer-events-none"
+        loop
+        preload="auto"
+        className={`fixed inset-0 w-full h-full object-cover scale-105 transition-opacity duration-700 pointer-events-none ${
+          !isSignUp ? "opacity-100 z-0" : "opacity-0 z-0"
+        }`}
       >
-        <source
-          src={isSignUp ? "/videos/monti-crea.mp4" : "/videos/monti-login.mp4"}
-          type="video/mp4"
-        />
+        <source src="/videos/monti-login.mp4" type="video/mp4" />
+      </video>
+
+      {/* 🎥 VIDEO 2: CREA ACCOUNT (Si ferma all'ultimo frame SENZA loop) */}
+      <video
+        ref={signupVideoRef}
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        className={`fixed inset-0 w-full h-full object-cover scale-105 transition-opacity duration-700 pointer-events-none ${
+          isSignUp ? "opacity-100 z-0" : "opacity-0 z-0"
+        }`}
+      >
+        <source src="/videos/monti-crea.mp4" type="video/mp4" />
       </video>
 
       {/* OVERLAY GLASS */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] pointer-events-none" />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] pointer-events-none z-0" />
 
       {/* CONTENT CONTAINER */}
       <div className="relative z-10 text-center max-w-sm w-full flex flex-col items-center justify-center gap-4 px-4 py-4 max-h-full">

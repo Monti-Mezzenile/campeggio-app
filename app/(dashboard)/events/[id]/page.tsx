@@ -9,7 +9,7 @@ import Button from "@/components/ui/Button";
 export default function EventPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+  const id = params?.id as string;
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [event, setEvent] = useState<any>(null);
@@ -30,7 +30,6 @@ export default function EventPage() {
     shoppingCount: 0,
   });
 
-  // Check se l'evento è "Winter"
   const isWinter = event?.titolo?.toLowerCase().includes("winter");
 
   // --- HELPER BADGE PASS DINAMICO ---
@@ -99,7 +98,7 @@ export default function EventPage() {
         <div className="flex items-center gap-2">
           <span className="text-xs font-black text-[#1b2b25]/70">{label}</span>
           <span className="text-xs font-extrabold text-[#1b2b25]">
-            {giorni[data.getDay()]}
+            {isNaN(data.getDay()) ? date : giorni[data.getDay()]}
           </span>
           {momento && (
             <span className="text-[10px] font-bold text-[#1b2b25]/50 capitalize">
@@ -117,137 +116,139 @@ export default function EventPage() {
   }
 
   async function loadEvent() {
+    if (!id) return;
     setLoading(true);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    try {
+      // 1. Dati Utente Corrente
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
 
-    if (user) {
-      setUser(user);
+      if (currentUser) {
+        setUser(currentUser);
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("ruolo")
-        .eq("id", user.id)
-        .single();
+        const [{ data: profile }, { data: myData }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("ruolo")
+            .eq("id", currentUser.id)
+            .maybeSingle(),
+          supabase
+            .from("event_members")
+            .select("*")
+            .eq("event_id", id)
+            .eq("user_id", currentUser.id)
+            .maybeSingle(),
+        ]);
 
-      setIsAdmin(profile?.ruolo === "admin");
+        setIsAdmin(profile?.ruolo === "admin");
+        setMyParticipation(myData);
+      }
 
-      const { data: myData } = await supabase
-        .from("event_members")
+      // 2. Dettagli Evento Principale
+      const { data: eventData, error: eventError } = await supabase
+        .from("events")
         .select("*")
-        .eq("event_id", id)
-        .eq("user_id", user.id)
+        .eq("id", id)
         .maybeSingle();
 
-      setMyParticipation(myData);
-    }
+      if (eventError || !eventData) {
+        console.error("Evento non trovato o errore:", eventError);
+        setEvent(null);
+        setLoading(false);
+        return;
+      }
 
-    const { data: eventData, error: eventError } = await supabase
-      .from("events")
-      .select("*")
-      .eq("id", id)
-      .single();
+      setEvent(eventData);
 
-    if (eventError) {
-      console.error(eventError);
+      // 3. Esecuzione Parallela di tutte le Query Statistiche
+      const [
+        partecipantiRes,
+        eventTentsRes,
+        tripCarsRes,
+        attrezzaturaRes,
+        mediaCountRes,
+        shoppingItemsRes,
+        meatItemsRes,
+        checklistsRes,
+      ] = await Promise.all([
+        supabase
+          .from("event_members")
+          .select("*", { count: "exact", head: true })
+          .eq("event_id", id)
+          .eq("stato", "partecipo"),
+        supabase.from("event_tents").select("tent_id").eq("event_id", id),
+        supabase.from("trip_cars").select("posti_disponibili").eq("trip_id", id),
+        supabase
+          .from("event_equipment")
+          .select("*", { count: "exact", head: true })
+          .eq("event_id", id),
+        supabase
+          .from("media")
+          .select("*", { count: "exact", head: true })
+          .eq("event_id", id),
+        supabase
+          .from("shopping_items")
+          .select("*", { count: "exact", head: true })
+          .eq("event_id", id),
+        supabase
+          .from("meat_items")
+          .select("*", { count: "exact", head: true })
+          .eq("event_id", id),
+        supabase.from("checklists").select("id").eq("event_id", id),
+      ]);
+
+      // Calcolo Posti Letto
+      let postiLetto = 0;
+      const tentIds = eventTentsRes.data?.map((t) => t.tent_id) || [];
+      if (tentIds.length > 0) {
+        const { data: tents } = await supabase
+          .from("tents")
+          .select("posti")
+          .in("id", tentIds);
+        postiLetto = (tents || []).reduce((tot, t) => tot + (t.posti || 0), 0);
+      }
+
+      // Calcolo Checklist Items
+      let checklistTotale = 0;
+      let checklistCompletata = 0;
+      const checklistIds = checklistsRes.data?.map((c) => c.id) || [];
+      if (checklistIds.length > 0) {
+        const { data: checklistItems } = await supabase
+          .from("checklist_items")
+          .select("completato")
+          .in("checklist_id", checklistIds);
+
+        checklistTotale = checklistItems?.length || 0;
+        checklistCompletata =
+          checklistItems?.filter((item) => item.completato).length || 0;
+      }
+
+      // Calcolo Posti Auto
+      const postiAuto = (tripCarsRes.data || []).reduce(
+        (tot, car) => tot + (car.posti_disponibili || 0),
+        0
+      );
+
+      const shoppingCount =
+        (shoppingItemsRes.count || 0) + (meatItemsRes.count || 0);
+
+      setStats({
+        partecipanti: partecipantiRes.count || 0,
+        tende: eventTentsRes.data?.length || 0,
+        postiLetto,
+        auto: tripCarsRes.data?.length || 0,
+        postiAuto,
+        attrezzatura: attrezzaturaRes.count || 0,
+        checklistTotale,
+        checklistCompletata,
+        mediaCount: mediaCountRes.count || 0,
+        shoppingCount,
+      });
+    } catch (err) {
+      console.error("Errore generale caricamento evento:", err);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setEvent(eventData);
-
-    const { count: partecipanti } = await supabase
-      .from("event_members")
-      .select("*", { count: "exact", head: true })
-      .eq("event_id", id)
-      .eq("stato", "partecipo");
-
-    const { data: eventTents } = await supabase
-      .from("event_tents")
-      .select("tent_id")
-      .eq("event_id", id);
-
-    let postiLetto = 0;
-    if (eventTents && eventTents.length) {
-      const ids = eventTents.map((t) => t.tent_id);
-      const { data: tents } = await supabase
-        .from("tents")
-        .select("posti")
-        .in("id", ids);
-
-      postiLetto = (tents || []).reduce((tot, t) => tot + (t.posti || 0), 0);
-    }
-
-    const { data: tripCars } = await supabase
-      .from("trip_cars")
-      .select("posti_disponibili")
-      .eq("trip_id", id);
-
-    const { count: attrezzatura } = await supabase
-      .from("event_equipment")
-      .select("*", { count: "exact", head: true })
-      .eq("event_id", id);
-
-    const { count: mediaCount } = await supabase
-      .from("media")
-      .select("*", { count: "exact", head: true })
-      .eq("event_id", id);
-
-    const { count: shoppingItems } = await supabase
-      .from("shopping_items")
-      .select("*", { count: "exact", head: true })
-      .eq("event_id", id);
-
-    const { count: meatItems } = await supabase
-      .from("meat_items")
-      .select("*", { count: "exact", head: true })
-      .eq("event_id", id);
-
-    const shoppingCount = (shoppingItems || 0) + (meatItems || 0);
-
-    const { data: checklists } = await supabase
-      .from("checklists")
-      .select("id")
-      .eq("event_id", id);
-
-    let checklistTotale = 0;
-    let checklistCompletata = 0;
-
-    if (checklists && checklists.length) {
-      const { data: checklistItems } = await supabase
-        .from("checklist_items")
-        .select("completato")
-        .in(
-          "checklist_id",
-          checklists.map((c) => c.id)
-        );
-
-      checklistTotale = checklistItems?.length || 0;
-      checklistCompletata =
-        checklistItems?.filter((item) => item.completato).length || 0;
-    }
-
-    const postiAuto = (tripCars || []).reduce(
-      (tot, car) => tot + (car.posti_disponibili || 0),
-      0
-    );
-
-    setStats({
-      partecipanti: partecipanti || 0,
-      tende: eventTents?.length || 0,
-      postiLetto,
-      auto: tripCars?.length || 0,
-      postiAuto,
-      attrezzatura: attrezzatura || 0,
-      checklistTotale,
-      checklistCompletata,
-      mediaCount: mediaCount || 0,
-      shoppingCount,
-    });
-
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -264,28 +265,11 @@ export default function EventPage() {
     );
     if (!ok) return;
 
-    const { data: rows, error: findError } = await supabase
-      .from("event_members")
-      .select("id")
-      .eq("event_id", id)
-      .eq("user_id", user.id);
-
-    if (findError) {
-      alert(findError.message);
-      return;
-    }
-
-    if (!rows || rows.length === 0) {
-      alert("Nessuna partecipazione trovata");
-      return;
-    }
-
-    const ids = rows.map((row) => row.id);
-
     const { error } = await supabase
       .from("event_members")
       .delete()
-      .in("id", ids);
+      .eq("event_id", id)
+      .eq("user_id", user.id);
 
     if (error) {
       alert(error.message);
@@ -300,19 +284,10 @@ export default function EventPage() {
     const ok = confirm("Sei sicuro di voler eliminare questo evento?");
     if (!ok) return;
 
-    const { data, error } = await supabase
-      .from("events")
-      .delete()
-      .eq("id", id)
-      .select();
+    const { error } = await supabase.from("events").delete().eq("id", id);
 
     if (error) {
       alert(error.message);
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      alert("Evento non eliminato");
       return;
     }
 
@@ -322,7 +297,7 @@ export default function EventPage() {
   if (loading) {
     return (
       <main className="min-h-dvh p-6 max-w-md mx-auto flex flex-col items-center justify-center bg-transparent">
-        <div className="w-16 h-16 rounded-full bg-white/50 backdrop-blur-md flex items-center justify-center shadow-lg animate-pulse mb-3 border border-white">
+        <div className="w-16 h-16 rounded-full bg-white/60 backdrop-blur-md flex items-center justify-center shadow-lg animate-pulse mb-3 border border-white">
           <CustomIcon name="tenda-grossa" size={36} />
         </div>
         <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#1b2b25]">
@@ -335,7 +310,7 @@ export default function EventPage() {
   if (!event) {
     return (
       <main className="min-h-dvh p-6 max-w-md mx-auto flex flex-col items-center justify-center text-center bg-transparent">
-        <div className="bg-white/70 backdrop-blur-2xl border border-white p-8 rounded-[2.5rem] shadow-sm">
+        <div className="bg-white/80 backdrop-blur-2xl border border-white p-8 rounded-[2.5rem] shadow-sm">
           <CustomIcon name="tenda-grossa" size={76} className="mx-auto mb-3 opacity-60" />
           <h2 className="text-xl font-black text-[#1b2b25]">
             Spedizione Non Trovata
@@ -355,6 +330,11 @@ export default function EventPage() {
     stats.checklistTotale > 0
       ? Math.round((stats.checklistCompletata / stats.checklistTotale) * 100)
       : 0;
+
+  const displayDate =
+    event.data_inizio
+      ? `${event.data_inizio}${event.data_fine ? ` → ${event.data_fine}` : ""}`
+      : event.data_evento || event.date || "Data da definire";
 
   return (
     <main className="min-h-dvh p-4 sm:p-6 pb-40 max-w-md mx-auto flex flex-col gap-5 select-none bg-transparent">
@@ -413,18 +393,12 @@ export default function EventPage() {
           </div>
 
           <h1 className="text-3xl font-black text-[#1b2b25] leading-tight tracking-tight">
-            {event.titolo}
+            {event.titolo || event.title || "Spedizione"}
           </h1>
 
           <div className="flex items-center gap-2 text-xs font-bold text-[#1b2b25]/70">
             <span>🗓️</span>
-            <span>
-              {event.data_inizio
-                ? `${event.data_inizio}${
-                    event.data_fine ? ` → ${event.data_fine}` : ""
-                  }`
-                : event.data_evento || "Data da definire"}
-            </span>
+            <span>{displayDate}</span>
           </div>
         </div>
       </section>
@@ -439,7 +413,6 @@ export default function EventPage() {
             </h2>
           </div>
 
-          {/* BADGE STATO DINAMICO */}
           {renderPassBadge(myParticipation?.stato)}
         </div>
 
@@ -471,7 +444,7 @@ export default function EventPage() {
               <button
                 onClick={removeParticipation}
                 className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-600 border border-red-200 text-sm font-black active:scale-90 transition flex items-center justify-center hover:bg-red-500 hover:text-white shrink-0"
-                title="Annulla o Elimina Iscrizione"
+                title="Annulla Iscrizione"
               >
                 ❌
               </button>
@@ -491,7 +464,6 @@ export default function EventPage() {
 
       {/* 🧩 BENTO GRID - ICONE GIGANTI */}
       <section className="grid grid-cols-2 gap-3 items-stretch">
-        
         {/* 1. PARTECIPANTI */}
         <button
           onClick={() => router.push(`/events/${id}/participants`)}
@@ -704,7 +676,6 @@ export default function EventPage() {
 
           <CustomIcon name="foto" size={64} className="shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
         </button>
-
       </section>
     </main>
   );
