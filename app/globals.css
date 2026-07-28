@@ -24,13 +24,14 @@ body {
   margin: 0;
   padding: 0;
   
-  /* Sblocco fondamentale per i gesti touch verticali su Android */
+  /* Permette uno scroll fluido su Android e iOS */
   overflow-x: hidden;
   overflow-y: auto;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 
-  /* Blocchiamo solo lo scivolamento orizzontale, lasciando fluido quello verticale */
+  /* 'contain' blocca il rimbalzo di iOS alla fine della pagina senza bloccare lo scroll */
+  overscroll-behavior-y: contain;
   overscroll-behavior-x: none;
 
   background-color: #0d1b1e;
@@ -40,6 +41,13 @@ body {
   min-height: 100dvh;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Forza la registrazione GPU per evitare il displacement degli elementi fixed su iOS */
+.fix-ios-fixed {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 /* Utility per nascondere la scrollbar */

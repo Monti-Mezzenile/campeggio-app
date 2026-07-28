@@ -78,7 +78,7 @@ export default function BottomNav() {
   const ICON_SIZE = 50;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 w-full bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-2xl pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 w-full fix-ios-fixed transform-gpu [transform:translateZ(0)] bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-2xl pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around w-full px-2 py-1.5">
         
         {/* 1. HOME */}
