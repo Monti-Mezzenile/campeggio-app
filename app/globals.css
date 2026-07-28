@@ -18,15 +18,16 @@
   --foreground: var(--monti-primary);
 }
 
-/* Rimosso background-color: #ebdec8 !important */
 html, 
 body {
-  height: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
   width: 100%;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
   overscroll-behavior: none;
+  background-color: #0d1b1e; /* Evita le strisce chiare durante il caricamento o i rimbalzi */
 }
 
 body {

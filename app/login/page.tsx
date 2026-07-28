@@ -83,15 +83,15 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <main className="h-dvh w-full bg-[#1b2b25] flex items-center justify-center">
+      <main className="min-h-[100dvh] w-full bg-[#0d1b1e] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
       </main>
     );
   }
 
   return (
-    <main className="relative h-dvh w-full overflow-hidden flex items-center justify-center p-4 select-none">
-      {/* VIDEO BACKGROUND */}
+    <main className="relative min-h-[100dvh] w-full overflow-hidden flex items-center justify-center px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] bg-[#0d1b1e] select-none">
+      {/* VIDEO BACKGROUND - Ancorato fisicamente allo schermo intero */}
       <video
         ref={videoRef}
         autoPlay
@@ -99,7 +99,7 @@ export default function LoginPage() {
         playsInline
         loop={!isSignUp}
         preload="metadata"
-        className="absolute inset-0 w-full h-full object-cover scale-105 transition-all duration-700"
+        className="fixed inset-0 w-full h-full object-cover scale-105 transition-all duration-700 pointer-events-none"
       >
         <source
           src={isSignUp ? "/videos/monti-crea.mp4" : "/videos/monti-login.mp4"}
@@ -108,7 +108,7 @@ export default function LoginPage() {
       </video>
 
       {/* OVERLAY GLASS */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] pointer-events-none" />
 
       {/* CONTENT CONTAINER */}
       <div className="relative z-10 text-center max-w-sm w-full flex flex-col items-center justify-center gap-4 px-4 py-4 max-h-full">
