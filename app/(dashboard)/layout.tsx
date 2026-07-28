@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import BackgroundManager from "@/components/layout/BackgroundManager";
 import BottomNav from "@/components/layout/BottomNav";
 
@@ -6,10 +10,23 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Reset dello scroll all'inizio ad ogni cambio di pagina (Home, Storico, Curiosità, Io)
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+  }, [pathname]);
+
   return (
     <BackgroundManager>
       <div className="relative h-dvh w-full max-w-md mx-auto flex flex-col justify-between overflow-hidden">
-        <main className="flex-1 overflow-y-auto overflow-x-hidden pt-[calc(env(safe-area-inset-top)+12px)] pb-[calc(84px+env(safe-area-inset-bottom))] touch-pan-y w-full">
+        <main
+          ref={mainRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden pt-[calc(env(safe-area-inset-top)+12px)] pb-[calc(84px+env(safe-area-inset-bottom))] touch-pan-y w-full"
+        >
           {children}
         </main>
         <BottomNav />

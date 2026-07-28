@@ -41,10 +41,10 @@ export default function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
+    /* bg-[#F0D5B3] sul contenitore fisso riempie completamente la safe area di iOS eliminando lo spazio verde/scuro */
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#F0D5B3]">
       <nav
         className="
-          pointer-events-auto
           w-full
           max-w-md
           mx-auto
