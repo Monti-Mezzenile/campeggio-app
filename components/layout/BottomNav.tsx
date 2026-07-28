@@ -13,6 +13,7 @@ interface NavItem {
 export default function BottomNav() {
   const pathname = usePathname();
 
+  // Nasconde la navbar nella pagina di login/registrazione
   if (pathname === "/login" || pathname === "/register") {
     return null;
   }
@@ -41,29 +42,33 @@ export default function BottomNav() {
   ];
 
   return (
-    /* bg-[#F0D5B3] sul contenitore fisso riempie completamente la safe area di iOS eliminando lo spazio verde/scuro */
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#F0D5B3]">
+    <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
       <nav
         className="
+          pointer-events-auto
           w-full
           max-w-md
           mx-auto
-          rounded-t-[28px]
+          rounded-t-[32px]
           flex
           items-center
           justify-between
           px-3
           pt-2.5
+          pb-[calc(10px+env(safe-area-inset-bottom))]
           shadow-[0_-8px_25px_rgba(0,0,0,0.15)]
           border-t
           border-[#FFF4E3]/40
           bg-[#F0D5B3]
           relative
         "
-        style={{
-          paddingBottom: "max(12px, env(safe-area-inset-bottom))",
-        }}
       >
+        {/* 
+          PROIEZIONE SAFARI: Questo blocco parte dal fondo della nav e scende verso il basso per 128px.
+          Sigilla al 100% qualsiasi buco di Safari sotto la safe area senza intaccare gli angoli tondi sopra.
+        */}
+        <div className="absolute top-full left-0 right-0 h-32 bg-[#F0D5B3] pointer-events-none" />
+
         {items.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -81,7 +86,7 @@ export default function BottomNav() {
                 justify-center
                 flex-1
                 max-w-[80px]
-                h-[68px]
+                h-[72px]
                 rounded-2xl
                 transition-all
                 duration-300
@@ -94,6 +99,7 @@ export default function BottomNav() {
                 }
               `}
             >
+              {/* Sfondo attivo Verde Salvia */}
               {isActive && (
                 <span
                   className="
@@ -113,6 +119,7 @@ export default function BottomNav() {
                 />
               )}
 
+              {/* Icona */}
               <div
                 className={`
                   transition-transform
@@ -127,12 +134,13 @@ export default function BottomNav() {
                   }
                 `}
               >
-                <CustomIcon name={item.icon} size={40} className="drop-shadow-sm" />
+                <CustomIcon name={item.icon} size={42} className="drop-shadow-sm" />
               </div>
 
+              {/* Etichetta di testo */}
               <span
                 className={`
-                  text-[11px]
+                  text-[12px]
                   font-extrabold
                   leading-none
                   transition-all
