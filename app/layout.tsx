@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default", // Torna a default (così sotto è di nuovo perfetto)
     title: "MONTI",
   },
   icons: {
