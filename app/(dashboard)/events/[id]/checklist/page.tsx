@@ -5,6 +5,16 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import CustomIcon from "@/components/ui/CustomIcon";
 
+// Configurazione Categorie (Stessa del Profilo)
+const CATEGORIES = [
+  { id: "Attrezzatura Campeggio", label: "Attrezzatura Campeggio", icon: "🎪" },
+  { id: "Vestiti e Oggetti Personali", label: "Vestiti e Oggetti Personali", icon: "👕" },
+  { id: "Cucina e Bagno", label: "Cucina e Bagno", icon: "🍳" },
+  { id: "Persona e Comfort", label: "Persona e Comfort", icon: "🛋️" },
+  { id: "Divertimento ed Extra", label: "Divertimento ed Extra", icon: "🎲" },
+  { id: "Altro", label: "Altro", icon: "📦" },
+];
+
 export default function ChecklistPage() {
   const params = useParams();
   const router = useRouter();
@@ -40,8 +50,6 @@ export default function ChecklistPage() {
       .limit(1)
       .maybeSingle();
 
-    console.log("CHECKLIST TROVATA:", checklist, checkError);
-
     /* SE NON ESISTE LA CREO */
     if (!checklist) {
       const { data: newChecklist, error: createError } = await supabase
@@ -71,7 +79,6 @@ export default function ChecklistPage() {
       .eq("checklist_id", checklist.id)
       .order("created_at", { ascending: true });
 
-    console.log("ITEM CHECKLIST:", itemsData, itemsError);
     setItems(itemsData || []);
 
     /* CARICO ATTREZZATURA PERSONALE */
@@ -81,9 +88,7 @@ export default function ChecklistPage() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
 
-    console.log("MIA ATTREZZATURA:", equipmentData, equipmentError);
     setEquipment(equipmentData || []);
-
     setLoading(false);
   }
 
@@ -185,7 +190,12 @@ export default function ChecklistPage() {
       return;
     }
 
-    if (value && item.equipment_id) {
+    // Identifico a quale categoria appartiene l'oggetto
+    const eq = equipment.find((e) => e.id === item.equipment_id);
+    const isPersonalClothing = eq?.categoria === "Vestiti e Oggetti Personali";
+
+    // Aggiungo al gruppo SOLO SE non è un vestito o un oggetto personale
+    if (value && item.equipment_id && !isPersonalClothing) {
       const { error: eventEquipmentError } = await supabase
         .from("event_equipment")
         .upsert(
@@ -203,7 +213,7 @@ export default function ChecklistPage() {
       }
     }
 
-    if (!value && item.equipment_id) {
+    if (!value && item.equipment_id && !isPersonalClothing) {
       await supabase
         .from("event_equipment")
         .delete()
@@ -331,12 +341,12 @@ export default function ChecklistPage() {
 
         {showEquipment && (
           <div className="bg-white/90 backdrop-blur-2xl border border-white rounded-[2.5rem] p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-xs font-black uppercase tracking-wider text-[#1b2b25]">
                   Attrezzatura Salvata ({equipment.length})
                 </h3>
-                <p className="text-[10px] font-bold text-[#1b2b25]/50">
+                <p className="text-[10px] font-bold text-[#1b2b25]/50 mt-0.5">
                   Seleziona gli oggetti da mettere in lista
                 </p>
               </div>
@@ -344,7 +354,7 @@ export default function ChecklistPage() {
               {equipment.length > 0 && (
                 <button
                   onClick={addAllEquipmentToChecklist}
-                  className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-900 border border-emerald-200 text-[10px] font-black uppercase tracking-wider active:scale-95 transition"
+                  className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-900 border border-emerald-200 text-[10px] font-black uppercase tracking-wider active:scale-95 transition shrink-0"
                 >
                   ➕ Tutti
                 </button>
@@ -356,46 +366,57 @@ export default function ChecklistPage() {
                 Nessun oggetto trovato nel tuo profilo personale.
               </p>
             ) : (
-              <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
-                {equipment.map((item) => {
-                  const isSelected = selectedEquipment.includes(item.id);
-                  const isAlreadyInList = items.some(
-                    (i) => i.equipment_id === item.id
-                  );
+              <div className="max-h-72 overflow-y-auto space-y-4 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+                {CATEGORIES.map((cat) => {
+                  const catEquipment = equipment.filter((e) => e.categoria === cat.id);
+                  if (catEquipment.length === 0) return null;
 
                   return (
-                    <div
-                      key={item.id}
-                      onClick={() =>
-                        !isAlreadyInList && toggleEquipment(item.id)
-                      }
-                      className={`flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer select-none ${
-                        isAlreadyInList
-                          ? "bg-slate-100 border-slate-200 opacity-50 cursor-not-allowed"
-                          : isSelected
-                          ? "bg-emerald-50 border-emerald-300 shadow-2xs"
-                          : "bg-white/80 border-white hover:bg-slate-50"
-                      }`}
-                    >
-                      <span className="text-xs font-bold text-[#1b2b25]">
-                        {item.nome}
-                      </span>
+                    <div key={cat.id} className="space-y-2">
+                      <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-1.5 ml-1">
+                        <span>{cat.icon}</span> {cat.label}
+                      </h4>
+                      
+                      <div className="space-y-1.5">
+                        {catEquipment.map((item) => {
+                          const isSelected = selectedEquipment.includes(item.id);
+                          const isAlreadyInList = items.some((i) => i.equipment_id === item.id);
 
-                      {isAlreadyInList ? (
-                        <span className="text-[9px] font-black uppercase bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md">
-                          Già in lista
-                        </span>
-                      ) : (
-                        <div
-                          className={`w-5 h-5 rounded-lg border flex items-center justify-center text-xs font-black transition ${
-                            isSelected
-                              ? "bg-emerald-500 border-emerald-600 text-white"
-                              : "border-slate-300 bg-white"
-                          }`}
-                        >
-                          {isSelected && "✓"}
-                        </div>
-                      )}
+                          return (
+                            <div
+                              key={item.id}
+                              onClick={() => !isAlreadyInList && toggleEquipment(item.id)}
+                              className={`flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer select-none ${
+                                isAlreadyInList
+                                  ? "bg-slate-100/50 border-slate-200 opacity-50 cursor-not-allowed"
+                                  : isSelected
+                                  ? "bg-emerald-50 border-emerald-300 shadow-2xs"
+                                  : "bg-white border-slate-200 hover:bg-slate-50"
+                              }`}
+                            >
+                              <span className="text-xs font-bold text-[#1b2b25]">
+                                {item.nome}
+                              </span>
+
+                              {isAlreadyInList ? (
+                                <span className="text-[9px] font-black uppercase bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md">
+                                  Già in lista
+                                </span>
+                              ) : (
+                                <div
+                                  className={`w-5 h-5 rounded-lg border flex items-center justify-center text-xs font-black transition ${
+                                    isSelected
+                                      ? "bg-emerald-500 border-emerald-600 text-white"
+                                      : "border-slate-300 bg-white"
+                                  }`}
+                                >
+                                  {isSelected && "✓"}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   );
                 })}
@@ -405,7 +426,7 @@ export default function ChecklistPage() {
             {selectedEquipment.length > 0 && (
               <button
                 onClick={addEquipmentToChecklist}
-                className="w-full py-3 rounded-2xl bg-[#1b2b25] text-[#ebdec8] text-xs font-black uppercase tracking-wider shadow-sm active:scale-95 transition"
+                className="w-full py-3 rounded-2xl bg-[#1b2b25] text-[#ebdec8] text-xs font-black uppercase tracking-wider shadow-sm active:scale-95 transition mt-2"
               >
                 Aggiungi Selezionati ({selectedEquipment.length})
               </button>
@@ -426,7 +447,7 @@ export default function ChecklistPage() {
           <input
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            placeholder="Aggiungi oggetto (es. Torcia, Sacco a pelo)..."
+            placeholder="Aggiungi oggetto libero (es. Torcia)..."
             className="flex-1 bg-white/90 backdrop-blur-md border border-white rounded-2xl px-4 py-3 text-xs font-bold text-[#1b2b25] placeholder-[#1b2b25]/40 outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-xs"
           />
           <button
@@ -453,6 +474,11 @@ export default function ChecklistPage() {
         ) : (
           items.map((item) => {
             const isDone = item.completato;
+            
+            // Trovo la categoria di appartenenza (se è stato importato dall'attrezzatura)
+            const eqItem = equipment.find((e) => e.id === item.equipment_id);
+            const eqCategory = CATEGORIES.find((c) => c.id === eqItem?.categoria);
+
             return (
               <div
                 key={item.id}
@@ -488,9 +514,20 @@ export default function ChecklistPage() {
                       {item.nome}
                     </span>
 
+                    {/* BADGE CATEGORIA ESATTA (anziché generico "Equipaggiamento") */}
                     {item.equipment_id && (
-                      <span className="text-[9px] font-black uppercase text-amber-900 bg-amber-100 border border-amber-200 px-1.5 py-0.2 rounded-md inline-block mt-0.5">
-                        🎒 Equipaggiamento
+                      <span className="text-[9px] font-black uppercase text-[#1b2b25]/70 bg-[#1b2b25]/5 border border-[#1b2b25]/10 px-1.5 py-0.2 rounded-md inline-flex items-center gap-1 mt-0.5">
+                        {eqCategory ? (
+                          <>
+                            <span>{eqCategory.icon}</span>
+                            <span>{eqCategory.label}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>🎒</span>
+                            <span>Equipaggiamento</span>
+                          </>
+                        )}
                       </span>
                     )}
                   </div>

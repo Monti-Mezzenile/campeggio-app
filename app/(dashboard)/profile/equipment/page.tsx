@@ -16,6 +16,7 @@ interface EquipmentItem {
 // Configurazione Categorie con Icone e Colori dedicati
 const CATEGORIES = [
   { id: "Attrezzatura Campeggio", label: "Attrezzatura Campeggio", icon: "🎪", color: "bg-amber-500/15 text-amber-950 border-amber-500/30" },
+  { id: "Vestiti e Oggetti Personali", label: "Vestiti e Oggetti Personali", icon: "👕", color: "bg-blue-500/15 text-blue-950 border-blue-500/30" },
   { id: "Cucina e Bagno", label: "Cucina e Bagno", icon: "🍳", color: "bg-orange-500/15 text-orange-950 border-orange-500/30" },
   { id: "Persona e Comfort", label: "Persona e Comfort", icon: "🛋️", color: "bg-emerald-500/15 text-emerald-950 border-emerald-500/30" },
   { id: "Divertimento ed Extra", label: "Divertimento ed Extra", icon: "🎲", color: "bg-purple-500/15 text-purple-950 border-purple-500/30" },
@@ -291,7 +292,7 @@ export default function EquipmentPage() {
               Nome Oggetto *
             </label>
             <input
-              placeholder="es. Torcia frontale, Sedia campeggio..."
+              placeholder="es. Torcia frontale, Maglietta termica..."
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               className="w-full bg-zinc-50 border border-zinc-200 focus:border-amber-500 focus:bg-white rounded-xl p-2.5 text-sm font-semibold text-zinc-900 outline-none transition-all placeholder:text-zinc-400"
