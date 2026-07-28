@@ -21,7 +21,7 @@ export default function BottomNav() {
   const items: NavItem[] = [
     {
       name: "Home",
-      href: "/", // Corretto: punta alla root dell'app
+      href: "/",
       icon: "tenda-grossa",
     },
     {
@@ -42,26 +42,31 @@ export default function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-4 left-0 right-0 z-50 px-4 max-w-md mx-auto pointer-events-none">
+    <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
       <nav
         className="
           pointer-events-auto
-          h-[84px]
-          rounded-[28px]
+          w-full
+          max-w-md
+          mx-auto
+          rounded-t-[32px]
           flex
           items-center
           justify-between
-          px-2
-          shadow-2xl
-          border
+          px-3
+          pt-2.5
+          shadow-[0_-8px_25px_rgba(0,0,0,0.15)]
+          border-t
           border-[#FFF4E3]/40
           backdrop-blur-md
           relative
           overflow-hidden
-          w-full
         "
         style={{
           background: "#F0D5B3",
+          // env(safe-area-inset-bottom) permette alla barra di incollarsi fino al bordo
+          // inferiore aggiungendo lo spazio necessario per la barra di scorrimento home di iOS
+          paddingBottom: "max(12px, env(safe-area-inset-bottom))"
         }}
       >
         {items.map((item) => {
@@ -80,7 +85,7 @@ export default function BottomNav() {
                 items-center
                 justify-center
                 flex-1
-                max-w-[76px]
+                max-w-[80px]
                 h-[72px]
                 rounded-2xl
                 transition-all
@@ -94,7 +99,7 @@ export default function BottomNav() {
                 }
               `}
             >
-              {/* Sfondo attivo */}
+              {/* Sfondo attivo Verde Salvia */}
               {isActive && (
                 <span
                   className="
@@ -132,10 +137,10 @@ export default function BottomNav() {
                 <CustomIcon name={item.icon} size={42} className="drop-shadow-sm" />
               </div>
 
-              {/* Testo */}
+              {/* Etichetta di testo */}
               <span
                 className={`
-                  text-[11px]
+                  text-[12px]
                   font-extrabold
                   leading-none
                   transition-all
