@@ -36,13 +36,13 @@ export default function BottomNav() {
         max-w-md
         mx-auto
         bg-[#F0D5B3]
-        rounded-t-[28px]
+        rounded-t-[32px]
         flex
         items-center
         justify-between
-        px-3
-        pt-2
-        pb-2
+        px-4
+        pt-3
+        pb-[calc(0.75rem+env(safe-area-inset-bottom))]
         shadow-[0_-6px_20px_rgba(0,0,0,0.2)]
       "
     >
@@ -62,9 +62,9 @@ export default function BottomNav() {
               items-center
               justify-center
               flex-1
-              max-w-[72px]
-              h-[52px]
-              rounded-xl
+              max-w-[84px]
+              h-[64px]
+              rounded-2xl
               transition-all
               duration-200
               active:scale-95
@@ -81,7 +81,7 @@ export default function BottomNav() {
                 className="
                   absolute
                   inset-0
-                  rounded-xl
+                  rounded-2xl
                   -z-10
                   shadow-sm
                   transition-all
@@ -107,17 +107,19 @@ export default function BottomNav() {
                 }
               `}
             >
-              <CustomIcon name={item.icon} size={26} className="drop-shadow-sm" />
+              {/* Ingrandito da 26 a 32 */}
+              <CustomIcon name={item.icon} size={32} className="drop-shadow-sm" />
             </div>
 
             <span
               className={`
-                text-[10px]
+                text-xs
                 font-bold
                 leading-none
+                capitalize
                 transition-all
                 duration-200
-                ${isActive ? "mt-1" : "mt-0.5"}
+                ${isActive ? "mt-1.5" : "mt-1"}
               `}
             >
               {item.name}
