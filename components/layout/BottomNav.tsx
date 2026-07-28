@@ -13,6 +13,11 @@ interface NavItem {
 export default function BottomNav() {
   const pathname = usePathname();
 
+  // 1. NASCONDE LA NAV NEL LOGIN (e nell'eventuale pagina di registrazione)
+  if (pathname === "/login" || pathname === "/register") {
+    return null;
+  }
+
   const items: NavItem[] = [
     {
       name: "Home",
@@ -41,13 +46,13 @@ export default function BottomNav() {
       <nav
         className="
           pointer-events-auto
-          rounded-t-[28px]
+          rounded-t-[32px]
           flex
           items-center
           justify-around
           px-2
-          pt-2
-          shadow-[0_-8px_25px_rgba(0,0,0,0.12)]
+          pt-3
+          shadow-[0_-8px_25px_rgba(0,0,0,0.15)]
           border-t
           border-x
           border-[#FFF4E3]/50
@@ -57,9 +62,8 @@ export default function BottomNav() {
         "
         style={{
           backgroundColor: "rgba(240, 213, 179, 0.92)",
-          // Garantisce che lo sfondo arrivi al bordo inferiore dell'iPhone,
-          // sollevando le icone solo dello spazio strettamente necessario alla home bar di iOS
-          paddingBottom: "max(10px, env(safe-area-inset-bottom))",
+          // 2. FIX SAFE AREA: Lo sfondo tocca il bordo, le icone vengono sollevate 
+          paddingBottom: "max(16px, env(safe-area-inset-bottom))",
         }}
       >
         {items.map((item) => {
@@ -77,8 +81,8 @@ export default function BottomNav() {
                 flex-col
                 items-center
                 justify-center
-                w-[74px]
-                h-[56px]
+                w-[86px] 
+                h-[76px] 
                 rounded-2xl
                 transition-all
                 duration-300
@@ -91,6 +95,7 @@ export default function BottomNav() {
                 }
               `}
             >
+              {/* Sfondo attivo */}
               {isActive && (
                 <span
                   className="
@@ -110,6 +115,7 @@ export default function BottomNav() {
                 />
               )}
 
+              {/* 3. ICONA INGRANDITA (da 38 a 44) */}
               <div
                 className={`
                   transition-transform
@@ -124,17 +130,18 @@ export default function BottomNav() {
                   }
                 `}
               >
-                <CustomIcon name={item.icon} size={32} className="drop-shadow-sm" />
+                <CustomIcon name={item.icon} size={44} className="drop-shadow-sm" />
               </div>
 
+              {/* 4. TESTO INGRANDITO E PIÙ VISIBILE (text-[13px]) */}
               <span
                 className={`
-                  text-[10px]
+                  text-[13px]
                   font-extrabold
                   leading-none
                   transition-all
                   duration-200
-                  ${isActive ? "mt-1" : "mt-0.5"}
+                  ${isActive ? "mt-1.5" : "mt-1"}
                 `}
               >
                 {item.name}
