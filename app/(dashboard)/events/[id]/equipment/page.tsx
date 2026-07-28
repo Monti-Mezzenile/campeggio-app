@@ -32,7 +32,7 @@ export default function EquipmentPage() {
     },
     {
       name: "Divertimento ed Extra",
-      icon: "/icons/carte.png",
+      icon: "/bucock/carte.png",
       color: "border-l-purple-500",
     },
     {
@@ -162,7 +162,7 @@ export default function EquipmentPage() {
       <section className="bg-white/90 backdrop-blur-2xl rounded-[2.5rem] p-6 border border-white shadow-sm flex items-center justify-between relative overflow-hidden">
         <div className="space-y-1 relative z-10">
           <span className="text-[10px] font-black uppercase tracking-wider text-[#ebdec8] bg-[#1b2b25] px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 shadow-2xs">
-            <img src="/icons/tenda-grossa.png" alt="Equipaggiamento Campo" className="w-3.5 h-3.5 object-contain" />
+            <img src="/icons/tenda-grossa.png" alt="Equipaggiamento Campo" className="w-4 h-4 object-contain" />
             <span>Equipaggiamento Campo</span>
           </span>
           <h1 className="text-2xl font-black text-[#1b2b25] tracking-tight">
@@ -194,11 +194,12 @@ export default function EquipmentPage() {
                 className="w-full p-4 flex items-center justify-between text-left active:scale-[0.99] transition"
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 p-2 rounded-2xl bg-slate-100/80 border border-white shadow-2xs flex items-center justify-center shrink-0">
+                  {/* Contenitore e Icona Ingranditi */}
+                  <div className="w-12 h-12 p-1.5 rounded-2xl bg-slate-100/80 border border-white shadow-2xs flex items-center justify-center shrink-0">
                     <img
                       src={category.icon}
                       alt={category.name}
-                      className="w-6 h-6 object-contain"
+                      className="w-8 h-8 object-contain"
                     />
                   </div>
 
