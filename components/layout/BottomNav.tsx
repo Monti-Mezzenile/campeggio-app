@@ -41,14 +41,13 @@ export default function BottomNav() {
       <nav
         className="
           pointer-events-auto
-          rounded-t-[32px]
+          rounded-t-[28px]
           flex
           items-center
           justify-around
-          px-2.5
+          px-2
           pt-2
-          pb-[calc(env(safe-area-inset-bottom)+8px)]
-          shadow-[0_-8px_25px_rgba(0,0,0,0.15)]
+          shadow-[0_-8px_25px_rgba(0,0,0,0.12)]
           border-t
           border-x
           border-[#FFF4E3]/50
@@ -58,6 +57,9 @@ export default function BottomNav() {
         "
         style={{
           backgroundColor: "rgba(240, 213, 179, 0.92)",
+          // Garantisce che lo sfondo arrivi al bordo inferiore dell'iPhone,
+          // sollevando le icone solo dello spazio strettamente necessario alla home bar di iOS
+          paddingBottom: "max(10px, env(safe-area-inset-bottom))",
         }}
       >
         {items.map((item) => {
@@ -75,8 +77,8 @@ export default function BottomNav() {
                 flex-col
                 items-center
                 justify-center
-                w-[82px]
-                h-[68px]
+                w-[74px]
+                h-[56px]
                 rounded-2xl
                 transition-all
                 duration-300
@@ -122,12 +124,12 @@ export default function BottomNav() {
                   }
                 `}
               >
-                <CustomIcon name={item.icon} size={38} className="drop-shadow-sm" />
+                <CustomIcon name={item.icon} size={32} className="drop-shadow-sm" />
               </div>
 
               <span
                 className={`
-                  text-[11px]
+                  text-[10px]
                   font-extrabold
                   leading-none
                   transition-all

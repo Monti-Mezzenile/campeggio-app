@@ -3,10 +3,10 @@
 import { usePathname } from "next/navigation";
 
 const BACKGROUNDS = [
-  { src: "/background.jpg" }, // 👈 CORRETTO DA .png A .jpg
-  { src: "/background_gold.png" },
-  { src: "/background_day.png" },
-  { src: "/background_winter.png" },
+  { src: "/background/background.jpg" },
+  { src: "/background/background_gold.png" },
+  { src: "/background/background_day.png" },
+  { src: "/background/background_winter.png" },
 ];
 
 export default function BackgroundManager({
@@ -18,15 +18,15 @@ export default function BackgroundManager({
 
   const getActiveSrc = () => {
     if (pathname?.startsWith("/history") || pathname?.startsWith("/storico")) {
-      return "/background_gold.png";
+      return "/background/background_gold.png";
     }
     if (pathname?.startsWith("/curiosita") || pathname?.startsWith("/idee")) {
-      return "/background_day.png";
+      return "/background/background_day.png";
     }
     if (pathname?.startsWith("/profile") || pathname?.startsWith("/io")) {
-      return "/background_winter.png";
+      return "/background/background_winter.png";
     }
-    return "/background.jpg"; // 👈 CORRETTO ANCHE QUI DA .png A .jpg
+    return "/background/background.jpg";
   };
 
   const activeSrc = getActiveSrc();
