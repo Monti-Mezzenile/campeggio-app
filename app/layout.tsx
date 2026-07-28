@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent", // Fa passare lo sfondo sotto l'ora in alto
+    statusBarStyle: "black-translucent",
     title: "MONTI",
   },
   icons: {
@@ -31,8 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="it" className="h-full w-full bg-[#0d1b1e]">
-      <body className="min-h-full w-full bg-[#0d1b1e] text-[#1F2041] antialiased selection:bg-[#121816] selection:text-[#ebdec8]">
+    <html lang="it" className="bg-[#0d1b1e]">
+      <body className="w-full bg-[#0d1b1e] text-[#1F2041] antialiased selection:bg-[#121816] selection:text-[#ebdec8]">
         {children}
       </body>
     </html>
