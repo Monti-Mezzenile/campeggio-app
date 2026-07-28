@@ -9,23 +9,20 @@ import Button from "@/components/ui/Button";
 export default function LoginPage() {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
-
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false); // Switch tra Login e Registrazione
+  const [isSignUp, setIsSignUp] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
-
     async function initAuth() {
       try {
         const {
           data: { session },
         } = await supabase.auth.getSession();
-
         if (session && isMounted) {
           router.replace("/");
           return;
@@ -36,9 +33,7 @@ export default function LoginPage() {
         if (isMounted) setLoading(false);
       }
     }
-
     initAuth();
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -46,47 +41,39 @@ export default function LoginPage() {
         router.replace("/");
       }
     });
-
     return () => {
       isMounted = false;
       subscription.unsubscribe();
     };
   }, [router]);
 
-  // Gestione del cambio video quando si passa a "Crea Account"
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.load(); // Ricarica la sorgente del video
+      videoRef.current.load();
       videoRef.current.play();
     }
   }, [isSignUp]);
 
-  // Gestione Submit (Login / SignUp)
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setAuthLoading(true);
     setErrorMsg(null);
-
     if (isSignUp) {
-      // REGISTRAZIONE
       const { error } = await supabase.auth.signUp({
         email,
         password,
       });
-
       if (error) {
         setErrorMsg("Errore registrazione: " + error.message);
         setAuthLoading(false);
       } else {
-        router.replace("/profile"); // Reindirizza al profilo per completare i dati
+        router.replace("/profile");
       }
     } else {
-      // LOGIN
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-
       if (error) {
         setErrorMsg("Credenziali non valide o utente non trovato.");
         setAuthLoading(false);
@@ -96,21 +83,21 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#1b2b25] flex items-center justify-center">
+      <main className="h-dvh w-full bg-[#1b2b25] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
       </main>
     );
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 select-none">
-      {/* 🎬 VIDEO BACKGROUND DINAMICO */}
+    <main className="relative h-dvh w-full overflow-hidden flex items-center justify-center p-4 select-none">
+      {/* VIDEO BACKGROUND */}
       <video
         ref={videoRef}
         autoPlay
         muted
         playsInline
-        loop={!isSignUp} // In loop per il login, NO loop per la registrazione
+        loop={!isSignUp}
         preload="metadata"
         className="absolute inset-0 w-full h-full object-cover scale-105 transition-all duration-700"
       >
@@ -123,66 +110,62 @@ export default function LoginPage() {
       {/* OVERLAY GLASS */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
 
-      {/* 📦 CONTENT CONTAINER */}
-      <div className="relative z-10 text-center max-w-sm w-full flex flex-col items-center justify-center gap-6 px-4 py-8">
+      {/* CONTENT CONTAINER */}
+      <div className="relative z-10 text-center max-w-sm w-full flex flex-col items-center justify-center gap-4 px-4 py-4 max-h-full">
         {/* LOGO */}
-        <div className="relative w-64 h-24 flex items-center justify-center">
+        <div className="relative w-56 h-20 flex items-center justify-center shrink-0">
           <Image
             src="/images/logo-monti.png"
             alt="MONTI Logo"
-            width={260}
-            height={100}
+            width={220}
+            height={80}
             priority
             className="object-contain drop-shadow-2xl"
           />
         </div>
 
         {/* DESCRIZIONE */}
-        <div className="space-y-3">
-          <p className="text-[#FFF4E3] text-sm leading-relaxed drop-shadow-md font-medium">
+        <div className="space-y-2 shrink-0">
+          <p className="text-[#FFF4E3] text-xs sm:text-sm leading-relaxed drop-shadow-md font-medium">
             {isSignUp
               ? "Unisciti alla spedizione. Crea le tue credenziali da campo."
               : "Perché dopo anni di campeggi improvvisati era ora di fingere di essere organizzati."}
           </p>
-
-          <p className="text-[#FFF4E3]/90 text-xs italic font-medium border-l-2 border-[#FFF4E3]/30 pl-3 text-left">
+          <p className="text-[#FFF4E3]/90 text-[11px] italic font-medium border-l-2 border-[#FFF4E3]/30 pl-3 text-left">
             "Il caos era la legge della natura; l'ordine era il sogno dell'uomo."
-            <span className="block text-[10px] text-[#FFF4E3]/60 not-italic mt-0.5 font-normal">
+            <span className="block text-[9px] text-[#FFF4E3]/60 not-italic mt-0.5 font-normal">
               — Henry Adams
             </span>
           </p>
         </div>
 
         {/* FORM LOGIN / REGISTRAZIONE */}
-        <form onSubmit={handleSubmit} className="w-full space-y-3 pt-2">
+        <form onSubmit={handleSubmit} className="w-full space-y-2.5 pt-1 shrink-0">
           <input
             type="email"
             placeholder="Email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 bg-white/10 border border-[#FFF4E3]/30 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/50 focus:outline-none focus:border-[#FFF4E3] backdrop-blur-md text-sm"
+            className="w-full px-4 py-2.5 bg-white/10 border border-[#FFF4E3]/30 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/50 focus:outline-none focus:border-[#FFF4E3] backdrop-blur-md text-sm"
           />
-
           <input
             type="password"
             placeholder="Password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 bg-white/10 border border-[#FFF4E3]/30 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/50 focus:outline-none focus:border-[#FFF4E3] backdrop-blur-md text-sm"
+            className="w-full px-4 py-2.5 bg-white/10 border border-[#FFF4E3]/30 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/50 focus:outline-none focus:border-[#FFF4E3] backdrop-blur-md text-sm"
           />
-
           {errorMsg && (
-            <p className="text-red-400 text-xs text-center font-medium bg-red-950/40 py-1.5 rounded-lg border border-red-500/30">
+            <p className="text-red-400 text-xs text-center font-medium bg-red-950/40 py-1 rounded-lg border border-red-500/30">
               {errorMsg}
             </p>
           )}
-
           <Button
             type="submit"
             disabled={authLoading}
-            className="w-full bg-white/20 border border-[#FFF4E3]/40 text-[#FFF4E3] backdrop-blur-md shadow-lg hover:bg-white/30 active:scale-98 transition py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+            className="w-full bg-white/20 border border-[#FFF4E3]/40 text-[#FFF4E3] backdrop-blur-md shadow-lg hover:bg-white/30 active:scale-98 transition py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
           >
             <span>
               {authLoading
@@ -195,7 +178,7 @@ export default function LoginPage() {
         </form>
 
         {/* LINK SWITCH LOGIN / REGISTRAZIONE */}
-        <div className="pt-1 border-t border-[#FFF4E3]/10 w-full">
+        <div className="pt-1 border-t border-[#FFF4E3]/10 w-full shrink-0">
           <button
             type="button"
             onClick={() => {
@@ -209,8 +192,7 @@ export default function LoginPage() {
               : "Non hai un account? Registrati"}
           </button>
         </div>
-
-        <p className="text-[10px] text-[#FFF4E3]/70 tracking-wider uppercase font-bold">
+        <p className="text-[10px] text-[#FFF4E3]/70 tracking-wider uppercase font-bold shrink-0">
           Solo per veri sopravvissuti
         </p>
       </div>

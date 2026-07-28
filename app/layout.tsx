@@ -1,10 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import BackgroundManager from "@/components/layout/BackgroundManager";
-import BottomNav from "@/components/layout/BottomNav";
 
 export const viewport: Viewport = {
-  themeColor: "#ebdec8",
+  themeColor: "#121816",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -33,16 +31,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="it" className="h-full bg-transparent">
-      <body className="min-h-dvh w-full bg-transparent text-[#1F2041] antialiased">
-        <BackgroundManager>
-          <div className="relative min-h-dvh max-w-md mx-auto flex flex-col justify-between bg-transparent">
-            <main className="flex-1 bg-transparent pb-32">
-              {children}
-            </main>
-            <BottomNav />
-          </div>
-        </BackgroundManager>
+    <html lang="it" className="h-full w-full bg-[#121816]">
+      <body className="h-full w-full bg-[#121816] text-[#1F2041] antialiased overscroll-none">
+        {children}
       </body>
     </html>
   );

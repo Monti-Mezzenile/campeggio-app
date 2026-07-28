@@ -13,7 +13,6 @@ interface NavItem {
 export default function BottomNav() {
   const pathname = usePathname();
 
-  // Nasconde la navbar nella pagina di login/registrazione
   if (pathname === "/login" || pathname === "/register") {
     return null;
   }
@@ -49,7 +48,7 @@ export default function BottomNav() {
           w-full
           max-w-md
           mx-auto
-          rounded-t-[32px]
+          rounded-t-[28px]
           flex
           items-center
           justify-between
@@ -58,15 +57,11 @@ export default function BottomNav() {
           shadow-[0_-8px_25px_rgba(0,0,0,0.15)]
           border-t
           border-[#FFF4E3]/40
-          backdrop-blur-md
+          bg-[#F0D5B3]
           relative
-          overflow-hidden
         "
         style={{
-          background: "#F0D5B3",
-          // env(safe-area-inset-bottom) permette alla barra di incollarsi fino al bordo
-          // inferiore aggiungendo lo spazio necessario per la barra di scorrimento home di iOS
-          paddingBottom: "max(12px, env(safe-area-inset-bottom))"
+          paddingBottom: "max(12px, env(safe-area-inset-bottom))",
         }}
       >
         {items.map((item) => {
@@ -86,7 +81,7 @@ export default function BottomNav() {
                 justify-center
                 flex-1
                 max-w-[80px]
-                h-[72px]
+                h-[68px]
                 rounded-2xl
                 transition-all
                 duration-300
@@ -99,7 +94,6 @@ export default function BottomNav() {
                 }
               `}
             >
-              {/* Sfondo attivo Verde Salvia */}
               {isActive && (
                 <span
                   className="
@@ -119,7 +113,6 @@ export default function BottomNav() {
                 />
               )}
 
-              {/* Icona */}
               <div
                 className={`
                   transition-transform
@@ -134,13 +127,12 @@ export default function BottomNav() {
                   }
                 `}
               >
-                <CustomIcon name={item.icon} size={42} className="drop-shadow-sm" />
+                <CustomIcon name={item.icon} size={40} className="drop-shadow-sm" />
               </div>
 
-              {/* Etichetta di testo */}
               <span
                 className={`
-                  text-[12px]
+                  text-[11px]
                   font-extrabold
                   leading-none
                   transition-all
