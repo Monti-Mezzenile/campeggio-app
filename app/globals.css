@@ -18,6 +18,7 @@
   --foreground: var(--monti-primary);
 }
 
+/* Rimosso background-color: #ebdec8 !important */
 html, 
 body {
   height: 100%;
@@ -26,7 +27,6 @@ body {
   padding: 0;
   overflow-x: hidden;
   overscroll-behavior: none;
-  background-color: #ebdec8 !important; /* CORRETTO: Cambiato da #121816 al beige */
 }
 
 body {

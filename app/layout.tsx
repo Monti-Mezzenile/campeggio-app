@@ -32,12 +32,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="it" className="h-full w-full">
-      <head>
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      </head>
-      {/* NESSUN bg-xxx su body per evitare il ricalcolo della safe-area di iOS */}
-      <body className="h-full w-full text-[#1F2041] antialiased selection:bg-[#121816] selection:text-[#ebdec8]">
+      <body className="min-h-full w-full text-[#1F2041] antialiased selection:bg-[#121816] selection:text-[#ebdec8]">
         {children}
       </body>
     </html>
