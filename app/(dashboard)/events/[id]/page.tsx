@@ -484,12 +484,12 @@ export default function EventPage() {
                 {formatArrivalDeparture(
                   myParticipation.arrivo_data,
                   myParticipation.arrivo_ora,
-                  "🏕️ Arrivo:"
+                  "Camping Arrivo:"
                 )}
                 {formatArrivalDeparture(
                   myParticipation.partenza_data,
                   myParticipation.partenza_ora,
-                  "🚗 Partenza:"
+                  "Auto Partenza:"
                 )}
               </div>
             )}
@@ -527,34 +527,34 @@ export default function EventPage() {
         )}
       </section>
 
-      {/* 🧩 BENTO GRID - ICONE GIGANTI */}
+      {/* 🧩 BENTO GRID - ICONE RIDIMENSIONATE E SPANNO REGOLARE */}
       <section className="grid grid-cols-2 gap-3 items-stretch">
-        {/* 1. PARTECIPANTI */}
+        {/* 1. PARTECIANTI */}
         <button
           onClick={() => router.push(`/events/${id}/participants`)}
-          className="col-span-2 group bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-white border-l-4 border-l-[#1b2b25] shadow-sm flex items-center justify-between active:scale-[0.98] transition-all"
+          className="col-span-2 group overflow-hidden bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-white border-l-4 border-l-[#1b2b25] shadow-sm flex items-center justify-between active:scale-[0.98] transition-all"
         >
-          <div className="flex items-center gap-3.5">
-            <CustomIcon name="profilo" size={60} className="shrink-0 group-hover:scale-105 transition-transform" />
-            <div className="text-left">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <CustomIcon name="profilo" size={48} className="shrink-0 group-hover:scale-105 transition-transform" />
+            <div className="text-left min-w-0">
               <span className="text-[9px] font-black uppercase tracking-widest text-[#1b2b25]/40 block">
                 GRUPPO
               </span>
-              <h3 className="text-base font-black uppercase text-[#1b2b25] tracking-tight">
+              <h3 className="text-base font-black uppercase text-[#1b2b25] tracking-tight truncate">
                 Partecipanti ({stats.partecipanti})
               </h3>
-              <p className="text-[10px] font-bold text-[#1b2b25]/60">
+              <p className="text-[10px] font-bold text-[#1b2b25]/60 truncate">
                 Tutti gli iscritti al viaggio
               </p>
             </div>
           </div>
-          <span className="text-[#1b2b25] font-black text-xl pr-1">→</span>
+          <span className="text-[#1b2b25] font-black text-xl pr-1 shrink-0">→</span>
         </button>
 
         {/* 2. CHECKLIST */}
         <button
           onClick={() => router.push(`/events/${id}/checklist`)}
-          className="col-span-2 group bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-white border-l-4 border-l-emerald-500 shadow-sm active:scale-[0.98] transition-all text-left space-y-2"
+          className="col-span-2 group overflow-hidden bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-white border-l-4 border-l-emerald-500 shadow-sm active:scale-[0.98] transition-all text-left space-y-2"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -581,23 +581,23 @@ export default function EventPage() {
         {/* 3. TENDE */}
         <button
           onClick={() => router.push(`/events/${id}/tents`)}
-          className="group h-32 bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-white border-l-4 border-l-teal-500 shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
+          className="group overflow-hidden h-32 bg-white/90 backdrop-blur-2xl rounded-[2rem] p-3.5 border border-white border-l-4 border-l-teal-500 shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
         >
-          <div className="flex flex-col justify-between h-full">
+          <div className="flex flex-col justify-between h-full min-w-0 pr-1">
             <div>
               <span className="text-[9px] font-black uppercase tracking-widest text-teal-700 block">
                 ALLOGGI
               </span>
-              <h3 className="text-xs font-black uppercase text-[#1b2b25]">
+              <h3 className="text-xs font-black uppercase text-[#1b2b25] truncate">
                 Tende ({stats.tende})
               </h3>
             </div>
 
             <div className="space-y-1">
-              <div className="text-base font-black text-[#1b2b25]">
+              <div className="text-sm font-black text-[#1b2b25]">
                 {stats.postiLetto} <span className="text-[10px] font-bold text-[#1b2b25]/60">posti</span>
               </div>
-              <span className={`inline-block px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase border ${
+              <span className={`inline-block px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase border whitespace-nowrap ${
                 stats.postiLetto >= stats.partecipanti
                   ? "bg-emerald-100 text-emerald-900 border-emerald-200"
                   : "bg-amber-100 text-amber-900 border-amber-200"
@@ -607,29 +607,29 @@ export default function EventPage() {
             </div>
           </div>
 
-          <CustomIcon name="tenda-grossa" size={76} className="shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
+          <CustomIcon name="tenda-grossa" size={54} className="shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
         </button>
 
         {/* 4. AUTO */}
         <button
           onClick={() => router.push(`/events/${id}/cars`)}
-          className="group h-32 bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-white border-l-4 border-l-sky-500 shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
+          className="group overflow-hidden h-32 bg-white/90 backdrop-blur-2xl rounded-[2rem] p-3.5 border border-white border-l-4 border-l-sky-500 shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
         >
-          <div className="flex flex-col justify-between h-full">
+          <div className="flex flex-col justify-between h-full min-w-0 pr-1">
             <div>
               <span className="text-[9px] font-black uppercase tracking-widest text-sky-700 block">
                 TRASPORTI
               </span>
-              <h3 className="text-xs font-black uppercase text-[#1b2b25]">
+              <h3 className="text-xs font-black uppercase text-[#1b2b25] truncate">
                 Auto ({stats.auto})
               </h3>
             </div>
 
             <div className="space-y-1">
-              <div className="text-base font-black text-[#1b2b25]">
+              <div className="text-sm font-black text-[#1b2b25]">
                 {stats.postiAuto} <span className="text-[10px] font-bold text-[#1b2b25]/60">passaggi</span>
               </div>
-              <span className={`inline-block px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase border ${
+              <span className={`inline-block px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase border whitespace-nowrap ${
                 stats.postiAuto >= stats.partecipanti
                   ? "bg-emerald-100 text-emerald-900 border-emerald-200"
                   : "bg-amber-100 text-amber-900 border-amber-200"
@@ -639,107 +639,107 @@ export default function EventPage() {
             </div>
           </div>
 
-          <CustomIcon name="macchina" size={76} className="shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
+          <CustomIcon name="macchina" size={54} className="shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
         </button>
 
         {/* 5. EQUIPAGGIAMENTO */}
         <button
           onClick={() => router.push(`/events/${id}/equipment`)}
-          className="group h-32 bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-white border-l-4 border-l-[#9a5328] shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
+          className="group overflow-hidden h-32 bg-white/90 backdrop-blur-2xl rounded-[2rem] p-3.5 border border-white border-l-4 border-l-[#9a5328] shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
         >
-          <div className="flex flex-col justify-between h-full">
+          <div className="flex flex-col justify-between h-full min-w-0 pr-1">
             <div>
               <span className="text-[8px] font-black uppercase tracking-widest text-[#9a5328] block">
                 MATERIALE
               </span>
-              <h3 className="text-xs font-black uppercase text-[#1b2b25] tracking-wide">
+              <h3 className="text-xs font-black uppercase text-[#1b2b25] tracking-tight truncate">
                 Attrezzatura
               </h3>
             </div>
 
             <div>
-              <span className="font-mono text-xs font-black bg-[#9a5328]/10 text-[#9a5328] px-2 py-0.5 rounded-lg border border-[#9a5328]/20">
+              <span className="font-mono text-xs font-black bg-[#9a5328]/10 text-[#9a5328] px-2 py-0.5 rounded-lg border border-[#9a5328]/20 inline-block">
                 {stats.attrezzatura} oggetti
               </span>
-              <p className="text-[9px] font-bold text-[#1b2b25]/60 mt-1 leading-tight">
+              <p className="text-[9px] font-bold text-[#1b2b25]/60 mt-1 leading-tight truncate">
                 Kit & campo
               </p>
             </div>
           </div>
 
-          <CustomIcon name="zaino" size={76} className="shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
+          <CustomIcon name="zaino" size={54} className="shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
         </button>
 
         {/* 6. CIBO & SPESA */}
         <button
           onClick={() => router.push(`/events/${id}/shopping`)}
-          className="group h-32 bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-white border-l-4 border-l-orange-500 shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
+          className="group overflow-hidden h-32 bg-white/90 backdrop-blur-2xl rounded-[2rem] p-3.5 border border-white border-l-4 border-l-orange-500 shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
         >
-          <div className="flex flex-col justify-between h-full">
+          <div className="flex flex-col justify-between h-full min-w-0 pr-1">
             <div>
               <span className="text-[8px] font-black uppercase tracking-widest text-orange-700 block">
                 ALIMENTI
               </span>
-              <h3 className="text-xs font-black uppercase text-[#1b2b25] tracking-wide">
+              <h3 className="text-xs font-black uppercase text-[#1b2b25] tracking-tight whitespace-nowrap">
                 Cibo & Spesa
               </h3>
             </div>
 
             <div>
-              <span className="font-mono text-xs font-black bg-orange-100 text-orange-900 px-2 py-0.5 rounded-lg border border-orange-200">
+              <span className="font-mono text-xs font-black bg-orange-100 text-orange-900 px-2 py-0.5 rounded-lg border border-orange-200 inline-block">
                 {stats.shoppingCount} voci
               </span>
-              <p className="text-[9px] font-extrabold text-[#1b2b25]/60 mt-1 leading-tight">
+              <p className="text-[9px] font-extrabold text-[#1b2b25]/60 mt-1 leading-tight whitespace-nowrap">
                 Grigliata & menu
               </p>
             </div>
           </div>
 
-          <CustomIcon name="carrello" size={76} className="shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
+          <CustomIcon name="carrello" size={54} className="shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
         </button>
 
         {/* 7. SPESE */}
         <button
           onClick={() => router.push(`/events/${id}/expenses`)}
-          className="group h-28 bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-white border-l-4 border-l-amber-500 shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
+          className="group overflow-hidden h-28 bg-white/90 backdrop-blur-2xl rounded-[2rem] p-3.5 border border-white border-l-4 border-l-amber-500 shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
         >
-          <div className="flex flex-col justify-between h-full">
+          <div className="flex flex-col justify-between h-full min-w-0 pr-1">
             <div>
               <span className="text-[8px] font-black uppercase tracking-widest text-amber-700 block">
                 CONTABILITÀ
               </span>
-              <h3 className="text-xs font-black uppercase text-[#1b2b25]">
+              <h3 className="text-xs font-black uppercase text-[#1b2b25] truncate">
                 Spese
               </h3>
             </div>
-            <p className="text-[9px] font-bold text-[#1b2b25]/50">
+            <p className="text-[9px] font-bold text-[#1b2b25]/50 truncate">
               Scontrini & saldi
             </p>
           </div>
 
-          <CustomIcon name="soldi" size={64} className="shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
+          <CustomIcon name="soldi" size={48} className="shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
         </button>
 
         {/* 8. RICORDI */}
         <button
           onClick={() => router.push(`/events/${id}/media`)}
-          className="group h-28 bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-white border-l-4 border-l-indigo-500 shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
+          className="group overflow-hidden h-28 bg-white/90 backdrop-blur-2xl rounded-[2rem] p-3.5 border border-white border-l-4 border-l-indigo-500 shadow-sm active:scale-[0.95] transition-all text-left flex justify-between items-center"
         >
-          <div className="flex flex-col justify-between h-full">
+          <div className="flex flex-col justify-between h-full min-w-0 pr-1">
             <div>
               <span className="text-[8px] font-black uppercase tracking-widest text-indigo-700 block">
                 GALLERIA
               </span>
-              <h3 className="text-xs font-black uppercase text-[#1b2b25]">
+              <h3 className="text-xs font-black uppercase text-[#1b2b25] truncate">
                 Ricordi
               </h3>
             </div>
-            <p className="text-[9px] font-bold text-[#1b2b25]/50">
+            <p className="text-[9px] font-bold text-[#1b2b25]/50 truncate">
               {stats.mediaCount} elementi
             </p>
           </div>
 
-          <CustomIcon name="foto" size={64} className="shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
+          <CustomIcon name="foto" size={48} className="shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
         </button>
       </section>
     </main>
