@@ -8,7 +8,8 @@ export default function DashboardLayout({
 }) {
   return (
     <BackgroundManager>
-      <main className="flex-1 pb-24 overflow-y-auto">
+      {/* Rimosso overflow-y-auto per permettere al body/window di gestire lo scroll senza spezzare l'area safe */}
+      <main className="flex-1 pb-28">
         {children}
       </main>
       <BottomNav />
