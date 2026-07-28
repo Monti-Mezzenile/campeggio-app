@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/components/ui/BackButton";
-import CustomIcon from "@/components/ui/CustomIcon";
 
 interface EquipmentItem {
   id: string;
@@ -26,8 +25,11 @@ const CATEGORIES = [
 export default function EquipmentPage() {
   const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [adding, setAdding] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Item in fase di modifica (null = nuovo inserimento)
+  const [editingItem, setEditingItem] = useState<EquipmentItem | null>(null);
 
   // Form State
   const [showForm, setShowForm] = useState(false);
@@ -69,13 +71,31 @@ export default function EquipmentPage() {
     }
   }
 
-  async function addEquipment() {
+  function resetForm() {
+    setNome("");
+    setCategoria("Attrezzatura Campeggio");
+    setQuantita(1);
+    setNote("");
+    setEditingItem(null);
+    setShowForm(false);
+  }
+
+  function startEdit(item: EquipmentItem) {
+    setEditingItem(item);
+    setNome(item.nome);
+    setCategoria(item.categoria);
+    setQuantita(item.quantita || 1);
+    setNote(item.note || "");
+    setShowForm(true);
+  }
+
+  async function saveEquipment() {
     if (!nome.trim()) {
       alert("Inserisci un nome per l'oggetto!");
       return;
     }
 
-    setAdding(true);
+    setSaving(true);
 
     try {
       const {
@@ -84,44 +104,67 @@ export default function EquipmentPage() {
 
       if (!user) {
         alert("Utente non autenticato");
-        setAdding(false);
+        setSaving(false);
         return;
       }
 
-      const newItem = {
-        user_id: user.id,
-        nome: nome.trim(),
-        categoria,
-        quantita: Number(quantita) || 1,
-        note: note.trim(),
-      };
+      if (editingItem) {
+        // --- MODIFICA OGGETTO ESISTENTE ---
+        const { data, error } = await supabase
+          .from("equipment")
+          .update({
+            nome: nome.trim(),
+            categoria,
+            quantita: Number(quantita) || 1,
+            note: note.trim(),
+          })
+          .eq("id", editingItem.id)
+          .select()
+          .single();
 
-      const { data, error } = await supabase
-        .from("equipment")
-        .insert(newItem)
-        .select()
-        .single();
+        if (error) {
+          alert(error.message);
+          setSaving(false);
+          return;
+        }
 
-      if (error) {
-        alert(error.message);
-        setAdding(false);
-        return;
+        if (data) {
+          setEquipment((prev) =>
+            prev.map((item) => (item.id === data.id ? data : item))
+          );
+        }
+      } else {
+        // --- CREAZIONE NUOVO OGGETTO ---
+        const newItem = {
+          user_id: user.id,
+          nome: nome.trim(),
+          categoria,
+          quantita: Number(quantita) || 1,
+          note: note.trim(),
+        };
+
+        const { data, error } = await supabase
+          .from("equipment")
+          .insert(newItem)
+          .select()
+          .single();
+
+        if (error) {
+          alert(error.message);
+          setSaving(false);
+          return;
+        }
+
+        if (data) {
+          setEquipment((prev) => [data, ...prev]);
+        }
       }
 
-      if (data) {
-        setEquipment((prev) => [data, ...prev]);
-      }
-
-      // Reset form
-      setNome("");
-      setCategoria("Attrezzatura Campeggio");
-      setQuantita(1);
-      setNote("");
-      setShowForm(false);
+      resetForm();
     } catch (err) {
-      console.error("Errore inserimento:", err);
+      console.error("Errore salvataggio:", err);
     } finally {
-      setAdding(false);
+      setSaving(false);
     }
   }
 
@@ -141,6 +184,7 @@ export default function EquipmentPage() {
       }
 
       setEquipment((prev) => prev.filter((item) => item.id !== id));
+      if (editingItem?.id === id) resetForm();
     } catch (err) {
       console.error("Errore eliminazione:", err);
     } finally {
@@ -177,7 +221,7 @@ export default function EquipmentPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-4 sm:p-6 pb-28 max-w-3xl mx-auto flex flex-col justify-center items-center">
+      <main className="min-h-screen p-4 sm:p-6 pb-28 max-w-xl mx-auto flex flex-col justify-center items-center">
         <div className="w-10 h-10 border-4 border-amber-600/20 border-t-amber-600 rounded-full animate-spin mb-3" />
         <p className="text-xs font-bold text-zinc-800 tracking-wide">
           Apertura inventario attrezzatura...
@@ -187,24 +231,24 @@ export default function EquipmentPage() {
   }
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 pb-32 max-w-3xl mx-auto text-zinc-900">
+    <main className="min-h-screen p-3 sm:p-5 pb-32 max-w-xl mx-auto text-zinc-900">
       {/* Back Button */}
-      <div className="mb-4">
+      <div className="mb-3">
         <BackButton label="Profilo" />
       </div>
 
       {/* Header Pagina */}
-      <div className="flex items-center justify-between gap-3 mb-6">
+      <div className="flex items-center justify-between gap-3 mb-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-900/10 border border-amber-900/20 text-amber-950 text-[11px] font-black uppercase tracking-wider mb-1.5 backdrop-blur-md">
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-900/10 border border-amber-900/20 text-amber-950 text-[10px] font-black uppercase tracking-wider mb-1 backdrop-blur-md">
             <span>🧰 Personal Kit</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-zinc-950 tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl sm:text-3xl font-black text-zinc-950 tracking-tight flex items-center gap-2">
             La Mia Attrezzatura
           </h1>
           {equipment.length > 0 && (
-            <p className="text-xs font-bold text-zinc-700 mt-1 flex items-center gap-2">
-              <span>{totalTypesCount} {totalTypesCount === 1 ? "oggetto" : "oggetti"}</span>
+            <p className="text-xs font-bold text-zinc-600 mt-0.5 flex items-center gap-2">
+              <span>{totalTypesCount} voci</span>
               <span>•</span>
               <span className="text-amber-800 font-extrabold">{totalPiecesCount} pezzi totali 🎒</span>
             </p>
@@ -213,11 +257,14 @@ export default function EquipmentPage() {
 
         {/* Pulsante Apri Form */}
         <button
-          onClick={() => setShowForm(!showForm)}
-          className={`h-12 px-4 rounded-2xl font-extrabold text-xs shadow-lg active:scale-95 transition-all flex items-center gap-2 shrink-0 border ${
+          onClick={() => {
+            if (showForm) resetForm();
+            else setShowForm(true);
+          }}
+          className={`h-10 px-3.5 rounded-xl font-extrabold text-xs shadow-xs active:scale-95 transition-all flex items-center gap-1.5 shrink-0 border ${
             showForm
               ? "bg-zinc-900 text-white border-zinc-800"
-              : "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 border border-amber-500/30 border-amber-300/40 shadow-amber-500/20"
+              : "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 border-amber-500/30"
           }`}
         >
           <span>{showForm ? "✕" : "➕"}</span>
@@ -225,42 +272,42 @@ export default function EquipmentPage() {
         </button>
       </div>
 
-      {/* FORM AGGIUNTA OGGETTO (Espandibile) */}
+      {/* FORM AGGIUNTA / MODIFICA OGGETTO */}
       {showForm && (
-        <div className="mb-8 bg-white/90 border border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-xl backdrop-blur-md space-y-4 transition-all">
-          <div className="flex items-center justify-between border-b border-zinc-200/80 pb-3">
-            <h2 className="text-base font-extrabold text-zinc-900 flex items-center gap-2">
-              <span>➕</span>
-              <span>Aggiungi Nuovo Oggetto</span>
+        <div className="mb-5 bg-white border border-amber-500/30 rounded-2xl p-4 shadow-lg backdrop-blur-md space-y-3 transition-all">
+          <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
+            <h2 className="text-xs font-black uppercase text-zinc-900 flex items-center gap-1.5">
+              <span>{editingItem ? "✏️" : "➕"}</span>
+              <span>{editingItem ? "Modifica Oggetto" : "Aggiungi Oggetto"}</span>
             </h2>
-            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-950">
-              Nuovo
+            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-950">
+              {editingItem ? "Editing" : "Nuovo"}
             </span>
           </div>
 
           {/* Nome Oggetto */}
           <div>
-            <label className="block text-xs font-bold text-zinc-800 mb-1 uppercase tracking-wide">
-              Nome Oggetto <span className="text-rose-500">*</span>
+            <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
+              Nome Oggetto *
             </label>
             <input
-              placeholder="es. Torcia frontale, Sedia da campeggio, Gavetta..."
+              placeholder="es. Torcia frontale, Sedia campeggio..."
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="w-full bg-white border border-zinc-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 rounded-xl p-3 text-sm font-semibold text-zinc-900 outline-none transition-all placeholder:text-zinc-400 placeholder:font-normal"
+              className="w-full bg-zinc-50 border border-zinc-200 focus:border-amber-500 focus:bg-white rounded-xl p-2.5 text-sm font-semibold text-zinc-900 outline-none transition-all placeholder:text-zinc-400"
             />
           </div>
 
-          {/* Categoria e Quantità (Grid 2 Colonne) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Categoria e Quantità */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-zinc-800 mb-1 uppercase tracking-wide">
+              <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
                 Categoria
               </label>
               <select
                 value={categoria}
                 onChange={(e) => setCategoria(e.target.value)}
-                className="w-full bg-white border border-zinc-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 rounded-xl p-3 text-sm font-bold text-zinc-900 outline-none transition-all cursor-pointer"
+                className="w-full bg-zinc-50 border border-zinc-200 focus:border-amber-500 focus:bg-white rounded-xl p-2.5 text-xs font-bold text-zinc-900 outline-none cursor-pointer"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat.id} value={cat.id}>
@@ -271,24 +318,24 @@ export default function EquipmentPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-800 mb-1 uppercase tracking-wide">
-                Quantità Pezzi
+              <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
+                Quantità
               </label>
-              <div className="flex items-center bg-zinc-100 rounded-xl border border-zinc-300 p-1 h-[46px]">
+              <div className="flex items-center bg-zinc-100 rounded-xl border border-zinc-200 p-1 h-[40px]">
                 <button
                   type="button"
                   onClick={() => setQuantita(Math.max(1, quantita - 1))}
-                  className="w-9 h-full rounded-lg bg-white shadow-sm text-zinc-800 font-bold text-lg hover:bg-zinc-50 active:scale-95 transition-all flex items-center justify-center"
+                  className="w-8 h-full rounded-lg bg-white shadow-2xs text-zinc-800 font-bold text-sm active:scale-95 transition-all flex items-center justify-center"
                 >
                   -
                 </button>
-                <span className="flex-1 text-center font-black text-zinc-900 text-sm">
+                <span className="flex-1 text-center font-black text-zinc-900 text-xs">
                   {quantita} {quantita === 1 ? "pezzo" : "pezzi"}
                 </span>
                 <button
                   type="button"
                   onClick={() => setQuantita(quantita + 1)}
-                  className="w-9 h-full rounded-lg bg-white shadow-sm text-zinc-800 font-bold text-lg hover:bg-zinc-50 active:scale-95 transition-all flex items-center justify-center"
+                  className="w-8 h-full rounded-lg bg-white shadow-2xs text-zinc-800 font-bold text-sm active:scale-95 transition-all flex items-center justify-center"
                 >
                   +
                 </button>
@@ -298,49 +345,55 @@ export default function EquipmentPage() {
 
           {/* Note */}
           <div>
-            <label className="block text-xs font-bold text-zinc-800 mb-1 uppercase tracking-wide">
-              Note o Dettagli
+            <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
+              Note
             </label>
-            <textarea
-              placeholder="es. Batterie AAA non incluse, riposto nello zaino blu..."
+            <input
+              placeholder="es. Riposto nello zaino blu..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              rows={2}
-              className="w-full bg-white border border-zinc-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 rounded-xl p-3 text-sm font-medium text-zinc-900 outline-none transition-all placeholder:text-zinc-400 placeholder:font-normal resize-none"
+              className="w-full bg-zinc-50 border border-zinc-200 focus:border-amber-500 focus:bg-white rounded-xl p-2.5 text-xs font-medium text-zinc-900 outline-none transition-all placeholder:text-zinc-400"
             />
           </div>
 
-          {/* Tasto Salvataggio */}
-          <button
-            onClick={addEquipment}
-            disabled={adding}
-            className="w-full py-3.5 px-5 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 border border-amber-500/30 font-black text-sm tracking-wide shadow-md active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 border border-amber-300/40"
-          >
-            {adding ? (
-              <>
-                <div className="w-4 h-4 border-2 border-zinc-950/20 border-t-zinc-950 rounded-full animate-spin" />
+          {/* Pulsanti Azione Form */}
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={saveEquipment}
+              disabled={saving}
+              className="flex-1 py-2.5 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 border border-amber-500/30 font-black text-xs tracking-wide shadow-xs active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+            >
+              {saving ? (
                 <span>Salvataggio...</span>
-              </>
-            ) : (
-              <>
-                <span>📦</span>
-                <span>Salva Nell'Inventario</span>
-              </>
+              ) : (
+                <>
+                  <span>📦</span>
+                  <span>{editingItem ? "Salva Modifiche" : "Aggiungi all'Inventario"}</span>
+                </>
+              )}
+            </button>
+
+            {editingItem && (
+              <button
+                onClick={resetForm}
+                className="py-2.5 px-3 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold text-xs transition-all"
+              >
+                Annulla
+              </button>
             )}
-          </button>
+          </div>
         </div>
       )}
 
-      {/* BARRA FILTRI CATEGORIA (Scroll Orizzontale) */}
+      {/* BARRA FILTRI CATEGORIA */}
       {equipment.length > 0 && (
-        <div className="mb-5 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1">
-          {/* Opzione Tutti */}
+        <div className="mb-4 overflow-x-auto no-scrollbar flex items-center gap-1.5 pb-1">
           <button
             onClick={() => setSelectedFilter("Tutti")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all shrink-0 border ${
+            className={`px-3 py-1 rounded-full text-xs font-extrabold transition-all shrink-0 border ${
               selectedFilter === "Tutti"
-                ? "bg-zinc-950 text-white border-zinc-950 shadow-sm"
-                : "bg-white/80 text-zinc-700 border-white/90 hover:bg-white"
+                ? "bg-zinc-950 text-white border-zinc-950 shadow-2xs"
+                : "bg-white/80 text-zinc-700 border-white hover:bg-white"
             }`}
           >
             Tutti ({equipment.length})
@@ -348,7 +401,7 @@ export default function EquipmentPage() {
 
           {CATEGORIES.map((cat) => {
             const count = equipment.filter((i) => i.categoria === cat.id).length;
-            if (count === 0) return null; // Nascondi se vuoto per pulizia
+            if (count === 0) return null;
 
             const isSelected = selectedFilter === cat.id;
 
@@ -356,15 +409,15 @@ export default function EquipmentPage() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedFilter(cat.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all shrink-0 border flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 rounded-full text-xs font-extrabold transition-all shrink-0 border flex items-center gap-1 ${
                   isSelected
-                    ? "bg-zinc-950 text-white border-zinc-950 shadow-sm"
-                    : "bg-white/80 text-zinc-800 border-white/90 hover:bg-white"
+                    ? "bg-zinc-950 text-white border-zinc-950 shadow-2xs"
+                    : "bg-white/80 text-zinc-800 border-white hover:bg-white"
                 }`}
               >
                 <span>{cat.icon}</span>
                 <span>{cat.label}</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-zinc-200/60 text-zinc-900 font-black">
+                <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-zinc-200/60 text-zinc-900 font-black">
                   {count}
                 </span>
               </button>
@@ -375,80 +428,85 @@ export default function EquipmentPage() {
 
       {/* STATO VUOTO */}
       {equipment.length === 0 && !showForm && (
-        <div className="bg-white/80 border border-white/90 rounded-3xl p-8 text-center text-zinc-900 shadow-lg backdrop-blur-md">
-          <div className="w-20 h-20 mx-auto mb-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-3xl">
+        <div className="bg-white/80 border border-white rounded-2xl p-6 text-center text-zinc-900 shadow-sm backdrop-blur-md">
+          <div className="w-14 h-14 mx-auto mb-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-2xl">
             🎒
           </div>
-          <h3 className="text-lg font-bold text-zinc-900 mb-1">
+          <h3 className="text-sm font-black text-zinc-900 mb-0.5">
             Inventario Vuoto
           </h3>
-          <p className="text-xs text-zinc-600 max-w-xs mx-auto mb-5">
-            Non hai ancora registrato nessun oggetto personali. Aggiungi il tuo primo kit da campeggio!
+          <p className="text-xs text-zinc-600 max-w-xs mx-auto mb-4">
+            Non hai ancora registrato nessun oggetto personale. Aggiungi il tuo primo kit!
           </p>
           <button
             onClick={() => setShowForm(true)}
-            className="py-2.5 px-5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 border border-amber-500/30 text-xs font-bold transition-all active:scale-95 shadow-md"
+            className="py-2 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 border border-amber-500/30 text-xs font-black transition-all active:scale-95 shadow-xs"
           >
-            Aggiungi il tuo primo oggetto
+            Aggiungi Oggetto
           </button>
         </div>
       )}
 
-      {/* LISTA CARD ATTREZZATURA */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      {/* LISTA COMPATTA AD ELENCO */}
+      <div className="flex flex-col gap-2">
         {filteredEquipment.map((item) => {
           const meta = getCategoryMeta(item.categoria);
           const isDeleting = deletingId === item.id;
+          const isBeingEdited = editingItem?.id === item.id;
 
           return (
             <div
               key={item.id}
-              className="bg-white/80 border border-white/90 rounded-2xl p-4 backdrop-blur-md shadow-md flex flex-col justify-between hover:shadow-lg transition-all text-zinc-900"
+              className={`bg-white/90 border rounded-xl p-2.5 sm:p-3 backdrop-blur-md shadow-2xs flex items-center justify-between gap-2.5 transition-all ${
+                isBeingEdited
+                  ? "border-amber-500 ring-2 ring-amber-500/20"
+                  : "border-slate-200/80 hover:border-slate-300"
+              }`}
             >
-              <div>
-                {/* Header Card: Categoria Badge + Quantità */}
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span
-                    className={`inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-0.5 rounded-md border ${meta.color}`}
-                  >
-                    <span>{meta.icon}</span>
-                    <span>{meta.label}</span>
-                  </span>
+              {/* SX: Icona, Titolo e Note */}
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <span
+                  className="text-lg shrink-0 p-1.5 rounded-lg bg-zinc-100/80 border border-zinc-200/60"
+                  title={meta.label}
+                >
+                  {meta.icon}
+                </span>
 
-                  <span className="text-xs font-black px-2 py-0.5 rounded-md bg-zinc-900 text-white shadow-xs">
-                    x{item.quantita}
-                  </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs sm:text-sm font-black text-zinc-900 truncate">
+                      {item.nome}
+                    </span>
+                    <span className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-zinc-900 text-white shrink-0">
+                      x{item.quantita}
+                    </span>
+                  </div>
+
+                  {item.note && (
+                    <p className="text-[11px] font-medium text-zinc-500 truncate leading-tight mt-0.5">
+                      {item.note}
+                    </p>
+                  )}
                 </div>
-
-                {/* Titolo Oggetto */}
-                <h2 className="text-base font-black text-zinc-950 leading-tight">
-                  {item.nome}
-                </h2>
-
-                {/* Note se presenti */}
-                {item.note && (
-                  <p className="text-xs text-zinc-600 mt-2 italic bg-zinc-100/80 p-2 rounded-xl border border-zinc-200/60 line-clamp-3">
-                    "{item.note}"
-                  </p>
-                )}
               </div>
 
-              {/* Footer con Azione Eliminazione */}
-              <div className="flex justify-end pt-3 mt-3 border-t border-zinc-200/60">
+              {/* DX: Pulsanti Azione (Modifica & Elimina) */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => startEdit(item)}
+                  className="w-8 h-8 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 flex items-center justify-center text-xs font-bold transition-all active:scale-90"
+                  title="Modifica"
+                >
+                  ✏️
+                </button>
+
                 <button
                   onClick={() => deleteEquipment(item.id)}
                   disabled={isDeleting}
-                  className="py-1 px-2.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 font-bold text-xs border border-rose-500/20 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-1"
-                  title="Elimina oggetto"
+                  className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/60 flex items-center justify-center text-xs font-bold transition-all active:scale-90 disabled:opacity-50"
+                  title="Elimina"
                 >
-                  {isDeleting ? (
-                    <span className="text-[10px]">Eliminazione...</span>
-                  ) : (
-                    <>
-                      <span>🗑️</span>
-                      <span>Rimuovi</span>
-                    </>
-                  )}
+                  {isDeleting ? "..." : "✕"}
                 </button>
               </div>
             </div>
