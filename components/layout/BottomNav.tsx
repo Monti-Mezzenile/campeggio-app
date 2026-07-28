@@ -13,7 +13,7 @@ interface NavItem {
 export default function BottomNav() {
   const pathname = usePathname();
 
-  // 1. NASCONDE LA NAV NEL LOGIN E REGISTER
+  // Nasconde la navbar nella pagina di login/registrazione
   if (pathname === "/login" || pathname === "/register") {
     return null;
   }
@@ -21,7 +21,7 @@ export default function BottomNav() {
   const items: NavItem[] = [
     {
       name: "Home",
-      href: "/dashboard", // Corretto da "/" a "/dashboard"
+      href: "/dashboard", // Se la tua pagina è sotto /dashboard
       icon: "tenda-grossa",
     },
     {
@@ -42,33 +42,32 @@ export default function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto pointer-events-none">
+    <div className="fixed bottom-4 left-0 right-0 z-50 px-4 max-w-md mx-auto pointer-events-none">
       <nav
         className="
           pointer-events-auto
-          rounded-t-[32px]
+          h-[84px]
+          rounded-[28px]
           flex
           items-center
-          justify-around
+          justify-between
           px-2
-          pt-2.5
-          shadow-[0_-8px_25px_rgba(0,0,0,0.15)]
-          border-t
-          border-x
-          border-[#FFF4E3]/50
-          backdrop-blur-xl
+          shadow-2xl
+          border
+          border-[#FFF4E3]/40
+          backdrop-blur-md
           relative
           overflow-hidden
+          w-full
         "
         style={{
-          backgroundColor: "rgba(240, 213, 179, 0.92)",
-          paddingBottom: "max(12px, env(safe-area-inset-bottom))",
+          background: "#F0D5B3",
         }}
       >
         {items.map((item) => {
           const isActive =
             pathname === item.href ||
-            (item.href !== "/dashboard" && pathname?.startsWith(item.href));
+            (item.href !== "/dashboard" && item.href !== "/" && pathname?.startsWith(item.href));
 
           return (
             <Link
@@ -81,8 +80,8 @@ export default function BottomNav() {
                 items-center
                 justify-center
                 flex-1
-                max-w-[80px]
-                h-[70px]
+                max-w-[76px]
+                h-[72px]
                 rounded-2xl
                 transition-all
                 duration-300
@@ -95,7 +94,7 @@ export default function BottomNav() {
                 }
               `}
             >
-              {/* Sfondo attivo */}
+              {/* Sfondo attivo Verde Salvia */}
               {isActive && (
                 <span
                   className="
@@ -105,7 +104,7 @@ export default function BottomNav() {
                     -z-10
                     shadow-md
                     border
-                    border-white/30
+                    border-white/20
                     transition-all
                     duration-300
                   "
@@ -130,13 +129,13 @@ export default function BottomNav() {
                   }
                 `}
               >
-                <CustomIcon name={item.icon} size={40} className="drop-shadow-sm" />
+                <CustomIcon name={item.icon} size={42} className="drop-shadow-sm" />
               </div>
 
-              {/* Testo */}
+              {/* Etichetta di testo */}
               <span
                 className={`
-                  text-[12px]
+                  text-[11px]
                   font-extrabold
                   leading-none
                   transition-all
