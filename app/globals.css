@@ -18,39 +18,35 @@
   --foreground: var(--monti-primary);
 }
 
-html, 
+/* REGOLAZIONE ROOT PER SCROLL NATIVO MOBILE */
+html {
+  background-color: #0d1b1e;
+  /* Previene lo scorrimento orizzontale privo di senso senza bloccare il verticale */
+  overflow-x: hidden;
+  /* Permette al browser di gestire lo scroll nativo della finestra */
+  height: -webkit-fill-available;
+}
+
 body {
   width: 100%;
+  min-height: 100dvh;
   margin: 0;
   padding: 0;
-  
-  /* Permette uno scroll fluido su Android e iOS */
-  overflow-x: hidden;
-  overflow-y: auto;
-  touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
-
-  /* 'contain' blocca il rimbalzo di iOS alla fine della pagina senza bloccare lo scroll */
-  overscroll-behavior-y: contain;
-  overscroll-behavior-x: none;
-
   background-color: #0d1b1e;
-}
-
-body {
-  min-height: 100dvh;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  /* Mantiene pulito il margine orizzontale */
+  overflow-x: hidden;
 }
 
-/* Forza la registrazione GPU per evitare il displacement degli elementi fixed su iOS */
+/* Utility per evitare il displacement di elementi fixed su iOS durante la tastiera */
 .fix-ios-fixed {
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
   will-change: transform;
 }
 
-/* Utility per nascondere la scrollbar */
+/* Utility per nascondere la scrollbar (es. nelle tab orizzontali) */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
