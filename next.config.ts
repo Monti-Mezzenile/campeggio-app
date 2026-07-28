@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   turbopack: {},
-  // In Next.js 16 devIndicators si imposta solo con la posizione (o false per disabilitarlo)
   devIndicators: false,
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {

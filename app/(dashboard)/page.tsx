@@ -139,9 +139,7 @@ export default function Home() {
 
   useEffect(() => {
     loadData();
-  }, []);
 
-  useEffect(() => {
     function refreshHome() {
       loadData();
     }
@@ -155,16 +153,16 @@ export default function Home() {
 
   if (checkingSession || !user) {
     return (
-      <main className="min-h-dvh flex items-center justify-center p-6 text-[#1B2B25] bg-transparent">
-        <div className="bg-[#FFF4E3]/80 backdrop-blur-md px-6 py-3 rounded-2xl font-bold shadow-sm">
+      <div className="flex items-center justify-center min-h-[60vh] p-6 text-[#1B2B25] bg-transparent">
+        <div className="bg-[#FFF4E3]/80 backdrop-blur-md px-6 py-3 rounded-2xl font-bold shadow-sm border border-[#FFF4E3]/50">
           Caricamento...
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-dvh p-6 pb-36 space-y-6 bg-transparent">
+    <div className="px-5 py-6 space-y-6 bg-transparent">
       {/* Header con salutino */}
       <Header name={profile?.nome} />
 
@@ -183,6 +181,6 @@ export default function Home() {
 
       {/* Lista Eventi */}
       <MyEvents events={events} isAdmin={profile?.ruolo === "admin"} />
-    </main>
+    </div>
   );
 }

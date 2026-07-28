@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 
-// Array con i nomi esatti che mi hai confermato
 const BACKGROUNDS = [
   { src: "/background.png" },
   { src: "/background_gold.png" },
@@ -18,28 +17,24 @@ export default function BackgroundManager({
   const pathname = usePathname();
 
   const getActiveSrc = () => {
-    // Storico
     if (pathname?.startsWith("/history") || pathname?.startsWith("/storico")) {
       return "/background_gold.png";
     }
-    // Idee / Curiosità
     if (pathname?.startsWith("/curiosita") || pathname?.startsWith("/idee")) {
       return "/background_day.png";
     }
-    // IO / Profilo
     if (pathname?.startsWith("/profile") || pathname?.startsWith("/io")) {
       return "/background_winter.png";
     }
-    // Home ed Eventi (default)
     return "/background.png";
   };
 
   const activeSrc = getActiveSrc();
 
   return (
-    <div className="relative min-h-dvh w-full overflow-x-hidden">
-      {/* Sfondi fissi con z-index 0 */}
-      <div className="fixed inset-0 z-0 bg-[#1f2041]">
+    <div className="relative min-h-dvh w-full overflow-x-hidden bg-transparent">
+      {/* Sfondi fissi in background */}
+      <div className="fixed inset-0 z-0 bg-[#ebdec8]">
         {BACKGROUNDS.map((bg) => {
           const isActive = activeSrc === bg.src;
           return (

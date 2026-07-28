@@ -57,7 +57,7 @@ export default function BottomNav() {
           overflow-hidden
         "
         style={{
-          backgroundColor: "rgba(240, 213, 179, 0.92)", // Trasparenza per consentire il blur
+          backgroundColor: "rgba(240, 213, 179, 0.92)",
         }}
       >
         {items.map((item) => {
@@ -89,7 +89,6 @@ export default function BottomNav() {
                 }
               `}
             >
-              {/* Sfondo attivo Verde Salvia (#6C9A8B) */}
               {isActive && (
                 <span
                   className="
@@ -109,7 +108,6 @@ export default function BottomNav() {
                 />
               )}
 
-              {/* Icona Ingrandita */}
               <div
                 className={`
                   transition-transform
@@ -127,7 +125,6 @@ export default function BottomNav() {
                 <CustomIcon name={item.icon} size={38} className="drop-shadow-sm" />
               </div>
 
-              {/* Etichetta di testo */}
               <span
                 className={`
                   text-[11px]

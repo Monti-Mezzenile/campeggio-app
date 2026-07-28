@@ -35,13 +35,11 @@ export default function RootLayout({
   return (
     <html lang="it" className="h-full bg-transparent">
       <body className="min-h-dvh w-full bg-transparent text-[#1F2041] antialiased">
-        {/* BackgroundManager ora avvolge la struttura passandogli il children richiesto */}
         <BackgroundManager>
           <div className="relative min-h-dvh max-w-md mx-auto flex flex-col justify-between bg-transparent">
             <main className="flex-1 bg-transparent pb-32">
               {children}
             </main>
-            
             <BottomNav />
           </div>
         </BackgroundManager>

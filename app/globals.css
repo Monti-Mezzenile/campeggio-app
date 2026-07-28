@@ -10,27 +10,22 @@
 :root {
   --monti-background: #ebdec8;
   --monti-card: #F0D5B3;
-
   --monti-primary: #1F2041;
   --monti-secondary: #3D3E62;
-
   --monti-accent: #6C9A8B;
-
   --monti-danger: #A63A50;
-
   --monti-logo: #FFF4DD;
 
-  /* Rimuoviamo il colore solido di fallback globale */
   --foreground: var(--monti-primary);
 }
 
-html, body {
+html, 
+body {
   height: 100%;
   width: 100%;
   margin: 0;
   padding: 0;
   overscroll-behavior: none;
-  /* Rendiamo il background trasparente così il BackgroundManager mostra le immagini */
   background-color: transparent !important;
   background: transparent !important;
 }
@@ -40,28 +35,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* 🏔️ SFONDI DINAMICI SPEDIZIONI */
-.background-day {
-  background-color: #ebdec8;
-  background-image: url('/background-day.png');
-  background-size: cover;
-  background-position: center;
+/* Utility per nascondere la scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-.background-snow {
-  background-color: #dbeafe;
-  background-image: url('/background-snow.png');
-  background-size: cover;
-  background-position: center;
-}
-
-/* 🚀 Utility per nascondere le scrollbar mantenendo lo scorrimento */
-@layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
