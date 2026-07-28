@@ -11,34 +11,6 @@ export default function BottomNav() {
 
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-
-  // Gestione tastiera su iOS/Android quando un campo riceve il focus
-  useEffect(() => {
-    const handleFocusIn = (e: FocusEvent) => {
-      const target = e.target as HTMLElement;
-      if (
-        target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable)
-      ) {
-        setIsKeyboardOpen(true);
-      }
-    };
-
-    const handleFocusOut = () => {
-      setIsKeyboardOpen(false);
-    };
-
-    window.addEventListener("focusin", handleFocusIn);
-    window.addEventListener("focusout", handleFocusOut);
-
-    return () => {
-      window.removeEventListener("focusin", handleFocusIn);
-      window.removeEventListener("focusout", handleFocusOut);
-    };
-  }, []);
 
   // Fetch dell'evento attivo o futuro
   useEffect(() => {
@@ -100,17 +72,19 @@ export default function BottomNav() {
   const isEventActive = pathname.startsWith("/events");
   const ICON_SIZE = 50;
 
-  // Quando la tastiera è aperta, sparisce completamente per evitare il disancoramento iOS
-  if (isKeyboardOpen) return null;
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 w-full">
+    <nav 
+      id="bottom-nav" 
+      className="fixed bottom-0 left-0 right-0 z-50 w-full transform-gpu"
+    >
       {/* 
-        NB: La classe "after:absolute after:top-full after:left-0 after:right-0 after:h-40 after:bg-[#ebdec8]"
-        crea un blocco visivo in visibile SOTTO la barra che copre qualsiasi spazio o riga durante il rimbalzo su iOS!
+        Le classi "after:..." creano un blocco solido alto 200px sotto la barra.
+        Così quando Safari fa il suo "rimbalzo" verso l'alto, tu vedi solo il prolungamento della barra
+        e la barra non viene più mangiata o tagliata!
       */}
-      <div className="relative w-full bg-[#ebdec8] border-t border-x border-white/60 rounded-t-[2rem] shadow-2xl pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 after:absolute after:top-full after:left-0 after:right-0 after:h-40 after:bg-[#ebdec8]">
-        <div className="flex items-center justify-around w-full px-2">
+      <div className="w-full bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 after:absolute after:top-full after:left-0 after:right-0 after:h-[200px] after:bg-[#ebdec8]">
+        
+        <div className="flex items-center justify-around w-full px-2 relative z-10">
           
           {/* 1. HOME */}
           <button

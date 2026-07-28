@@ -87,14 +87,14 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <main className="min-h-[100dvh] w-full bg-[#0d1b1e] flex items-center justify-center">
+      <main className="fixed inset-0 h-[100dvh] w-full bg-[#0d1b1e] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
       </main>
     );
   }
 
   return (
-    <main className="relative min-h-[100dvh] w-full overflow-hidden flex items-center justify-center px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] bg-[#0d1b1e] select-none">
+    <main className="fixed inset-0 h-[100dvh] w-full overflow-hidden flex items-center justify-center px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-[calc(env(safe-area-inset-bottom)+0.5rem)] bg-[#0d1b1e] select-none">
       
       {/* 🎥 VIDEO 1: LOGIN (Loop continuo) */}
       <video
@@ -128,9 +128,9 @@ export default function LoginPage() {
       <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] pointer-events-none z-0" />
 
       {/* CONTENT CONTAINER */}
-      <div className="relative z-10 text-center max-w-sm w-full flex flex-col items-center justify-center gap-4 px-4 py-4 max-h-full">
+      <div className="relative z-10 text-center max-w-sm w-full flex flex-col items-center justify-center gap-3 sm:gap-4 px-2 py-2 max-h-full overflow-y-auto no-scrollbar">
         {/* LOGO */}
-        <div className="relative w-56 h-20 flex items-center justify-center shrink-0">
+        <div className="relative w-48 sm:w-56 h-16 sm:h-20 flex items-center justify-center shrink-0">
           <Image
             src="/images/logo-monti.png"
             alt="MONTI Logo"
@@ -142,7 +142,7 @@ export default function LoginPage() {
         </div>
 
         {/* DESCRIZIONE */}
-        <div className="space-y-2 shrink-0">
+        <div className="space-y-1.5 sm:space-y-2 shrink-0">
           <p className="text-[#FFF4E3] text-xs sm:text-sm leading-relaxed drop-shadow-md font-medium">
             {isSignUp
               ? "Unisciti alla spedizione. Crea le tue credenziali da campo."
@@ -164,7 +164,8 @@ export default function LoginPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2.5 bg-white/10 border border-[#FFF4E3]/30 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/50 focus:outline-none focus:border-[#FFF4E3] backdrop-blur-md text-sm"
+            /* text-base (16px) blocca lo zoom nativo ed evita lo scroll su iOS */
+            className="w-full px-4 py-2.5 bg-white/10 border border-[#FFF4E3]/30 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/50 focus:outline-none focus:border-[#FFF4E3] backdrop-blur-md text-base"
           />
           <input
             type="password"
@@ -172,7 +173,8 @@ export default function LoginPage() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2.5 bg-white/10 border border-[#FFF4E3]/30 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/50 focus:outline-none focus:border-[#FFF4E3] backdrop-blur-md text-sm"
+            /* text-base (16px) blocca lo zoom nativo ed evita lo scroll su iOS */
+            className="w-full px-4 py-2.5 bg-white/10 border border-[#FFF4E3]/30 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/50 focus:outline-none focus:border-[#FFF4E3] backdrop-blur-md text-base"
           />
           {errorMsg && (
             <p className="text-red-400 text-xs text-center font-medium bg-red-950/40 py-1 rounded-lg border border-red-500/30">

@@ -35,3 +35,10 @@ body {
 /* Utility per nascondere la scrollbar nelle tab */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* 🚨 MAGIA PER iOS: Nasconde la BottomNav all'istante se stai scrivendo */
+@supports selector(:has(*)) {
+  body:has(input:focus, textarea:focus, [contenteditable="true"]:focus) #bottom-nav {
+    display: none !important;
+  }
+}
