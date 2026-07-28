@@ -19,26 +19,31 @@ export default function EquipmentPage() {
       name: "Attrezzatura Campeggio",
       icon: "/icons/tenda-grossa.png",
       color: "border-l-emerald-500",
+      iconSize: "w-8 h-8",
     },
     {
       name: "Cucina e Bagno",
       icon: "/icons/accendino.png",
       color: "border-l-amber-500",
+      iconSize: "w-10 h-10 scale-125", // 🔍 Icona accendino ingrandita
     },
     {
       name: "Persona e Comfort",
       icon: "/icons/profilo.png",
       color: "border-l-indigo-500",
+      iconSize: "w-8 h-8",
     },
     {
       name: "Divertimento ed Extra",
       icon: "/bucock/carte.png",
       color: "border-l-purple-500",
+      iconSize: "w-8 h-8",
     },
     {
       name: "Altro",
       icon: "/icons/attrezzi.png",
       color: "border-l-slate-400",
+      iconSize: "w-8 h-8",
     },
   ];
 
@@ -194,12 +199,12 @@ export default function EquipmentPage() {
                 className="w-full p-4 flex items-center justify-between text-left active:scale-[0.99] transition"
               >
                 <div className="flex items-center gap-3.5">
-                  {/* Contenitore e Icona Ingranditi */}
-                  <div className="w-12 h-12 p-1.5 rounded-2xl bg-slate-100/80 border border-white shadow-2xs flex items-center justify-center shrink-0">
+                  {/* Contenitore e Icona */}
+                  <div className="w-12 h-12 p-1 rounded-2xl bg-slate-100/80 border border-white shadow-2xs flex items-center justify-center shrink-0 overflow-hidden">
                     <img
                       src={category.icon}
                       alt={category.name}
-                      className="w-8 h-8 object-contain"
+                      className={`${category.iconSize || "w-8 h-8"} object-contain transition-transform`}
                     />
                   </div>
 
