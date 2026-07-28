@@ -36,19 +36,17 @@ export default function BottomNav() {
         max-w-md
         mx-auto
         bg-[#F0D5B3]
-        rounded-t-[28px]
+        rounded-t-[24px]
         flex
         items-center
-        justify-between
+        justify-around
         px-3
-        pt-2
+        pt-1.5
+        pb-[calc(0.5rem+env(safe-area-inset-bottom))]
         shadow-[0_-6px_20px_rgba(0,0,0,0.15)]
         border-t
         border-[#FFF4E3]/40
       "
-      style={{
-        paddingBottom: "max(12px, env(safe-area-inset-bottom))",
-      }}
     >
       {items.map((item) => {
         const isActive =
@@ -66,8 +64,8 @@ export default function BottomNav() {
               items-center
               justify-center
               flex-1
-              max-w-[72px]
-              h-[50px]
+              max-w-[70px]
+              py-1.5
               rounded-xl
               transition-all
               duration-200
@@ -108,12 +106,12 @@ export default function BottomNav() {
                 justify-center
                 ${
                   isActive
-                    ? "scale-105 -translate-y-0.5"
+                    ? "scale-105"
                     : "scale-100 opacity-80"
                 }
               `}
             >
-              <CustomIcon name={item.icon} size={28} className="drop-shadow-sm" />
+              <CustomIcon name={item.icon} size={24} className="drop-shadow-sm" />
             </div>
 
             <span
@@ -121,9 +119,9 @@ export default function BottomNav() {
                 text-[10px]
                 font-bold
                 leading-none
+                mt-1
                 transition-all
                 duration-200
-                ${isActive ? "mt-1" : "mt-0.5"}
               `}
             >
               {item.name}
