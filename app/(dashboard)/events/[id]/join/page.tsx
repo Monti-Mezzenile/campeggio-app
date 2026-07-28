@@ -55,11 +55,6 @@ export default function JoinEventPage() {
     }
   }, [id]);
 
-  function formatDate(date: string) {
-    if (!date) return "";
-    return date.split("T")[0];
-  }
-
   function generateHours() {
     return Array.from({ length: 30 }).map((_, i) => {
       const totaleMinuti = 9 * 60 + i * 30;
@@ -69,6 +64,61 @@ export default function JoinEventPage() {
       const minuti = (totaleMinuti % 60).toString().padStart(2, "0");
       return `${ore}:${minuti}`;
     });
+  }
+
+  // 🗓️ Helper per generare l'elenco dei giorni dell'evento o da Lunedì a Domenica
+  function getDaysOptions() {
+    const daysOfWeek = [
+      "Domenica",
+      "Lunedì",
+      "Martedì",
+      "Mercoledì",
+      "Giovedì",
+      "Venerdì",
+      "Sabato",
+    ];
+
+    const fallbackDays = [
+      { value: "Lunedì", label: "Lunedì" },
+      { value: "Martedì", label: "Martedì" },
+      { value: "Mercoledì", label: "Mercoledì" },
+      { value: "Giovedì", label: "Giovedì" },
+      { value: "Venerdì", label: "Venerdì" },
+      { value: "Sabato", label: "Sabato" },
+      { value: "Domenica", label: "Domenica" },
+    ];
+
+    if (!event?.data_inizio && !event?.data_evento) {
+      return fallbackDays;
+    }
+
+    const start = new Date(event.data_inizio || event.data_evento);
+    const end = event.data_fine ? new Date(event.data_fine) : new Date(start);
+
+    if (isNaN(start.getTime())) {
+      return fallbackDays;
+    }
+
+    const options = [];
+    const current = new Date(start);
+
+    // Genera i giorni dell'evento (almeno 3 giorni di default per permettere la scelta del rientro)
+    let count = 0;
+    while ((current <= end || options.length < 3) && count < 10) {
+      const yyyy = current.getFullYear();
+      const mm = String(current.getMonth() + 1).padStart(2, "0");
+      const dd = String(current.getDate()).padStart(2, "0");
+      const isoDate = `${yyyy}-${mm}-${dd}`;
+
+      const dayName = daysOfWeek[current.getDay()];
+      const formattedLabel = `${dayName} (${dd}/${mm})`;
+
+      options.push({ value: isoDate, label: formattedLabel });
+      current.setDate(current.getDate() + 1);
+      count++;
+    }
+
+    return options;
   }
 
   async function saveParticipation() {
@@ -121,7 +171,6 @@ export default function JoinEventPage() {
       return;
     }
 
-    /* CREA CHECKLIST PERSONALE AUTOMATICA */
     if (scelta === "partecipo" || scelta === "forse") {
       const { data: existingChecklist } = await supabase
         .from("checklists")
@@ -175,11 +224,6 @@ export default function JoinEventPage() {
 
   const isWinter = event.titolo?.toLowerCase().includes("winter");
 
-  const minDate = formatDate(event.data_inizio || event.data_evento);
-  const maxDate = formatDate(
-    event.data_fine || event.data_inizio || event.data_evento
-  );
-
   const choices = [
     {
       id: "partecipo",
@@ -200,6 +244,8 @@ export default function JoinEventPage() {
       description: "Sono un soffice batuffolo con le orecchie lunghe.",
     },
   ];
+
+  const daysOptions = getDaysOptions();
 
   return (
     <main className="min-h-screen p-4 sm:p-6 pb-36 max-w-md mx-auto flex flex-col gap-4 select-none">
@@ -300,14 +346,18 @@ export default function JoinEventPage() {
               <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1 block truncate">
                 📅 Data Arrivo
               </label>
-              <input
-                type="date"
-                min={minDate}
-                max={maxDate}
+              <select
                 value={arrivoData}
                 onChange={(e) => setArrivoData(e.target.value)}
-                className="w-full h-11 block min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-xl px-2.5 text-[11px] sm:text-xs font-extrabold text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs [color-scheme:light]"
-              />
+                className="w-full h-11 block min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-xl px-2.5 text-[11px] sm:text-xs font-extrabold text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
+              >
+                <option value="">Seleziona giorno</option>
+                {daysOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* ORA ARRIVO */}
@@ -318,7 +368,7 @@ export default function JoinEventPage() {
               <select
                 value={arrivoOra}
                 onChange={(e) => setArrivoOra(e.target.value)}
-                className="w-full h-11 block min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-xl px-2.5 text-[11px] sm:text-xs font-extrabold text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs [color-scheme:light]"
+                className="w-full h-11 block min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-xl px-2.5 text-[11px] sm:text-xs font-extrabold text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
               >
                 <option value="">Seleziona ora</option>
                 {generateHours().map((ora) => (
@@ -334,14 +384,18 @@ export default function JoinEventPage() {
               <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1 block truncate">
                 📅 Data Partenza
               </label>
-              <input
-                type="date"
-                min={minDate}
-                max={maxDate}
+              <select
                 value={partenzaData}
                 onChange={(e) => setPartenzaData(e.target.value)}
-                className="w-full h-11 block min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-xl px-2.5 text-[11px] sm:text-xs font-extrabold text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs [color-scheme:light]"
-              />
+                className="w-full h-11 block min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-xl px-2.5 text-[11px] sm:text-xs font-extrabold text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
+              >
+                <option value="">Seleziona giorno</option>
+                {daysOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* ORA PARTENZA */}
@@ -352,7 +406,7 @@ export default function JoinEventPage() {
               <select
                 value={partenzaOra}
                 onChange={(e) => setPartenzaOra(e.target.value)}
-                className="w-full h-11 block min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-xl px-2.5 text-[11px] sm:text-xs font-extrabold text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs [color-scheme:light]"
+                className="w-full h-11 block min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-xl px-2.5 text-[11px] sm:text-xs font-extrabold text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
               >
                 <option value="">Seleziona ora</option>
                 {generateHours().map((ora) => (

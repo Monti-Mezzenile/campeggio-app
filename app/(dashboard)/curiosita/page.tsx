@@ -99,7 +99,7 @@ export default function CuriositaPage() {
       sottotitolo: "Regolamento & Fanfara",
       immagine: "/curiosity/corsa.png",
       link: "/curiosita/corsa-dei-cavalli",
-      badge: "Evento",
+      badge: "Gara",
       glowColor: "bg-amber-500/15",
     },
     {
@@ -107,7 +107,7 @@ export default function CuriositaPage() {
       sottotitolo: "Tradizioni & Aneddoti",
       immagine: "/curiosity/bockok.png",
       link: "/curiosita/bookock",
-      badge: "Mito",
+      badge: "gioco",
       glowColor: "bg-purple-500/15",
     },
     {
@@ -115,7 +115,7 @@ export default function CuriositaPage() {
       sottotitolo: "La Mascotte di Monti",
       immagine: "/curiosity/cavallo.png",
       link: "/curiosita/cavallo",
-      badge: "Mascotte",
+      badge: "Mito",
       glowColor: "bg-blue-500/15",
     },
   ];
@@ -167,10 +167,10 @@ export default function CuriositaPage() {
         </div>
       </header>
 
-      {/* 🏕️ SEZIONE PILASTRI UFFICIALI (CARD 3D CREATIVE) */}
+      {/* 🏕️ SEZIONE PILASTRI UFFICIALI */}
       <section className="space-y-3">
         <div className="px-2">
-          <h2 className="text-xs font-black uppercase tracking-wider text-zinc-200">
+          <h2 className="text-xs font-black uppercase tracking-wider text-zinc-950">
             I Pilastri di MONTI
           </h2>
         </div>

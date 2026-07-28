@@ -372,31 +372,93 @@ export default function EventPage() {
         )}
       </header>
 
-      {/* 🏕️ HERO EVENTO */}
-      <section className="relative rounded-[2.5rem] bg-white/90 backdrop-blur-2xl p-6 shadow-sm border border-white overflow-hidden">
-        <div className="absolute -right-2 -bottom-2 pointer-events-none">
+      {/* 🏕️ HERO EVENTO CREATIVO & SCENOGRAFICO */}
+      <section
+        className={`relative overflow-hidden rounded-[2.5rem] border-2 border-white/90 p-6 sm:p-7 shadow-xl backdrop-blur-2xl transition-all duration-500 ${
+          isWinter
+            ? "bg-gradient-to-br from-slate-900/90 via-sky-950/85 to-slate-900/90 text-white border-sky-300/30 shadow-sky-950/20"
+            : "bg-gradient-to-br from-white/95 via-white/90 to-[#ebdec8]/60 text-[#1b2b25] shadow-black/5"
+        }`}
+      >
+        {/* Glow d'ambiente dinamico (Winter vs Summer) */}
+        <div
+          className={`absolute -top-12 -right-12 w-48 h-48 rounded-full blur-3xl pointer-events-none ${
+            isWinter ? "bg-sky-400/20" : "bg-amber-400/25"
+          }`}
+        />
+        <div
+          className={`absolute -bottom-10 -left-10 w-36 h-36 rounded-full blur-2xl pointer-events-none ${
+            isWinter ? "bg-blue-600/15" : "bg-emerald-500/15"
+          }`}
+        />
+
+        {/* Tenda Icona 3D Ancorata con Aura */}
+        <div className="absolute -right-3 -bottom-3 pointer-events-none group">
+          <div
+            className={`absolute inset-0 rounded-full blur-2xl scale-125 transition-all duration-700 ${
+              isWinter ? "bg-sky-400/30" : "bg-[#ebdec8]/80"
+            }`}
+          />
           {isWinter ? (
             <img
               src="/icons/tenda-snow.png"
               alt="Tenda Snow"
-              className="w-[110px] h-[110px] object-contain drop-shadow-sm"
+              className="relative w-[120px] h-[120px] sm:w-[135px] sm:h-[135px] object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.25)] transition-transform duration-500 hover:scale-105"
             />
           ) : (
-            <CustomIcon name="tenda-grossa" size={110} />
+            <div className="relative transform transition-transform duration-500 hover:scale-105 drop-shadow-[0_10px_20px_rgba(0,0,0,0.15)]">
+              <CustomIcon name="tenda-grossa" size={130} />
+            </div>
           )}
         </div>
 
-        <div className="relative z-10 space-y-3">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#ebdec8] text-[#1b2b25] font-black text-[10px] uppercase tracking-wider border border-white shadow-2xs">
-            📍 {event.luogo || "Destinazione Segreta"}
+        {/* Contenuto Principale */}
+        <div className="relative z-10 space-y-3.5 max-w-[78%]">
+          {/* Stamp / Badges */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-xs backdrop-blur-md ${
+                isWinter
+                  ? "bg-sky-500/20 text-sky-200 border-sky-400/30"
+                  : "bg-[#1b2b25] text-[#ebdec8] border-white/20"
+              }`}
+            >
+              <span>
+                {isWinter ? "❄️ Spedizione Winter" : "🏕️ Spedizione MONTI"}
+              </span>
+            </div>
+
+            <div
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-xs backdrop-blur-md ${
+                isWinter
+                  ? "bg-white/10 text-white/90 border-white/20"
+                  : "bg-white/80 text-[#1b2b25] border-white shadow-2xs"
+              }`}
+            >
+              <span>📍 {event.luogo || "Destinazione Segreta"}</span>
+            </div>
           </div>
 
-          <h1 className="text-3xl font-black text-[#1b2b25] leading-tight tracking-tight">
-            {event.titolo || event.title || "Spedizione"}
-          </h1>
+          {/* Titolo Principale Impattante */}
+          <div className="space-y-1">
+            <h1
+              className={`text-3xl sm:text-4xl font-black tracking-tight leading-[1.1] drop-shadow-xs ${
+                isWinter ? "text-white" : "text-[#1b2b25]"
+              }`}
+            >
+              {event.titolo || event.title || "Spedizione"}
+            </h1>
+          </div>
 
-          <div className="flex items-center gap-2 text-xs font-bold text-[#1b2b25]/70">
-            <span>🗓️</span>
+          {/* Data Badge Glassmorphic */}
+          <div
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border text-xs font-black shadow-xs backdrop-blur-md ${
+              isWinter
+                ? "bg-white/10 border-white/20 text-sky-100"
+                : "bg-white/70 border-white text-[#1b2b25]"
+            }`}
+          >
+            <span className="text-sm">🗓️</span>
             <span>{displayDate}</span>
           </div>
         </div>

@@ -104,39 +104,50 @@ export default function HistoryAndVideosPage() {
   }, [videos, searchQuery]);
 
   return (
-    <main className="min-h-dvh p-4 md:p-6 pb-36 max-w-4xl mx-auto space-y-6 select-none bg-transparent">
-      {/* 📖 HEADER CON ICONA LIBRO */}
-      <div className="text-center space-y-3 pt-2">
-        <div className="relative inline-block group">
-          {/* Effetto Glow Dorato dietro l'icona */}
-          <div className="absolute inset-0 bg-amber-400/25 rounded-full blur-2xl scale-150 transition-all duration-500 group-hover:scale-175 group-hover:bg-amber-400/40" />
+    <main className="min-h-dvh p-4 md:p-6 pb-36 max-w-4xl mx-auto space-y-5 select-none bg-transparent">
+      
+      {/* 📖 HERO HEADER COMPATTO ORIZZONTALE */}
+      <header className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-zinc-900/90 via-zinc-950/85 to-black/90 border border-amber-400/30 p-4 sm:p-5 shadow-xl backdrop-blur-2xl">
+        {/* Glow ambientale soft e contenuto */}
+        <div className="absolute -top-10 -right-10 w-40 h-40 bg-amber-500/15 rounded-full blur-2xl pointer-events-none" />
 
-          <img
-            src="/icons/libro.png"
-            alt="Il Libro dei Ricordi"
-            className="relative h-28 sm:h-36 md:h-44 w-auto mx-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.7)] transition-transform duration-300 hover:scale-105"
-          />
-        </div>
+        <div className="relative z-10 flex items-center gap-3.5 sm:gap-5 text-left">
+          {/* Icona Libro 3D Compatta */}
+          <div className="relative shrink-0 group">
+            <div className="absolute inset-0 bg-amber-400/25 rounded-full blur-xl scale-125 transition-all duration-300 group-hover:scale-150" />
+            <img
+              src="/icons/libro.png"
+              alt="Il Libro dei Ricordi"
+              className="relative h-16 sm:h-20 w-auto object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)] transition-transform duration-300 group-hover:scale-105"
+            />
+          </div>
 
-        <div>
-          <h1
-            className="text-4xl md:text-5xl font-bold text-[#ebdec8] drop-shadow-md tracking-wide"
-            style={{ fontFamily: "var(--font-caveat)" }}
-          >
-            Il Libro dei Ricordi
-          </h1>
-          <p className="text-xs text-amber-100/80 mt-1 font-medium max-w-md mx-auto">
-            Perché di cazzate ne abbiamo fatte tante e devono essere ricordate.
-          </p>
+          {/* Dettagli Testuali */}
+          <div className="space-y-0.5 min-w-0">
+            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/25 text-amber-300 text-[9px] font-black uppercase tracking-wider shadow-2xs">
+              <span>✨ Archivio & Videoteca</span>
+            </div>
+
+            <h1
+              className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ebdec8] via-amber-200 to-[#ebdec8] leading-tight tracking-wide"
+              style={{ fontFamily: "var(--font-caveat)" }}
+            >
+              Il Libro dei Ricordi
+            </h1>
+
+            <p className="text-[11px] sm:text-xs text-amber-100/75 font-medium line-clamp-2 leading-tight">
+              Perché di cazzate ne abbiamo fatte tante e devono essere ricordate.
+            </p>
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* 🔘 TAB SWITCHER COMPATTO */}
-      <div className="relative max-w-md mx-auto p-1 rounded-2xl bg-zinc-950/80 backdrop-blur-2xl border border-amber-400/30 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
-        <div className="grid grid-cols-2 gap-1 relative z-10">
+      <div className="relative max-w-md mx-auto p-1.5 rounded-2xl bg-zinc-950/80 backdrop-blur-2xl border border-amber-400/30 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+        <div className="grid grid-cols-2 gap-1.5 relative z-10">
           <button
             onClick={() => setActiveTab("events")}
-            className={`relative py-2.5 px-3 rounded-xl text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1.5 overflow-hidden ${
+            className={`relative py-2 px-3 rounded-xl text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1.5 overflow-hidden ${
               activeTab === "events"
                 ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-200 text-zinc-950 shadow-[0_0_15px_rgba(251,191,36,0.35)] scale-[1.01]"
                 : "text-amber-100/70 hover:text-white hover:bg-white/5"
@@ -157,7 +168,7 @@ export default function HistoryAndVideosPage() {
 
           <button
             onClick={() => setActiveTab("videos")}
-            className={`relative py-2.5 px-3 rounded-xl text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1.5 overflow-hidden ${
+            className={`relative py-2 px-3 rounded-xl text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1.5 overflow-hidden ${
               activeTab === "videos"
                 ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-200 text-zinc-950 shadow-[0_0_15px_rgba(251,191,36,0.35)] scale-[1.01]"
                 : "text-amber-100/70 hover:text-white hover:bg-white/5"
@@ -189,7 +200,7 @@ export default function HistoryAndVideosPage() {
           }
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-2 pl-9 rounded-xl bg-black/70 border border-amber-400/30 text-xs text-[#ebdec8] placeholder-zinc-400 focus:outline-none focus:border-amber-300 backdrop-blur-xl transition-all shadow-inner"
+          className="w-full px-4 py-2.5 pl-9 rounded-xl bg-black/70 border border-amber-400/30 text-xs text-[#ebdec8] placeholder-zinc-400 focus:outline-none focus:border-amber-300 backdrop-blur-xl transition-all shadow-inner"
         />
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">
           🔍
