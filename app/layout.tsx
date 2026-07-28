@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const viewport: Viewport = {
-  themeColor: "#0d1b1e", // o il colore scuro della tua webapp
+  // Sfondo scuro per integrarsi con l'header notturno
+  themeColor: "#0b1319", 
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent", // Fa passare lo sfondo scuro sotto la barra di stato
     title: "MONTI",
   },
   icons: {
@@ -31,12 +32,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="it" className="h-full w-full">
+    // Cambiato bg-[#ebdec8] in bg-[#0b1319] (lo sfondo scuro notturno)
+    <html lang="it" className="h-full w-full bg-[#0b1319]">
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      {/* Rimosso bg-[#ebdec8] dal body */}
-      <body className="min-h-full w-full text-[#1F2041] antialiased selection:bg-[#121816] selection:text-[#ebdec8]">
+      <body className="min-h-full w-full bg-[#0b1319] text-[#1F2041] antialiased selection:bg-[#121816] selection:text-[#ebdec8]">
         {children}
       </body>
     </html>
