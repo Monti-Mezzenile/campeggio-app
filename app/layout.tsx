@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const viewport: Viewport = {
-  themeColor: "#F0D5B3", // Colorato come la BottomNav per eliminare strisce colorate di sistema
+  themeColor: "#F0D5B3",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default", // FONDAMENTALE: "default" usa il themeColor (#F0D5B3) ed elimina la striscia scura
     title: "MONTI",
   },
   icons: {
