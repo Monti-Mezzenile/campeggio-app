@@ -50,17 +50,21 @@ export default function BottomNav() {
           max-w-md
           mx-auto
           bg-[#F0D5B3]
-          rounded-t-[24px]
+          rounded-t-[28px]
           flex
           items-center
           justify-between
           px-3
           pt-2
-          pb-[calc(8px+env(safe-area-inset-bottom))]
           shadow-[0_-6px_20px_rgba(0,0,0,0.15)]
           border-t
           border-[#FFF4E3]/40
         "
+        style={{
+          // Gli spazi attorno a '+' in calc() sono OBBLIGATORI in CSS
+          // per far processare la safe area ad iOS Safari senza scartare la regola
+          paddingBottom: "calc(8px + env(safe-area-inset-bottom, 16px))",
+        }}
       >
         {items.map((item) => {
           const isActive =
@@ -112,7 +116,7 @@ export default function BottomNav() {
                 />
               )}
 
-              {/* Icona (proporzionata e compatta) */}
+              {/* Icona compattata a 28px */}
               <div
                 className={`
                   transition-transform
@@ -127,7 +131,7 @@ export default function BottomNav() {
                   }
                 `}
               >
-                <CustomIcon name={item.icon} size={26} className="drop-shadow-sm" />
+                <CustomIcon name={item.icon} size={28} className="drop-shadow-sm" />
               </div>
 
               {/* Etichetta di testo */}
