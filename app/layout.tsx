@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import BackgroundManager from "@/components/layout/BackgroundManager";
 
 export const viewport: Viewport = {
   themeColor: "#ebdec8",
@@ -8,7 +7,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "cover",
+  viewportFit: "cover", // Essenziale per coprire tutta la safe area su iOS
 };
 
 export const metadata: Metadata = {
@@ -33,10 +32,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="it" className="h-full w-full bg-[#ebdec8]">
-      <body className="min-h-dvh w-full bg-[#ebdec8] text-[#1F2041] antialiased">
-        <BackgroundManager>
-          {children}
-        </BackgroundManager>
+      <body className="h-full w-full bg-[#ebdec8] text-[#1F2041] antialiased selection:bg-[#121816] selection:text-[#ebdec8]">
+        {children}
       </body>
     </html>
   );
