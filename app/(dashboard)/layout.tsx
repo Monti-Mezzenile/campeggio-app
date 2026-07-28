@@ -13,7 +13,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const mainRef = useRef<HTMLElement>(null);
 
-  // Reset dello scroll all'inizio ad ogni cambio di pagina (Home, Storico, Curiosità, Io)
+  // Reset dello scroll a ogni cambio scheda
   useEffect(() => {
     if (mainRef.current) {
       mainRef.current.scrollTop = 0;
@@ -25,7 +25,7 @@ export default function DashboardLayout({
       <div className="relative h-dvh w-full max-w-md mx-auto flex flex-col justify-between overflow-hidden">
         <main
           ref={mainRef}
-          className="flex-1 overflow-y-auto overflow-x-hidden pt-[calc(env(safe-area-inset-top)+12px)] pb-[calc(84px+env(safe-area-inset-bottom))] touch-pan-y w-full"
+          className="flex-1 overflow-y-auto overflow-x-hidden pt-[calc(env(safe-area-inset-top)+12px)] pb-[calc(68px+env(safe-area-inset-bottom))] touch-pan-y w-full"
         >
           {children}
         </main>

@@ -49,26 +49,19 @@ export default function BottomNav() {
           w-full
           max-w-md
           mx-auto
-          rounded-t-[32px]
+          bg-[#F0D5B3]
+          rounded-t-[24px]
           flex
           items-center
           justify-between
           px-3
-          pt-2.5
-          pb-[calc(10px+env(safe-area-inset-bottom))]
-          shadow-[0_-8px_25px_rgba(0,0,0,0.15)]
+          pt-2
+          pb-[calc(8px+env(safe-area-inset-bottom))]
+          shadow-[0_-6px_20px_rgba(0,0,0,0.15)]
           border-t
           border-[#FFF4E3]/40
-          bg-[#F0D5B3]
-          relative
         "
       >
-        {/* 
-          PROIEZIONE SAFARI: Questo blocco parte dal fondo della nav e scende verso il basso per 128px.
-          Sigilla al 100% qualsiasi buco di Safari sotto la safe area senza intaccare gli angoli tondi sopra.
-        */}
-        <div className="absolute top-full left-0 right-0 h-32 bg-[#F0D5B3] pointer-events-none" />
-
         {items.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -85,11 +78,11 @@ export default function BottomNav() {
                 items-center
                 justify-center
                 flex-1
-                max-w-[80px]
-                h-[72px]
-                rounded-2xl
+                max-w-[72px]
+                h-[50px]
+                rounded-xl
                 transition-all
-                duration-300
+                duration-200
                 active:scale-95
                 select-none
                 ${
@@ -105,13 +98,13 @@ export default function BottomNav() {
                   className="
                     absolute
                     inset-0
-                    rounded-2xl
+                    rounded-xl
                     -z-10
-                    shadow-md
+                    shadow-sm
                     border
                     border-white/20
                     transition-all
-                    duration-300
+                    duration-200
                   "
                   style={{
                     background: "#6C9A8B",
@@ -119,11 +112,11 @@ export default function BottomNav() {
                 />
               )}
 
-              {/* Icona */}
+              {/* Icona (proporzionata e compatta) */}
               <div
                 className={`
                   transition-transform
-                  duration-300
+                  duration-200
                   flex
                   items-center
                   justify-center
@@ -134,14 +127,14 @@ export default function BottomNav() {
                   }
                 `}
               >
-                <CustomIcon name={item.icon} size={42} className="drop-shadow-sm" />
+                <CustomIcon name={item.icon} size={26} className="drop-shadow-sm" />
               </div>
 
               {/* Etichetta di testo */}
               <span
                 className={`
-                  text-[12px]
-                  font-extrabold
+                  text-[10px]
+                  font-bold
                   leading-none
                   transition-all
                   duration-200
