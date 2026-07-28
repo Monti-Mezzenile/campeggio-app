@@ -13,7 +13,7 @@ interface NavItem {
 export default function BottomNav() {
   const pathname = usePathname();
 
-  // 1. NASCONDE LA NAV NEL LOGIN (e nell'eventuale pagina di registrazione)
+  // 1. NASCONDE LA NAV NEL LOGIN E REGISTER
   if (pathname === "/login" || pathname === "/register") {
     return null;
   }
@@ -21,7 +21,7 @@ export default function BottomNav() {
   const items: NavItem[] = [
     {
       name: "Home",
-      href: "/",
+      href: "/dashboard", // Corretto da "/" a "/dashboard"
       icon: "tenda-grossa",
     },
     {
@@ -51,7 +51,7 @@ export default function BottomNav() {
           items-center
           justify-around
           px-2
-          pt-3
+          pt-2.5
           shadow-[0_-8px_25px_rgba(0,0,0,0.15)]
           border-t
           border-x
@@ -62,14 +62,13 @@ export default function BottomNav() {
         "
         style={{
           backgroundColor: "rgba(240, 213, 179, 0.92)",
-          // 2. FIX SAFE AREA: Lo sfondo tocca il bordo, le icone vengono sollevate 
-          paddingBottom: "max(16px, env(safe-area-inset-bottom))",
+          paddingBottom: "max(12px, env(safe-area-inset-bottom))",
         }}
       >
         {items.map((item) => {
           const isActive =
             pathname === item.href ||
-            (item.href !== "/" && pathname?.startsWith(item.href));
+            (item.href !== "/dashboard" && pathname?.startsWith(item.href));
 
           return (
             <Link
@@ -81,8 +80,9 @@ export default function BottomNav() {
                 flex-col
                 items-center
                 justify-center
-                w-[86px] 
-                h-[76px] 
+                flex-1
+                max-w-[80px]
+                h-[70px]
                 rounded-2xl
                 transition-all
                 duration-300
@@ -115,7 +115,7 @@ export default function BottomNav() {
                 />
               )}
 
-              {/* 3. ICONA INGRANDITA (da 38 a 44) */}
+              {/* Icona */}
               <div
                 className={`
                   transition-transform
@@ -130,18 +130,18 @@ export default function BottomNav() {
                   }
                 `}
               >
-                <CustomIcon name={item.icon} size={44} className="drop-shadow-sm" />
+                <CustomIcon name={item.icon} size={40} className="drop-shadow-sm" />
               </div>
 
-              {/* 4. TESTO INGRANDITO E PIÙ VISIBILE (text-[13px]) */}
+              {/* Testo */}
               <span
                 className={`
-                  text-[13px]
+                  text-[12px]
                   font-extrabold
                   leading-none
                   transition-all
                   duration-200
-                  ${isActive ? "mt-1.5" : "mt-1"}
+                  ${isActive ? "mt-1" : "mt-0.5"}
                 `}
               >
                 {item.name}

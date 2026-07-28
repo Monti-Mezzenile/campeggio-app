@@ -19,13 +19,10 @@
   --foreground: var(--monti-primary);
 }
 
-/* FIX PER LO SCROLL LATERALE E LA RESA MOBILE */
 html, 
 body {
   height: 100%;
   width: 100%;
-  max-width: 100vw;        /* Impedisce ad elementi larghi di allargare la pagina */
-  overflow-x: hidden;      /* Blocca lo scorrimento orizzontale */
   margin: 0;
   padding: 0;
   overscroll-behavior: none;
@@ -36,12 +33,6 @@ body {
 body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  position: relative;
-}
-
-/* Previene lo scroll laterale accidentale su tutti i container */
-* {
-  box-sizing: border-box;
 }
 
 /* Utility per nascondere la scrollbar */

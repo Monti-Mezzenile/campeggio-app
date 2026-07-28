@@ -162,7 +162,7 @@ export default function Home() {
   }
 
   return (
-    <div className="px-5 py-6 space-y-6 bg-transparent">
+    <div className="w-full max-w-full px-5 py-6 space-y-6 bg-transparent overflow-x-hidden">
       {/* Header con salutino */}
       <Header name={profile?.nome} />
 
