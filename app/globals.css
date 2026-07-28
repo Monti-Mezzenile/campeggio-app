@@ -18,34 +18,39 @@
   --foreground: var(--monti-primary);
 }
 
-/* 🚨 IL SEGRETO DELL'APP SHELL PER iOS 🚨 */
-html, body {
-  position: fixed; /* Inchioda l'app allo schermo */
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100dvh;
-  margin: 0;
-  padding: 0;
-  overflow: hidden; /* Nessun rimbalzo e nessuno scroll sul body */
+/* REGOLAZIONE ROOT PER SCROLL NATIVO MOBILE */
+html {
   background-color: #0d1b1e;
-  overscroll-behavior: none; 
+  /* Previene lo scorrimento orizzontale privo di senso senza bloccare il verticale */
+  overflow-x: hidden;
+  /* Permette al browser di gestire lo scroll nativo della finestra */
+  height: -webkit-fill-available;
 }
 
 body {
+  width: 100%;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  background-color: #0d1b1e;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-}
-
-/* 📦 CONTENITORE INTERNO SCROLLABILE */
-.app-scroll-container {
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
+  /* Mantiene pulito il margine orizzontale */
   overflow-x: hidden;
-  -webkit-overflow-scrolling: touch; /* Riattiva lo scroll fluido nativo per i div interni */
-  overscroll-behavior-y: contain; /* Permette il rimbalzo elastico ma solo dentro questo div */
 }
 
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+/* Utility per evitare il displacement di elementi fixed su iOS durante la tastiera */
+.fix-ios-fixed {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Utility per nascondere la scrollbar (es. nelle tab orizzontali) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
