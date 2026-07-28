@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 
 const BACKGROUNDS = [
-  { src: "/background.png" },
+  { src: "/background.jpg" }, // 👈 CORRETTO DA .png A .jpg
   { src: "/background_gold.png" },
   { src: "/background_day.png" },
   { src: "/background_winter.png" },
@@ -26,7 +26,7 @@ export default function BackgroundManager({
     if (pathname?.startsWith("/profile") || pathname?.startsWith("/io")) {
       return "/background_winter.png";
     }
-    return "/background.png";
+    return "/background.jpg"; // 👈 CORRETTO ANCHE QUI DA .png A .jpg
   };
 
   const activeSrc = getActiveSrc();
