@@ -7,7 +7,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "cover", // Essenziale per coprire tutta la safe area su iOS
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -32,6 +32,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="it" className="h-full w-full bg-[#ebdec8]">
+      <head>
+        {/* Forzatura per vecchie versioni iOS Safari */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </head>
       <body className="h-full w-full bg-[#ebdec8] text-[#1F2041] antialiased selection:bg-[#121816] selection:text-[#ebdec8]">
         {children}
       </body>
