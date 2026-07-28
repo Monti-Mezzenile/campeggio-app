@@ -16,8 +16,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    // FONDAMENTALE: permette al colore scuro di scorrere sotto l'ora/batteria senza creare blocchi
-    statusBarStyle: "black-translucent", 
+    statusBarStyle: "black-translucent",
     title: "MONTI",
   },
   icons: {
@@ -32,13 +31,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // Imponiamo lo sfondo scuro #0d1b1e sia su HTML che su BODY
-    <html lang="it" className="h-full w-full bg-[#0d1b1e]">
+    <html lang="it" className="h-full w-full">
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="min-h-full w-full bg-[#0d1b1e] text-[#1F2041] antialiased selection:bg-[#121816] selection:text-[#ebdec8]">
+      {/* NESSUN bg-xxx su body per evitare il ricalcolo della safe-area di iOS */}
+      <body className="h-full w-full text-[#1F2041] antialiased selection:bg-[#121816] selection:text-[#ebdec8]">
         {children}
       </body>
     </html>
