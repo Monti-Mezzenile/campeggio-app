@@ -112,7 +112,7 @@ export default function BottomNav() {
               `}
             >
               {/* Icona ingrandita da 32 a 35 */}
-              <CustomIcon name={item.icon} size={35} className="drop-shadow-sm" />
+              <CustomIcon name={item.icon} size={47} className="drop-shadow-sm" />
             </div>
 
             <span
