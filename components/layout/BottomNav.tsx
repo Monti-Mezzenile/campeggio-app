@@ -50,18 +50,20 @@ export default function BottomNav() {
           max-w-md
           mx-auto
           bg-[#F0D5B3]
-          rounded-t-[20px]
+          rounded-t-[28px]
           flex
           items-center
           justify-between
-          px-2.5
-          pt-1.5
-          shadow-[0_-4px_16px_rgba(0,0,0,0.12)]
+          px-3
+          pt-2
+          shadow-[0_-6px_20px_rgba(0,0,0,0.15)]
           border-t
           border-[#FFF4E3]/40
         "
         style={{
-          paddingBottom: "calc(6px + env(safe-area-inset-bottom, 12px))",
+          // Gli spazi attorno a '+' in calc() sono OBBLIGATORI in CSS
+          // per far processare la safe area ad iOS Safari senza scartare la regola
+          paddingBottom: "calc(8px + env(safe-area-inset-bottom, 16px))",
         }}
       >
         {items.map((item) => {
@@ -80,8 +82,8 @@ export default function BottomNav() {
                 items-center
                 justify-center
                 flex-1
-                max-w-[68px]
-                h-[42px]
+                max-w-[72px]
+                h-[50px]
                 rounded-xl
                 transition-all
                 duration-200
@@ -114,7 +116,7 @@ export default function BottomNav() {
                 />
               )}
 
-              {/* Icona compatta a 22px */}
+              {/* Icona compattata a 28px */}
               <div
                 className={`
                   transition-transform
@@ -124,23 +126,23 @@ export default function BottomNav() {
                   justify-center
                   ${
                     isActive
-                      ? "scale-105"
+                      ? "scale-105 -translate-y-0.5"
                       : "scale-100 opacity-80"
                   }
                 `}
               >
-                <CustomIcon name={item.icon} size={22} className="drop-shadow-sm" />
+                <CustomIcon name={item.icon} size={28} className="drop-shadow-sm" />
               </div>
 
               {/* Etichetta di testo */}
               <span
                 className={`
-                  text-[9px]
+                  text-[10px]
                   font-bold
                   leading-none
                   transition-all
                   duration-200
-                  mt-0.5
+                  ${isActive ? "mt-1" : "mt-0.5"}
                 `}
               >
                 {item.name}

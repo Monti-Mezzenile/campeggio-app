@@ -32,9 +32,9 @@ export default function BackgroundManager({
   const activeSrc = getActiveSrc();
 
   return (
-    <div className="fixed inset-0 w-full h-full overflow-hidden bg-[#ebdec8]">
-      {/* Sfondi fissi a tutto schermo */}
-      <div className="absolute inset-0 z-0 bg-[#ebdec8]">
+    <div className="relative min-h-dvh w-full overflow-x-hidden bg-transparent">
+      {/* Sfondi fissi in background */}
+      <div className="fixed inset-0 z-0 bg-[#ebdec8]">
         {BACKGROUNDS.map((bg) => {
           const isActive = activeSrc === bg.src;
           return (
@@ -55,7 +55,7 @@ export default function BackgroundManager({
       </div>
 
       {/* Contenuto dell'App */}
-      <div className="relative z-10 w-full h-full overflow-hidden bg-transparent">
+      <div className="relative z-10 min-h-dvh bg-transparent">
         {children}
       </div>
     </div>
