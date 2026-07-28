@@ -11,6 +11,50 @@ export default function BottomNav() {
 
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  // 1. Gestione apertura tastiera su iOS/Android
+  useEffect(() => {
+    const handleFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        setIsKeyboardOpen(true);
+      }
+    };
+
+    const handleBlur = () => {
+      setIsKeyboardOpen(false);
+    };
+
+    // Controllo avanzato tramite Visual Viewport (specifico per iOS Safari)
+    const handleResize = () => {
+      if (window.visualViewport) {
+        // Se il viewport si riduce di oltre 150px, la tastiera è aperta
+        const isKeyboard = window.innerHeight - window.visualViewport.height > 150;
+        setIsKeyboardOpen(isKeyboard);
+      }
+    };
+
+    window.addEventListener("focusin", handleFocus);
+    window.addEventListener("focusout", handleBlur);
+    
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", handleResize);
+    }
+
+    return () => {
+      window.removeEventListener("focusin", handleFocus);
+      window.removeEventListener("focusout", handleBlur);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("resize", handleResize);
+      }
+    };
+  }, []);
 
   // Fetch dell'evento in corso o più prossimo
   useEffect(() => {
@@ -78,7 +122,13 @@ export default function BottomNav() {
   const ICON_SIZE = 50;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 w-full fix-ios-fixed transform-gpu [transform:translateZ(0)] bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-2xl pb-[env(safe-area-inset-bottom)]">
+    <nav
+      className={`fixed bottom-0 left-0 right-0 z-50 w-full fix-ios-fixed transform-gpu bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-2xl pb-[env(safe-area-inset-bottom)] transition-all duration-300 ease-in-out ${
+        isKeyboardOpen
+          ? "translate-y-full opacity-0 pointer-events-none"
+          : "translate-y-0 opacity-100"
+      }`}
+    >
       <div className="flex items-center justify-around w-full px-2 py-1.5">
         
         {/* 1. HOME */}
