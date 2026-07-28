@@ -184,7 +184,7 @@ export default function CavalloPage() {
 
           <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-center">
             <p className="text-xs font-black text-amber-950 uppercase tracking-wide">
-              Nel preciso istante in cui la moneta tocca terra, sei membro del Club del Cavallo fino a fine soggiorno.
+              Nel preciso istante in cui la moneta tocca terra, sei membro del Club del Cavallo fino alla fine dei tuoi tempi.
             </p>
           </div>
         </div>
