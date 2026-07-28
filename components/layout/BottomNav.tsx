@@ -11,6 +11,28 @@ export default function BottomNav() {
 
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  // 🎯 RILEVAMENTO TASTIERA DEFINITIVO CON VISUAL VIEWPORT API (Nativo iOS/Android)
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+
+    const vv = window.visualViewport;
+
+    const handleViewportChange = () => {
+      // Se l'altezza visibile è inferiore al 75% dello schermo, la tastiera è aperta
+      const isKeyboard = vv.height < window.innerHeight * 0.75;
+      setIsKeyboardOpen(isKeyboard);
+    };
+
+    vv.addEventListener("resize", handleViewportChange);
+    vv.addEventListener("scroll", handleViewportChange);
+
+    return () => {
+      vv.removeEventListener("resize", handleViewportChange);
+      vv.removeEventListener("scroll", handleViewportChange);
+    };
+  }, []);
 
   // Fetch dell'evento attivo o futuro
   useEffect(() => {
@@ -72,19 +94,14 @@ export default function BottomNav() {
   const isEventActive = pathname.startsWith("/events");
   const ICON_SIZE = 50;
 
+  // 🛑 SE LA TASTIERA È APERTA, SMONTIAMO LA BOTTOMNAV DAL DOM
+  // Impedisce fisicamente a iOS di spostarla a metà schermo
+  if (isKeyboardOpen) return null;
+
   return (
-    <nav 
-      id="bottom-nav" 
-      className="fixed bottom-0 left-0 right-0 z-50 w-full transform-gpu"
-    >
-      {/* 
-        Le classi "after:..." creano un blocco solido alto 200px sotto la barra.
-        Così quando Safari fa il suo "rimbalzo" verso l'alto, tu vedi solo il prolungamento della barra
-        e la barra non viene più mangiata o tagliata!
-      */}
-      <div className="w-full bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 after:absolute after:top-full after:left-0 after:right-0 after:h-[200px] after:bg-[#ebdec8]">
-        
-        <div className="flex items-center justify-around w-full px-2 relative z-10">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 w-full pointer-events-auto">
+      <div className="w-full bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-1.5">
+        <div className="flex items-center justify-around w-full px-2">
           
           {/* 1. HOME */}
           <button
