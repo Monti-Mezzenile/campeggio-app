@@ -21,7 +21,7 @@ export default function BottomNav() {
   const items: NavItem[] = [
     {
       name: "Home",
-      href: "/dashboard", // Se la tua pagina è sotto /dashboard
+      href: "/", // Corretto: punta alla root dell'app
       icon: "tenda-grossa",
     },
     {
@@ -67,7 +67,7 @@ export default function BottomNav() {
         {items.map((item) => {
           const isActive =
             pathname === item.href ||
-            (item.href !== "/dashboard" && item.href !== "/" && pathname?.startsWith(item.href));
+            (item.href !== "/" && pathname?.startsWith(item.href));
 
           return (
             <Link
@@ -94,7 +94,7 @@ export default function BottomNav() {
                 }
               `}
             >
-              {/* Sfondo attivo Verde Salvia */}
+              {/* Sfondo attivo */}
               {isActive && (
                 <span
                   className="
@@ -132,7 +132,7 @@ export default function BottomNav() {
                 <CustomIcon name={item.icon} size={42} className="drop-shadow-sm" />
               </div>
 
-              {/* Etichetta di testo */}
+              {/* Testo */}
               <span
                 className={`
                   text-[11px]
