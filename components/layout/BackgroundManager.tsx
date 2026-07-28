@@ -33,7 +33,7 @@ export default function BackgroundManager({
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-[#F0D5B3]">
-      {/* Sfondi fissi estesi oltre i bordi (-bottom-10 per coprire eventuali micro-gap di iOS) */}
+      {/* Sfondi fissi estesi oltre i bordi */}
       <div className="fixed -top-10 -bottom-10 left-0 right-0 z-0 bg-[#F0D5B3]">
         {BACKGROUNDS.map((bg) => {
           const isActive = activeSrc === bg.src;
@@ -54,8 +54,8 @@ export default function BackgroundManager({
         })}
       </div>
 
-      {/* Contenuto dell'App */}
-      <div className="relative z-10 min-h-screen bg-transparent">
+      {/* Contenuto dell'App: Applicato il padding Safe Area globale qui! */}
+      <div className="relative z-10 min-h-screen bg-transparent pt-[calc(env(safe-area-inset-top)+1rem)]">
         {children}
       </div>
     </div>
