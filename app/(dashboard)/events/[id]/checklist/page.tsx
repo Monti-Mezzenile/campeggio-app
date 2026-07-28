@@ -21,12 +21,15 @@ export default function ChecklistPage() {
   const eventId = params.id as string;
 
   const [checklistId, setChecklistId] = useState("");
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<any[]>([]); // Conterrà oggetti {..., category: string}
   const [equipment, setEquipment] = useState<any[]>([]);
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
   const [showEquipment, setShowEquipment] = useState(false);
   const [loading, setLoading] = useState(true);
   const [nome, setNome] = useState("");
+
+  // Stato per la tab attiva nella checklist principale
+  const [activeTab, setActiveTab] = useState("Tutti");
 
   async function loadChecklist() {
     setLoading(true);
@@ -72,23 +75,32 @@ export default function ChecklistPage() {
 
     setChecklistId(checklist.id);
 
-    /* CARICO GLI ELEMENTI */
+    /* CARICO ATTREZZATURA PERSONALE (serve per mappare le categorie) */
+    const { data: equipmentData, error: equipmentError } = await supabase
+      .from("equipment")
+      .select("*")
+      .eq("user_id", user.id);
+
+    const userEquipment = equipmentData || [];
+    setEquipment(userEquipment);
+
+    /* CARICO GLI ELEMENTI CHECKLIST E MAPPO LE CATEGORIE IMMEDIATAMENTE */
     const { data: itemsData, error: itemsError } = await supabase
       .from("checklist_items")
       .select("*")
       .eq("checklist_id", checklist.id)
       .order("created_at", { ascending: true });
 
-    setItems(itemsData || []);
+    // Pre-processo gli item per includere la categoria direttamente nell'oggetto
+    const processedItems = (itemsData || []).map((item: any) => {
+      if (item.equipment_id) {
+        const eq = userEquipment.find((e) => e.id === item.equipment_id);
+        return { ...item, category: eq?.categoria || "Altro" };
+      }
+      return { ...item, category: "Manuale" }; // Categoria speciale per inserimenti liberi
+    });
 
-    /* CARICO ATTREZZATURA PERSONALE */
-    const { data: equipmentData, error: equipmentError } = await supabase
-      .from("equipment")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true });
-
-    setEquipment(equipmentData || []);
+    setItems(processedItems);
     setLoading(false);
   }
 
@@ -107,6 +119,10 @@ export default function ChecklistPage() {
     }
 
     setNome("");
+    // Se stiamo visualizzando una categoria specifica, torniamo a "Tutti" o "Manuale" per vedere il nuovo item
+    if (activeTab !== "Tutti" && activeTab !== "Manuale") {
+      setActiveTab("Manuale");
+    }
     loadChecklist();
   }
 
@@ -130,6 +146,9 @@ export default function ChecklistPage() {
 
     setSelectedEquipment([]);
     setShowEquipment(false);
+    // Impostiamo la tab sulla categoria del primo oggetto inserito per feedback visivo?
+    // O lasciamo su Tutti. Lasciamo su Tutti per ora.
+    setActiveTab("Tutti");
     loadChecklist();
   }
 
@@ -190,11 +209,10 @@ export default function ChecklistPage() {
       return;
     }
 
-    // Identifico a quale categoria appartiene l'oggetto
-    const eq = equipment.find((e) => e.id === item.equipment_id);
-    const isPersonalClothing = eq?.categoria === "Vestiti e Oggetti Personali";
+    // Sfruttiamo la categoria pre-mappata nell'item
+    const isPersonalClothing = item.category === "Vestiti e Oggetti Personali";
 
-    // Aggiungo al gruppo SOLO SE non è un vestito o un oggetto personale
+    // Aggiungo al gruppo SOLO SE ha un equipment_id E non è un vestito/oggetto personale
     if (value && item.equipment_id && !isPersonalClothing) {
       const { error: eventEquipmentError } = await supabase
         .from("event_equipment")
@@ -262,6 +280,12 @@ export default function ChecklistPage() {
   const percentuale = items.length
     ? Math.round((completati / items.length) * 100)
     : 0;
+
+  // Filtraggio degli item in base alla tab attiva
+  const filteredItems = items.filter((item) => {
+    if (activeTab === "Tutti") return true;
+    return item.category === activeTab;
+  });
 
   return (
     <main className="min-h-screen p-4 sm:p-6 pb-36 max-w-md mx-auto flex flex-col gap-5 select-none">
@@ -459,7 +483,63 @@ export default function ChecklistPage() {
         </form>
       </section>
 
-      {/* 📋 LISTA ELEMENTI CHECKLIST */}
+      {/* 🗂 CATEGORY TABS (Scrollable) */}
+      {items.length > 0 && (
+        <section className="overflow-x-auto no-scrollbar pb-2">
+          <div className="flex items-center gap-2 w-max px-1">
+            {/* Tab: Tutti */}
+            <button
+              onClick={() => setActiveTab("Tutti")}
+              className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
+                activeTab === "Tutti"
+                  ? "bg-[#1b2b25] text-[#ebdec8] border-[#1b2b25]"
+                  : "bg-white text-[#1b2b25]/70 border-white hover:border-slate-200 shadow-2xs"
+              }`}
+            >
+              Tutti ({items.length})
+            </button>
+
+            {/* Tab: Manuale (solo se ci sono item manuali) */}
+            {items.some(i => i.category === "Manuale") && (
+               <button
+                 onClick={() => setActiveTab("Manuale")}
+                 className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
+                   activeTab === "Manuale"
+                     ? "bg-[#1b2b25] text-[#ebdec8] border-[#1b2b25]"
+                     : "bg-white text-[#1b2b25]/70 border-white hover:border-slate-200 shadow-2xs"
+                 }`}
+               >
+                 <span>✍️</span>
+                 <span>A mano ({items.filter(i => i.category === "Manuale").length})</span>
+               </button>
+            )}
+
+            {/* Tabs per Categorie Standard (solo se ci sono item) */}
+            {CATEGORIES.map((cat) => {
+              const count = items.filter(i => i.category === cat.id).length;
+              if (count === 0) return null; // Non mostriamo tab vuote
+
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveTab(cat.id)}
+                  className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
+                    activeTab === cat.id
+                      ? "bg-[#1b2b25] text-[#ebdec8] border-[#1b2b25]"
+                      : "bg-white text-[#1b2b25]/70 border-white hover:border-slate-200 shadow-2xs"
+                  }`}
+                >
+                  <span>{cat.icon}</span>
+                  <span>{cat.label}</span>
+                  <span className="font-mono opacity-60">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* 📋 LISTA ELEMENTI CHECKLIST (Filtrata) */}
       <section className="space-y-2.5">
         {items.length === 0 ? (
           <div className="bg-white/70 backdrop-blur-2xl border border-white p-8 rounded-[2.5rem] shadow-sm text-center space-y-2">
@@ -471,13 +551,18 @@ export default function ChecklistPage() {
               Scrivi un oggetto qui sopra o importalo direttamente dal tuo zaino.
             </p>
           </div>
+        ) : filteredItems.length === 0 ? (
+           <div className="bg-white/70 backdrop-blur-2xl border border-white p-8 rounded-[2.5rem] shadow-sm text-center space-y-2">
+            <p className="text-xs font-semibold text-[#1b2b25]/50 italic">
+              Nessun oggetto pronto in questa categoria.
+            </p>
+          </div>
         ) : (
-          items.map((item) => {
+          filteredItems.map((item) => {
             const isDone = item.completato;
             
-            // Trovo la categoria di appartenenza (se è stato importato dall'attrezzatura)
-            const eqItem = equipment.find((e) => e.id === item.equipment_id);
-            const eqCategory = CATEGORIES.find((c) => c.id === eqItem?.categoria);
+            // Recupero info categoria standard (se non è manuale)
+            const standardCat = CATEGORIES.find((c) => c.id === item.category);
 
             return (
               <div
@@ -514,13 +599,18 @@ export default function ChecklistPage() {
                       {item.nome}
                     </span>
 
-                    {/* BADGE CATEGORIA ESATTA (anziché generico "Equipaggiamento") */}
-                    {item.equipment_id && (
-                      <span className="text-[9px] font-black uppercase text-[#1b2b25]/70 bg-[#1b2b25]/5 border border-[#1b2b25]/10 px-1.5 py-0.2 rounded-md inline-flex items-center gap-1 mt-0.5">
-                        {eqCategory ? (
+                    {/* BADGE CATEGORIA ESATTA (Visibile solo nella tab "Tutti") */}
+                    {activeTab === "Tutti" && (
+                      <span className="text-[9px] font-black uppercase text-[#1b2b25]/70 bg-[#1b2b25]/5 border border-[#1b2b25]/10 px-1.5 py-0.2 rounded-md inline-flex items-center gap-1 mt-0.5 whitespace-nowrap">
+                        {standardCat ? (
                           <>
-                            <span>{eqCategory.icon}</span>
-                            <span>{eqCategory.label}</span>
+                            <span>{standardCat.icon}</span>
+                            <span>{standardCat.label}</span>
+                          </>
+                        ) : item.category === "Manuale" ? (
+                          <>
+                            <span>✍️</span>
+                            <span>A mano</span>
                           </>
                         ) : (
                           <>
@@ -535,7 +625,7 @@ export default function ChecklistPage() {
 
                 <button
                   onClick={() => deleteItem(item.id)}
-                  className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-600 border border-rose-200 text-xs font-black active:scale-90 transition flex items-center justify-center hover:bg-rose-500 hover:text-white shrink-0"
+                  className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-600 border border-rose-200 text-xs font-black active:scale-90 transition flex items-center justify-center hover:bg-rose-500 hover:text-white shrink-0 shadow-2xs"
                   title="Elimina"
                 >
                   🗑️
