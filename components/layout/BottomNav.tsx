@@ -11,11 +11,9 @@ export default function BottomNav() {
 
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
-  
-  // Stato per nascondere brutalmente la barra
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
-  // 1. Intercettazione ISTANTANEA della tastiera (senza visualViewport)
+  // Gestione tastiera su iOS/Android quando un campo riceve il focus
   useEffect(() => {
     const handleFocusIn = (e: FocusEvent) => {
       const target = e.target as HTMLElement;
@@ -33,7 +31,6 @@ export default function BottomNav() {
       setIsKeyboardOpen(false);
     };
 
-    // Usiamo focusin/focusout perché sono fulminei rispetto al resize
     window.addEventListener("focusin", handleFocusIn);
     window.addEventListener("focusout", handleFocusOut);
 
@@ -43,7 +40,7 @@ export default function BottomNav() {
     };
   }, []);
 
-  // Fetch dell'evento in corso o più prossimo
+  // Fetch dell'evento attivo o futuro
   useEffect(() => {
     async function fetchActiveEvent() {
       try {
@@ -103,20 +100,16 @@ export default function BottomNav() {
   const isEventActive = pathname.startsWith("/events");
   const ICON_SIZE = 50;
 
-  // Se la tastiera è aperta, NON renderizziamo proprio la UI per evitare conflitti con iOS
-  if (isKeyboardOpen) {
-    return null;
-  }
+  // Quando la tastiera è aperta, sparisce completamente per evitare il disancoramento iOS
+  if (isKeyboardOpen) return null;
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-50 w-full pointer-events-none"
-    >
+    <nav className="fixed bottom-0 left-0 right-0 z-50 w-full">
       {/* 
-        Rimossi transform-gpu e transizioni. 
-        Aggiunto un calc() per il padding bottom così non si schiaccia mai contro il bordo.
+        NB: La classe "after:absolute after:top-full after:left-0 after:right-0 after:h-40 after:bg-[#ebdec8]"
+        crea un blocco visivo in visibile SOTTO la barra che copre qualsiasi spazio o riga durante il rimbalzo su iOS!
       */}
-      <div className="w-full bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-1.5 pointer-events-auto">
+      <div className="relative w-full bg-[#ebdec8] border-t border-x border-white/60 rounded-t-[2rem] shadow-2xl pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 after:absolute after:top-full after:left-0 after:right-0 after:h-40 after:bg-[#ebdec8]">
         <div className="flex items-center justify-around w-full px-2">
           
           {/* 1. HOME */}
