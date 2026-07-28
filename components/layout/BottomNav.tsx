@@ -44,6 +44,10 @@ export default function BottomNav() {
         pt-3
         pb-[calc(0.75rem+env(safe-area-inset-bottom))]
         shadow-[0_-6px_20px_rgba(0,0,0,0.2)]
+        /* FIX PER SCROLL IOS SAFARI */
+        transform-gpu
+        will-change-transform
+        translate-z-0
       "
     >
       {items.map((item) => {
@@ -107,19 +111,19 @@ export default function BottomNav() {
                 }
               `}
             >
-              {/* Ingrandito da 26 a 32 */}
-              <CustomIcon name={item.icon} size={32} className="drop-shadow-sm" />
+              {/* Icona ingrandita da 32 a 35 */}
+              <CustomIcon name={item.icon} size={35} className="drop-shadow-sm" />
             </div>
 
             <span
               className={`
-                text-xs
-                font-bold
+                text-[13px]
+                font-extrabold
                 leading-none
                 capitalize
                 transition-all
                 duration-200
-                ${isActive ? "mt-1.5" : "mt-1"}
+                ${isActive ? "mt-1" : "mt-0.5"}
               `}
             >
               {item.name}
