@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import BackButton from "@/components/ui/BackButton";
 
 // --- Utility SVG Icons ---
@@ -30,27 +30,70 @@ function BeerIcon({ className = "w-6 h-6" }: { className?: string }) {
 
 export default function CorsaDeiCavalliPage() {
   const [showGunModal, setShowGunModal] = useState(false);
+  const [isShooting, setIsShooting] = useState(false);
+  
+  // Usiamo un ref per tracciare l'orario dell'ultimo sparo ed evitare mitragliatrici involontarie
+  const lastShotTime = useRef<number>(0);
 
-  // Funzione per riprodurre il suono dello sparo
+  // Funzione per aprire la modale e chiedere i permessi per i sensori (obbligatorio su iOS)
+  const openGunModal = async () => {
+    if (
+      typeof (DeviceMotionEvent as any) !== "undefined" &&
+      typeof (DeviceMotionEvent as any).requestPermission === "function"
+    ) {
+      try {
+        const permission = await (DeviceMotionEvent as any).requestPermission();
+        if (permission !== "granted") {
+          console.warn("Permesso per il sensore di movimento negato.");
+        }
+      } catch (err) {
+        console.error("Errore richiesta permessi accelerometro:", err);
+      }
+    }
+    setShowGunModal(true);
+  };
+
+  // Funzione per riprodurre lo sparo e l'effetto visivo
   const playSparoAudio = () => {
+    // Evita di accavallare troppi spari in pochi millisecondi (cooldown di 800ms)
+    const now = Date.now();
+    if (now - lastShotTime.current < 800) return;
+    lastShotTime.current = now;
+
+    // Effetto Flash Visivo
+    setIsShooting(true);
+    setTimeout(() => setIsShooting(false), 150);
+
+    // Audio
     const audio = new Audio("/audio/sparo.mp3");
     audio.play().catch((err) => console.log("Errore nella riproduzione dell'audio:", err));
   };
 
-  // Listener per intercettare la pressione del tasto Volume Giù quando la modale è aperta
+  // Listener per l'accelerometro (scuotimento/movimento netto)
   useEffect(() => {
     if (!showGunModal) return;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "VolumeDown" || e.code === "VolumeDown") {
-        e.preventDefault();
+    const handleMotion = (event: DeviceMotionEvent) => {
+      // Usiamo l'accelerazione senza gravità (più precisa) o con gravità come fallback
+      const acc = event.acceleration || event.accelerationIncludingGravity;
+      if (!acc) return;
+
+      const x = acc.x || 0;
+      const y = acc.y || 0;
+      const z = acc.z || 0;
+
+      // Calcoliamo la "forza" totale del movimento
+      const magnitude = Math.sqrt(x * x + y * y + z * z);
+
+      // Se il movimento supera la soglia di 15 (un bel colpo secco)
+      if (magnitude > 15) {
         playSparoAudio();
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("devicemotion", handleMotion);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("devicemotion", handleMotion);
     };
   }, [showGunModal]);
 
@@ -110,7 +153,7 @@ export default function CorsaDeiCavalliPage() {
       {/* 🔫 BOTTONE PISTOLA STARTER */}
       <div className="mb-6">
         <button
-          onClick={() => setShowGunModal(true)}
+          onClick={openGunModal}
           className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-black py-4 px-6 rounded-3xl shadow-xl border border-zinc-700/50 flex items-center justify-center gap-3 active:scale-95 transition-all group"
         >
           <img
@@ -347,44 +390,51 @@ export default function CorsaDeiCavalliPage() {
 
       </div>
 
-      {/* 🔴 MODALE PISTOLA A SCHERMO INTERO */}
+      {/* 🔴 MODALE PISTOLA A SCHERMO INTERO CLICCABILE */}
       {showGunModal && (
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col items-center justify-between p-6 animate-in fade-in duration-200 select-none">
+        <div 
+          onClick={playSparoAudio}
+          className={`fixed inset-0 z-50 flex flex-col items-center justify-between p-6 cursor-pointer select-none transition-colors duration-100 ${
+            isShooting ? "bg-white" : "bg-black/95 backdrop-blur-xl"
+          }`}
+        >
           {/* Tasto Chiudi X in alto a destra */}
           <button
-            onClick={() => setShowGunModal(false)}
+            onClick={(e) => {
+              e.stopPropagation(); // Evita di sparare quando si chiude
+              setShowGunModal(false);
+            }}
             className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white font-black text-xl flex items-center justify-center border border-white/20 transition-all active:scale-90 z-10 shadow-lg"
           >
             ✕
           </button>
 
           {/* Header Istruzione */}
-          <div className="w-full text-center pt-8">
+          <div className="w-full text-center pt-8 pointer-events-none">
             <span className="inline-block px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black uppercase tracking-widest mb-2">
               🔫 Segnale di Partenza
             </span>
-            <p className="text-xs sm:text-sm text-zinc-300 font-bold max-w-xs mx-auto">
-              Premi il tasto <span className="text-amber-400 underline decoration-amber-400 decoration-2">Volume Giù</span> del dispositivo per sparare!
+            <p className="text-base sm:text-lg text-white font-black max-w-sm mx-auto animate-pulse">
+              MUOVI IL TELEFONO A FRUSTA<br/>O TOCCA LO SCHERMO!
             </p>
           </div>
 
-          {/* Immagine Grande della Pistola al centro (con supporto al tocco alternativo) */}
-          <div
-            onClick={playSparoAudio}
-            className="relative w-full max-w-md h-3/5 flex items-center justify-center cursor-pointer group my-auto"
-          >
-            <div className="absolute inset-0 bg-amber-500/10 rounded-full blur-3xl pointer-events-none group-active:bg-amber-500/20 transition-all" />
+          {/* Immagine Grande della Pistola al centro */}
+          <div className="relative w-full max-w-md h-3/5 flex items-center justify-center group my-auto pointer-events-none">
+            <div className={`absolute inset-0 bg-amber-500/10 rounded-full blur-3xl transition-all ${isShooting ? 'scale-150 opacity-0' : 'scale-100 opacity-100'}`} />
             <img
               src="/icons/pistola.png"
               alt="Pistola Starter"
-              className="w-full h-full object-contain drop-shadow-[0_0_35px_rgba(245,158,11,0.25)] group-active:scale-95 transition-transform duration-150"
+              className={`w-full h-full object-contain drop-shadow-[0_0_35px_rgba(245,158,11,0.25)] transition-transform duration-100 ${
+                isShooting ? "scale-90 -rotate-12" : "scale-100 rotate-0"
+              }`}
             />
           </div>
 
           {/* Footer Avviso */}
-          <div className="pb-4 text-center">
+          <div className="pb-4 text-center pointer-events-none">
             <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
-              Puoi anche toccare l'immagine per sparare
+              L'accelerometro e lo schermo sono pronti
             </p>
           </div>
         </div>
