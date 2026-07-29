@@ -218,8 +218,8 @@ function ParticipantCard({
     statusDot = "🔴";
   }
 
-  // Lettura dati specifici del profilo
-  const mansioneCampo = profile?.mansione || profile?.ruolo_campo || profile?.mansione_campo || profile?.ruolo;
+  // Estrazione precisa di titolo_campo e nome_coniglio
+  const titoloCampo = profile?.titolo_campo;
   const nomeConiglio = profile?.nome_coniglio;
   const isPadreFondatore = profile?.ruolo?.toLowerCase() === "admin" || profile?.ruolo?.toLowerCase() === "padre fondatore";
 
@@ -269,8 +269,8 @@ function ParticipantCard({
               )}
             </div>
 
-            {/* Riga 2: Mansione da Campo / Padre Fondatore & Nome Coniglio */}
-            {(isPadreFondatore || mansioneCampo || nomeConiglio) && (
+            {/* Riga 2: Titolo da Campo / Padre Fondatore & Nome Coniglio */}
+            {(isPadreFondatore || titoloCampo || nomeConiglio) && (
               <div className="flex items-center gap-1.5 flex-wrap">
                 {/* Badge Padre Fondatore */}
                 {isPadreFondatore && (
@@ -279,10 +279,10 @@ function ParticipantCard({
                   </span>
                 )}
 
-                {/* Badge Mansione / Ruolo da Campo */}
-                {mansioneCampo && !isPadreFondatore && (
+                {/* Badge Titolo da Campo (dalla colonna titolo_campo) */}
+                {titoloCampo && !isPadreFondatore && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-200 text-slate-800 text-[9px] font-black uppercase tracking-wider shadow-xs border border-white">
-                    <span>⛺</span> {mansioneCampo}
+                    <span>⛺</span> {titoloCampo}
                   </span>
                 )}
 
