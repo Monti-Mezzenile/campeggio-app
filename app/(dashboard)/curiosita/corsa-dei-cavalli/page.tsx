@@ -32,41 +32,49 @@ export default function CorsaDeiCavalliPage() {
   const [showGunModal, setShowGunModal] = useState(false);
   const [isShooting, setIsShooting] = useState(false);
   
-  // Ref per tracciare l'ultimo sparo (cooldown) e l'audio precaricato
   const lastShotTime = useRef<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Pre-carichiamo l'audio `/audio/sparo.mp3`
+  // Pre-carichiamo l'audio
   useEffect(() => {
     audioRef.current = new Audio("/audio/sparo.mp3");
   }, []);
 
-  // Funzione per eseguire lo sparo: combina FLASH + AUDIO
+  // Funzione per eseguire lo sparo (Flash + Suono)
   const triggerShot = () => {
     const now = Date.now();
-    if (now - lastShotTime.current < 600) return; // Cooldown di 600ms per evitare spari sovrapposti
+    if (now - lastShotTime.current < 500) return; // Cooldown di 500ms
     lastShotTime.current = now;
 
-    // 1. EFFETTO FLASH VISIVO
+    // 1. Flash Visivo
     setIsShooting(true);
     setTimeout(() => setIsShooting(false), 150);
 
-    // 2. RIPRODUZIONE AUDIO "/audio/sparo.mp3"
+    // 2. Riproduzione Audio
     if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {
-        // Fallback istanza audio separata
-        const fallbackAudio = new Audio("/audio/sparo.mp3");
-        fallbackAudio.play().catch((err) => console.log("Errore audio:", err));
+      // Usiamo cloneNode per riprodurre l'audio anche in caso di spari ravvicinati
+      const soundClone = audioRef.current.cloneNode(true) as HTMLAudioElement;
+      soundClone.play().catch((err) => {
+        console.log("Errore riproduzione audio:", err);
+        // Fallback su elemento principale
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch(() => {});
+        }
       });
     }
   };
 
-  // Apertura modale con sblocco sensori e audio per iOS/Android
+  // Apertura modale e sblocco contestuale dell'audio (fondamentale per iOS/Android)
   const openGunModal = async () => {
-    // Sblocca il contesto audio al tocco dell'utente
+    // SBLOCCO AUDIO: Avviamo e mettiamo in pausa immediatamente durante il CLICK
     if (audioRef.current) {
-      audioRef.current.load();
+      audioRef.current.play().then(() => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        }
+      }).catch((err) => console.log("Audio unlock error:", err));
     }
 
     // Richiesta permessi sensori per dispositivi iOS
@@ -75,10 +83,7 @@ export default function CorsaDeiCavalliPage() {
       typeof (DeviceMotionEvent as any).requestPermission === "function"
     ) {
       try {
-        const permission = await (DeviceMotionEvent as any).requestPermission();
-        if (permission !== "granted") {
-          console.warn("Permesso accelerometro non concesso");
-        }
+        await (DeviceMotionEvent as any).requestPermission();
       } catch (err) {
         console.error("Errore richiesta permessi accelerometro:", err);
       }
@@ -86,7 +91,7 @@ export default function CorsaDeiCavalliPage() {
     setShowGunModal(true);
   };
 
-  // Listener per l'accelerometro (scuotimento / colpo a frusta verso il basso)
+  // Listener per l'accelerometro
   useEffect(() => {
     if (!showGunModal) return;
 
@@ -98,10 +103,9 @@ export default function CorsaDeiCavalliPage() {
       const y = acc.y || 0;
       const z = acc.z || 0;
 
-      // Forza totale dell'accelerazione
       const magnitude = Math.sqrt(x * x + y * y + z * z);
 
-      // Soglia d'innesco movimento
+      // Soglia movimento (colpo secco a frusta)
       if (magnitude > 15) {
         triggerShot();
       }
@@ -407,7 +411,7 @@ export default function CorsaDeiCavalliPage() {
 
       </div>
 
-      {/* 🔴 MODALE PISTOLA A SCHERMO INTERO (TRIGGER MOVIMENTO + TAP) */}
+      {/* 🔴 MODALE PISTOLA A SCHERMO INTERO */}
       {showGunModal && (
         <div 
           onClick={triggerShot}
@@ -415,10 +419,10 @@ export default function CorsaDeiCavalliPage() {
             isShooting ? "bg-white" : "bg-black/95 backdrop-blur-xl"
           }`}
         >
-          {/* Tasto Chiudi X in alto a destra */}
+          {/* Tasto Chiudi X */}
           <button
             onClick={(e) => {
-              e.stopPropagation(); // Evita di sparare durante la chiusura
+              e.stopPropagation();
               setShowGunModal(false);
             }}
             className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white font-black text-xl flex items-center justify-center border border-white/20 transition-all active:scale-90 z-10 shadow-lg"
@@ -436,7 +440,7 @@ export default function CorsaDeiCavalliPage() {
             </p>
           </div>
 
-          {/* Immagine Grande della Pistola con reazione visiva al rinculo */}
+          {/* Immagine Pistola */}
           <div className="relative w-full max-w-md h-3/5 flex items-center justify-center group my-auto pointer-events-none">
             <div className={`absolute inset-0 bg-amber-500/10 rounded-full blur-3xl transition-all ${isShooting ? 'scale-150 opacity-0' : 'scale-100 opacity-100'}`} />
             <img
@@ -448,10 +452,10 @@ export default function CorsaDeiCavalliPage() {
             />
           </div>
 
-          {/* Footer Avviso */}
+          {/* Footer */}
           <div className="pb-4 text-center pointer-events-none">
             <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
-              Accelerometro e Flash attivi per /audio/sparo.mp3
+              Audio e flash pronti per lo sparo
             </p>
           </div>
         </div>
