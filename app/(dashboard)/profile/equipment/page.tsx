@@ -9,7 +9,7 @@ interface EquipmentItem {
   nome: string;
   categoria: string;
   quantita: number;
-  stagione?: "estivo" | "invernale" | "entrambi";
+  stagione?: "estivo" | "invernale" | "entrambi" | null;
   note?: string;
   created_at?: string;
 }
@@ -39,12 +39,12 @@ export default function EquipmentPage() {
   // Item in fase di modifica (null = nuovo inserimento)
   const [editingItem, setEditingItem] = useState<EquipmentItem | null>(null);
 
-  // Form State
+  // Form State (Default stagione = null / Nessun Tag)
   const [showForm, setShowForm] = useState(false);
   const [nome, setNome] = useState("");
   const [categoria, setCategoria] = useState("Attrezzatura Campeggio");
   const [quantita, setQuantita] = useState(1);
-  const [stagione, setStagione] = useState<"estivo" | "invernale" | "entrambi">("entrambi");
+  const [stagione, setStagione] = useState<"estivo" | "invernale" | "entrambi" | null>(null);
   const [note, setNote] = useState("");
 
   // Filter States
@@ -85,7 +85,7 @@ export default function EquipmentPage() {
     setNome("");
     setCategoria("Attrezzatura Campeggio");
     setQuantita(1);
-    setStagione("entrambi");
+    setStagione(null); // Reset a nessun tag
     setNote("");
     setEditingItem(null);
     setShowForm(false);
@@ -96,7 +96,7 @@ export default function EquipmentPage() {
     setNome(item.nome);
     setCategoria(item.categoria);
     setQuantita(item.quantita || 1);
-    setStagione(item.stagione || "entrambi");
+    setStagione(item.stagione || null);
     setNote(item.note || "");
     setShowForm(true);
   }
@@ -128,7 +128,7 @@ export default function EquipmentPage() {
             nome: nome.trim(),
             categoria,
             quantita: Number(quantita) || 1,
-            stagione,
+            stagione, // può essere null
             note: note.trim(),
           })
           .eq("id", editingItem.id)
@@ -153,7 +153,7 @@ export default function EquipmentPage() {
           nome: nome.trim(),
           categoria,
           quantita: Number(quantita) || 1,
-          stagione,
+          stagione, // null se non selezionato
           note: note.trim(),
         };
 
@@ -222,11 +222,10 @@ export default function EquipmentPage() {
     const matchCategory =
       selectedFilter === "Tutti" || item.categoria === selectedFilter;
 
-    const itemStagione = item.stagione || "entrambi";
     const matchSeason =
       seasonFilter === "tutti" ||
-      itemStagione === "entrambi" ||
-      itemStagione === seasonFilter;
+      item.stagione === "entrambi" ||
+      item.stagione === seasonFilter;
 
     return matchCategory && matchSeason;
   });
@@ -241,14 +240,16 @@ export default function EquipmentPage() {
     );
   };
 
-  const getSeasonBadge = (stg?: string) => {
+  const getSeasonBadge = (stg?: string | null) => {
     switch (stg) {
       case "estivo":
         return { label: "Estivo", icon: "☀️", color: "bg-amber-100 text-amber-800" };
       case "invernale":
         return { label: "Invernale", icon: "❄️", color: "bg-blue-100 text-blue-800" };
-      default:
+      case "entrambi":
         return { label: "Tutto l'anno", icon: "🔄", color: "bg-zinc-100 text-zinc-700" };
+      default:
+        return null; // Nessun tag visualizzato
     }
   };
 
@@ -331,27 +332,43 @@ export default function EquipmentPage() {
             />
           </div>
 
-          {/* Selezione Tag Stagione */}
+          {/* Selezione Tag Stagione (Opzionale, clicca per deselezionare) */}
           <div>
-            <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
-              Stagione
-            </label>
-            <div className="grid grid-cols-3 gap-1.5 p-1 bg-zinc-100 rounded-xl border border-zinc-200">
-              {SEASONS.map((s) => (
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[10px] font-black text-zinc-700 uppercase tracking-wide">
+                Stagione <span className="text-zinc-400 font-normal">(Opzionale)</span>
+              </label>
+              {stagione && (
                 <button
-                  key={s.id}
                   type="button"
-                  onClick={() => setStagione(s.id as "estivo" | "invernale" | "entrambi")}
-                  className={`py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
-                    stagione === s.id
-                      ? "bg-white text-zinc-900 shadow-2xs border border-zinc-200 font-extrabold"
-                      : "text-zinc-500 hover:text-zinc-800"
-                  }`}
+                  onClick={() => setStagione(null)}
+                  className="text-[10px] font-bold text-amber-800 hover:underline"
                 >
-                  <span>{s.icon}</span>
-                  <span>{s.label}</span>
+                  Rimuovi tag
                 </button>
-              ))}
+              )}
+            </div>
+            <div className="grid grid-cols-3 gap-1.5 p-1 bg-zinc-100 rounded-xl border border-zinc-200">
+              {SEASONS.map((s) => {
+                const isSelected = stagione === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() =>
+                      setStagione(isSelected ? null : (s.id as "estivo" | "invernale" | "entrambi"))
+                    }
+                    className={`py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+                      isSelected
+                        ? "bg-white text-zinc-900 shadow-2xs border border-zinc-200 font-extrabold"
+                        : "text-zinc-500 hover:text-zinc-800"
+                    }`}
+                  >
+                    <span>{s.icon}</span>
+                    <span>{s.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -563,7 +580,7 @@ export default function EquipmentPage() {
                   : "border-slate-200/80 hover:border-slate-300"
               }`}
             >
-              {/* SX: Icona, Titolo, Stagione e Note */}
+              {/* SX: Icona, Titolo, Stagione (se presente) e Note */}
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <span
                   className="text-lg shrink-0 p-1.5 rounded-lg bg-zinc-100/80 border border-zinc-200/60"
@@ -580,12 +597,14 @@ export default function EquipmentPage() {
                     <span className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-zinc-900 text-white shrink-0">
                       x{item.quantita}
                     </span>
-                    <span
-                      className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-md shrink-0 flex items-center gap-0.5 ${seasonBadge.color}`}
-                    >
-                      <span>{seasonBadge.icon}</span>
-                      <span>{seasonBadge.label}</span>
-                    </span>
+                    {seasonBadge && (
+                      <span
+                        className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-md shrink-0 flex items-center gap-0.5 ${seasonBadge.color}`}
+                      >
+                        <span>{seasonBadge.icon}</span>
+                        <span>{seasonBadge.label}</span>
+                      </span>
+                    )}
                   </div>
 
                   {item.note && (
