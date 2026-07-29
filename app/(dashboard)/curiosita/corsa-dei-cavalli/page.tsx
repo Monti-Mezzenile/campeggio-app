@@ -215,7 +215,7 @@ export default function CorsaDeiCavalliPage() {
             className="w-8 h-8 object-contain group-hover:scale-110 transition-transform"
           />
           <span className="text-xs sm:text-sm uppercase tracking-wider text-amber-400">
-            Pistola dello Starter (Segnale di Start)
+            Fuoco alle polveri
           </span>
         </button>
       </div>
