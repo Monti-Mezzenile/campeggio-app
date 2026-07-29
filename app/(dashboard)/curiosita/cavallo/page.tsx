@@ -121,7 +121,7 @@ export default function CavalloPage() {
             </div>
             <div>
               <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-zinc-950 leading-tight">
-                Il Ritual d'Iniziazione
+                Il Rituale d'Iniziazione
               </h2>
               <p className="text-[10px] text-zinc-500 font-bold">
                 Il gesto solenne che segna il punto di non ritorno
