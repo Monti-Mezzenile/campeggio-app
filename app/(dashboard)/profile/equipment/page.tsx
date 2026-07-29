@@ -9,6 +9,7 @@ interface EquipmentItem {
   nome: string;
   categoria: string;
   quantita: number;
+  stagione?: "estivo" | "invernale" | "entrambi";
   note?: string;
   created_at?: string;
 }
@@ -21,6 +22,12 @@ const CATEGORIES = [
   { id: "Persona e Comfort", label: "Persona e Comfort", icon: "🛋️", color: "bg-emerald-500/15 text-emerald-950 border-emerald-500/30" },
   { id: "Divertimento ed Extra", label: "Divertimento ed Extra", icon: "🎲", color: "bg-purple-500/15 text-purple-950 border-purple-500/30" },
   { id: "Altro", label: "Altro", icon: "📦", color: "bg-zinc-500/15 text-zinc-950 border-zinc-500/30" },
+];
+
+const SEASONS = [
+  { id: "estivo", label: "Estivo", icon: "☀️" },
+  { id: "invernale", label: "Invernale", icon: "❄️" },
+  { id: "entrambi", label: "Entrambi", icon: "🔄" },
 ];
 
 export default function EquipmentPage() {
@@ -37,10 +44,12 @@ export default function EquipmentPage() {
   const [nome, setNome] = useState("");
   const [categoria, setCategoria] = useState("Attrezzatura Campeggio");
   const [quantita, setQuantita] = useState(1);
+  const [stagione, setStagione] = useState<"estivo" | "invernale" | "entrambi">("entrambi");
   const [note, setNote] = useState("");
 
-  // Filter State
+  // Filter States
   const [selectedFilter, setSelectedFilter] = useState<string>("Tutti");
+  const [seasonFilter, setSeasonFilter] = useState<string>("tutti");
 
   async function loadEquipment() {
     setLoading(true);
@@ -76,6 +85,7 @@ export default function EquipmentPage() {
     setNome("");
     setCategoria("Attrezzatura Campeggio");
     setQuantita(1);
+    setStagione("entrambi");
     setNote("");
     setEditingItem(null);
     setShowForm(false);
@@ -86,6 +96,7 @@ export default function EquipmentPage() {
     setNome(item.nome);
     setCategoria(item.categoria);
     setQuantita(item.quantita || 1);
+    setStagione(item.stagione || "entrambi");
     setNote(item.note || "");
     setShowForm(true);
   }
@@ -117,6 +128,7 @@ export default function EquipmentPage() {
             nome: nome.trim(),
             categoria,
             quantita: Number(quantita) || 1,
+            stagione,
             note: note.trim(),
           })
           .eq("id", editingItem.id)
@@ -141,6 +153,7 @@ export default function EquipmentPage() {
           nome: nome.trim(),
           categoria,
           quantita: Number(quantita) || 1,
+          stagione,
           note: note.trim(),
         };
 
@@ -204,11 +217,19 @@ export default function EquipmentPage() {
     0
   );
 
-  // Filtraggio
-  const filteredEquipment =
-    selectedFilter === "Tutti"
-      ? equipment
-      : equipment.filter((item) => item.categoria === selectedFilter);
+  // Filtraggio combinato (Categoria + Stagione)
+  const filteredEquipment = equipment.filter((item) => {
+    const matchCategory =
+      selectedFilter === "Tutti" || item.categoria === selectedFilter;
+
+    const itemStagione = item.stagione || "entrambi";
+    const matchSeason =
+      seasonFilter === "tutti" ||
+      itemStagione === "entrambi" ||
+      itemStagione === seasonFilter;
+
+    return matchCategory && matchSeason;
+  });
 
   const getCategoryMeta = (catName: string) => {
     return (
@@ -218,6 +239,17 @@ export default function EquipmentPage() {
         color: "bg-zinc-500/15 text-zinc-950 border-zinc-500/30",
       }
     );
+  };
+
+  const getSeasonBadge = (stg?: string) => {
+    switch (stg) {
+      case "estivo":
+        return { label: "Estivo", icon: "☀️", color: "bg-amber-100 text-amber-800" };
+      case "invernale":
+        return { label: "Invernale", icon: "❄️", color: "bg-blue-100 text-blue-800" };
+      default:
+        return { label: "Tutto l'anno", icon: "🔄", color: "bg-zinc-100 text-zinc-700" };
+    }
   };
 
   if (loading) {
@@ -292,11 +324,35 @@ export default function EquipmentPage() {
               Nome Oggetto *
             </label>
             <input
-              placeholder="es. Torcia frontale, Maglietta termica..."
+              placeholder="es. Torcia frontale, Sacco a pelo..."
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               className="w-full bg-zinc-50 border border-zinc-200 focus:border-amber-500 focus:bg-white rounded-xl p-2.5 text-sm font-semibold text-zinc-900 outline-none transition-all placeholder:text-zinc-400"
             />
+          </div>
+
+          {/* Selezione Tag Stagione */}
+          <div>
+            <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
+              Stagione
+            </label>
+            <div className="grid grid-cols-3 gap-1.5 p-1 bg-zinc-100 rounded-xl border border-zinc-200">
+              {SEASONS.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setStagione(s.id as "estivo" | "invernale" | "entrambi")}
+                  className={`py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+                    stagione === s.id
+                      ? "bg-white text-zinc-900 shadow-2xs border border-zinc-200 font-extrabold"
+                      : "text-zinc-500 hover:text-zinc-800"
+                  }`}
+                >
+                  <span>{s.icon}</span>
+                  <span>{s.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Categoria e Quantità */}
@@ -386,6 +442,45 @@ export default function EquipmentPage() {
         </div>
       )}
 
+      {/* SELEZIONE FILTRO STAGIONALE */}
+      {equipment.length > 0 && (
+        <div className="mb-3 grid grid-cols-3 gap-1.5 bg-zinc-200/60 p-1 rounded-2xl border border-zinc-300/40 backdrop-blur-md">
+          <button
+            onClick={() => setSeasonFilter("tutti")}
+            className={`py-1.5 px-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1 ${
+              seasonFilter === "tutti"
+                ? "bg-zinc-950 text-white shadow-2xs"
+                : "text-zinc-700 hover:bg-white/40"
+            }`}
+          >
+            <span>🎒</span>
+            <span>Tutti</span>
+          </button>
+          <button
+            onClick={() => setSeasonFilter("estivo")}
+            className={`py-1.5 px-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1 ${
+              seasonFilter === "estivo"
+                ? "bg-amber-500 text-amber-950 shadow-2xs"
+                : "text-zinc-700 hover:bg-white/40"
+            }`}
+          >
+            <span>☀️</span>
+            <span>Estivo</span>
+          </button>
+          <button
+            onClick={() => setSeasonFilter("invernale")}
+            className={`py-1.5 px-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1 ${
+              seasonFilter === "invernale"
+                ? "bg-blue-600 text-white shadow-2xs"
+                : "text-zinc-700 hover:bg-white/40"
+            }`}
+          >
+            <span>❄️</span>
+            <span>Invernale</span>
+          </button>
+        </div>
+      )}
+
       {/* BARRA FILTRI CATEGORIA */}
       {equipment.length > 0 && (
         <div className="mb-4 overflow-x-auto no-scrollbar flex items-center gap-1.5 pb-1">
@@ -397,7 +492,7 @@ export default function EquipmentPage() {
                 : "bg-white/80 text-zinc-700 border-white hover:bg-white"
             }`}
           >
-            Tutti ({equipment.length})
+            Tutte Categorie
           </button>
 
           {CATEGORIES.map((cat) => {
@@ -428,22 +523,25 @@ export default function EquipmentPage() {
       )}
 
       {/* STATO VUOTO */}
-      {equipment.length === 0 && !showForm && (
+      {filteredEquipment.length === 0 && !showForm && (
         <div className="bg-white/80 border border-white rounded-2xl p-6 text-center text-zinc-900 shadow-sm backdrop-blur-md">
           <div className="w-14 h-14 mx-auto mb-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-2xl">
             🎒
           </div>
           <h3 className="text-sm font-black text-zinc-900 mb-0.5">
-            Inventario Vuoto
+            Nessun Oggetto Trovato
           </h3>
           <p className="text-xs text-zinc-600 max-w-xs mx-auto mb-4">
-            Non hai ancora registrato nessun oggetto personale. Aggiungi il tuo primo kit!
+            Non ci sono oggetti che corrispondono ai filtri selezionati.
           </p>
           <button
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setSelectedFilter("Tutti");
+              setSeasonFilter("tutti");
+            }}
             className="py-2 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 border border-amber-500/30 text-xs font-black transition-all active:scale-95 shadow-xs"
           >
-            Aggiungi Oggetto
+            Reset Filtri
           </button>
         </div>
       )}
@@ -452,6 +550,7 @@ export default function EquipmentPage() {
       <div className="flex flex-col gap-2">
         {filteredEquipment.map((item) => {
           const meta = getCategoryMeta(item.categoria);
+          const seasonBadge = getSeasonBadge(item.stagione);
           const isDeleting = deletingId === item.id;
           const isBeingEdited = editingItem?.id === item.id;
 
@@ -464,7 +563,7 @@ export default function EquipmentPage() {
                   : "border-slate-200/80 hover:border-slate-300"
               }`}
             >
-              {/* SX: Icona, Titolo e Note */}
+              {/* SX: Icona, Titolo, Stagione e Note */}
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <span
                   className="text-lg shrink-0 p-1.5 rounded-lg bg-zinc-100/80 border border-zinc-200/60"
@@ -480,6 +579,12 @@ export default function EquipmentPage() {
                     </span>
                     <span className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-zinc-900 text-white shrink-0">
                       x{item.quantita}
+                    </span>
+                    <span
+                      className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-md shrink-0 flex items-center gap-0.5 ${seasonBadge.color}`}
+                    >
+                      <span>{seasonBadge.icon}</span>
+                      <span>{seasonBadge.label}</span>
                     </span>
                   </div>
 
