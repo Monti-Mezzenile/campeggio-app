@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import BackButton from "@/components/ui/BackButton";
 
 // --- Utility SVG Icons ---
@@ -28,6 +29,31 @@ function BeerIcon({ className = "w-6 h-6" }: { className?: string }) {
 }
 
 export default function CorsaDeiCavalliPage() {
+  const [showGunModal, setShowGunModal] = useState(false);
+
+  // Funzione per riprodurre il suono dello sparo
+  const playSparoAudio = () => {
+    const audio = new Audio("/audio/sparo.mp3");
+    audio.play().catch((err) => console.log("Errore nella riproduzione dell'audio:", err));
+  };
+
+  // Listener per intercettare la pressione del tasto Volume Giù quando la modale è aperta
+  useEffect(() => {
+    if (!showGunModal) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "VolumeDown" || e.code === "VolumeDown") {
+        e.preventDefault();
+        playSparoAudio();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showGunModal]);
+
   return (
     <main className="min-h-screen p-4 sm:p-6 pb-32 max-w-2xl mx-auto text-zinc-900">
       {/* Tasto Indietro */}
@@ -53,7 +79,7 @@ export default function CorsaDeiCavalliPage() {
       </div>
 
       {/* REQUISITO ESSENZIALE: AUDIO FANFARA */}
-      <div className="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-md backdrop-blur-md mb-6 space-y-3">
+      <div className="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-md backdrop-blur-md mb-4 space-y-3">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-2xl bg-amber-500 text-amber-950 shadow-md animate-pulse">
             <VolumeUpIcon className="w-6 h-6" />
@@ -79,6 +105,23 @@ export default function CorsaDeiCavalliPage() {
             Il tuo browser non supporta la riproduzione audio.
           </audio>
         </div>
+      </div>
+
+      {/* 🔫 BOTTONE PISTOLA STARTER */}
+      <div className="mb-6">
+        <button
+          onClick={() => setShowGunModal(true)}
+          className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-black py-4 px-6 rounded-3xl shadow-xl border border-zinc-700/50 flex items-center justify-center gap-3 active:scale-95 transition-all group"
+        >
+          <img
+            src="/icons/pistola.png"
+            alt="Pistola Starter"
+            className="w-8 h-8 object-contain group-hover:scale-110 transition-transform"
+          />
+          <span className="text-xs sm:text-sm uppercase tracking-wider text-amber-400">
+            Pistola dello Starter (Segnale di Start)
+          </span>
+        </button>
       </div>
 
       {/* SHOWCASE CREATIVO DEI 4 CAVALLI IN GARA */}
@@ -303,6 +346,49 @@ export default function CorsaDeiCavalliPage() {
         </div>
 
       </div>
+
+      {/* 🔴 MODALE PISTOLA A SCHERMO INTERO */}
+      {showGunModal && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col items-center justify-between p-6 animate-in fade-in duration-200 select-none">
+          {/* Tasto Chiudi X in alto a destra */}
+          <button
+            onClick={() => setShowGunModal(false)}
+            className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white font-black text-xl flex items-center justify-center border border-white/20 transition-all active:scale-90 z-10 shadow-lg"
+          >
+            ✕
+          </button>
+
+          {/* Header Istruzione */}
+          <div className="w-full text-center pt-8">
+            <span className="inline-block px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black uppercase tracking-widest mb-2">
+              🔫 Segnale di Partenza
+            </span>
+            <p className="text-xs sm:text-sm text-zinc-300 font-bold max-w-xs mx-auto">
+              Premi il tasto <span className="text-amber-400 underline decoration-amber-400 decoration-2">Volume Giù</span> del dispositivo per sparare!
+            </p>
+          </div>
+
+          {/* Immagine Grande della Pistola al centro (con supporto al tocco alternativo) */}
+          <div
+            onClick={playSparoAudio}
+            className="relative w-full max-w-md h-3/5 flex items-center justify-center cursor-pointer group my-auto"
+          >
+            <div className="absolute inset-0 bg-amber-500/10 rounded-full blur-3xl pointer-events-none group-active:bg-amber-500/20 transition-all" />
+            <img
+              src="/icons/pistola.png"
+              alt="Pistola Starter"
+              className="w-full h-full object-contain drop-shadow-[0_0_35px_rgba(245,158,11,0.25)] group-active:scale-95 transition-transform duration-150"
+            />
+          </div>
+
+          {/* Footer Avviso */}
+          <div className="pb-4 text-center">
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+              Puoi anche toccare l'immagine per sparare
+            </p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
