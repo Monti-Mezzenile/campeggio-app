@@ -218,10 +218,10 @@ function ParticipantCard({
     statusDot = "🔴";
   }
 
-  // Estrazione Ruolo e Nome Coniglio
-  const ruolo = profile?.ruolo;
+  // Lettura dati specifici del profilo
+  const mansioneCampo = profile?.mansione || profile?.ruolo_campo || profile?.mansione_campo || profile?.ruolo;
   const nomeConiglio = profile?.nome_coniglio;
-  const isPadreFondatore = ruolo?.toLowerCase() === "admin" || ruolo?.toLowerCase() === "padre fondatore";
+  const isPadreFondatore = profile?.ruolo?.toLowerCase() === "admin" || profile?.ruolo?.toLowerCase() === "padre fondatore";
 
   function formatTimeDetail(date: string, time: string) {
     if (!date) return "Non specificato";
@@ -241,7 +241,7 @@ function ParticipantCard({
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
           
-          {/* Avatar (Allineato in alto per non sfasare i testi) */}
+          {/* Avatar */}
           {profile?.avatar_url ? (
             <img
               src={profile.avatar_url}
@@ -257,7 +257,7 @@ function ParticipantCard({
           {/* Dati Esploratore */}
           <div className="min-w-0 flex flex-col gap-1.5">
             
-            {/* Riga 1: Nome + Badge Tu */}
+            {/* Riga 1: Nome Reale + Badge Tu */}
             <div className="flex items-center gap-1.5 flex-wrap">
               <h3 className="text-sm font-black text-[#1b2b25] truncate">
                 {profile?.nome || "Esploratore"}
@@ -269,19 +269,22 @@ function ParticipantCard({
               )}
             </div>
 
-            {/* Riga 2: Ruolo & Nome Coniglio (Le nuove chicche!) */}
-            {(ruolo || nomeConiglio) && (
+            {/* Riga 2: Mansione da Campo / Padre Fondatore & Nome Coniglio */}
+            {(isPadreFondatore || mansioneCampo || nomeConiglio) && (
               <div className="flex items-center gap-1.5 flex-wrap">
-                {/* Badge Ruolo */}
-                {isPadreFondatore ? (
+                {/* Badge Padre Fondatore */}
+                {isPadreFondatore && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#1b2b25] text-[#ebdec8] text-[9px] font-black uppercase tracking-wider shadow-xs">
                     <span>🐴</span> Padre Fondatore
                   </span>
-                ) : ruolo ? (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-200 text-slate-700 text-[9px] font-black uppercase tracking-wider shadow-xs border border-white">
-                    <span>⛺</span> {ruolo}
+                )}
+
+                {/* Badge Mansione / Ruolo da Campo */}
+                {mansioneCampo && !isPadreFondatore && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-200 text-slate-800 text-[9px] font-black uppercase tracking-wider shadow-xs border border-white">
+                    <span>⛺</span> {mansioneCampo}
                   </span>
-                ) : null}
+                )}
 
                 {/* Badge Nome Coniglio */}
                 {nomeConiglio && (
