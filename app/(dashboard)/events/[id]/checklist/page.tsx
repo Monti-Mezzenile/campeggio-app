@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import CustomIcon from "@/components/ui/CustomIcon";
 
-// Configurazione Categorie (Stessa del Profilo)
+// Configurazione Categorie
 const CATEGORIES = [
   { id: "Attrezzatura Campeggio", label: "Attrezzatura Campeggio", icon: "🎪" },
   { id: "Vestiti e Oggetti Personali", label: "Vestiti e Oggetti Personali", icon: "👕" },
@@ -21,15 +21,16 @@ export default function ChecklistPage() {
   const eventId = params.id as string;
 
   const [checklistId, setChecklistId] = useState("");
-  const [items, setItems] = useState<any[]>([]); // Conterrà oggetti {..., category: string}
+  const [items, setItems] = useState<any[]>([]); 
   const [equipment, setEquipment] = useState<any[]>([]);
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
   const [showEquipment, setShowEquipment] = useState(false);
   const [loading, setLoading] = useState(true);
   const [nome, setNome] = useState("");
 
-  // Stato per la tab attiva nella checklist principale
+  // Filtri
   const [activeTab, setActiveTab] = useState("Tutti");
+  const [seasonFilter, setSeasonFilter] = useState("tutti"); // "tutti", "estivo", "invernale"
 
   async function loadChecklist() {
     setLoading(true);
@@ -43,8 +44,8 @@ export default function ChecklistPage() {
       return;
     }
 
-    /* PRENDO LA CHECKLIST ESISTENTE (evento + utente) */
-    let { data: checklist, error: checkError } = await supabase
+    /* 1. CARICO / CREO LA CHECKLIST PER QUESTO EVENTO */
+    let { data: checklist } = await supabase
       .from("checklists")
       .select("*")
       .eq("event_id", eventId)
@@ -53,7 +54,6 @@ export default function ChecklistPage() {
       .limit(1)
       .maybeSingle();
 
-    /* SE NON ESISTE LA CREO */
     if (!checklist) {
       const { data: newChecklist, error: createError } = await supabase
         .from("checklists")
@@ -75,8 +75,8 @@ export default function ChecklistPage() {
 
     setChecklistId(checklist.id);
 
-    /* CARICO ATTREZZATURA PERSONALE (serve per mappare le categorie) */
-    const { data: equipmentData, error: equipmentError } = await supabase
+    /* 2. CARICO L'ATTREZZATURA PERSONALE (Estraggo categoria e colonna stagione) */
+    const { data: equipmentData } = await supabase
       .from("equipment")
       .select("*")
       .eq("user_id", user.id);
@@ -84,20 +84,27 @@ export default function ChecklistPage() {
     const userEquipment = equipmentData || [];
     setEquipment(userEquipment);
 
-    /* CARICO GLI ELEMENTI CHECKLIST E MAPPO LE CATEGORIE IMMEDIATAMENTE */
-    const { data: itemsData, error: itemsError } = await supabase
+    /* 3. CARICO GLI ELEMENTI CHECKLIST E ASSOCIO CATEGORIA E STAGIONE DAL TABELLARE EQUIPMENT */
+    const { data: itemsData } = await supabase
       .from("checklist_items")
       .select("*")
       .eq("checklist_id", checklist.id)
       .order("created_at", { ascending: true });
 
-    // Pre-processo gli item per includere la categoria direttamente nell'oggetto
     const processedItems = (itemsData || []).map((item: any) => {
       if (item.equipment_id) {
         const eq = userEquipment.find((e) => e.id === item.equipment_id);
-        return { ...item, category: eq?.categoria || "Altro" };
+        
+        // Leggo ed elaboro la colonna stagione da equipment
+        const rawStagione = eq?.stagione ? String(eq.stagione).toLowerCase().trim() : null;
+
+        return { 
+          ...item, 
+          category: eq?.categoria || "Altro",
+          stagione: rawStagione // 'estivo', 'invernale', 'entrambi', oppure null
+        };
       }
-      return { ...item, category: "Manuale" }; // Categoria speciale per inserimenti liberi
+      return { ...item, category: "Manuale", stagione: null };
     });
 
     setItems(processedItems);
@@ -119,9 +126,11 @@ export default function ChecklistPage() {
     }
 
     setNome("");
-    // Se stiamo visualizzando una categoria specifica, torniamo a "Tutti" o "Manuale" per vedere il nuovo item
     if (activeTab !== "Tutti" && activeTab !== "Manuale") {
       setActiveTab("Manuale");
+    }
+    if (seasonFilter !== "tutti") {
+      setSeasonFilter("tutti");
     }
     loadChecklist();
   }
@@ -146,9 +155,8 @@ export default function ChecklistPage() {
 
     setSelectedEquipment([]);
     setShowEquipment(false);
-    // Impostiamo la tab sulla categoria del primo oggetto inserito per feedback visivo?
-    // O lasciamo su Tutti. Lasciamo su Tutti per ora.
     setActiveTab("Tutti");
+    setSeasonFilter("tutti");
     loadChecklist();
   }
 
@@ -209,12 +217,10 @@ export default function ChecklistPage() {
       return;
     }
 
-    // Sfruttiamo la categoria pre-mappata nell'item
     const isPersonalClothing = item.category === "Vestiti e Oggetti Personali";
 
-    // Aggiungo al gruppo SOLO SE ha un equipment_id E non è un vestito/oggetto personale
     if (value && item.equipment_id && !isPersonalClothing) {
-      const { error: eventEquipmentError } = await supabase
+      await supabase
         .from("event_equipment")
         .upsert(
           {
@@ -225,10 +231,6 @@ export default function ChecklistPage() {
           },
           { onConflict: "event_id,equipment_id,assegnato_a" }
         );
-
-      if (eventEquipmentError) {
-        console.log("ERRORE EVENT EQUIPMENT:", eventEquipmentError);
-      }
     }
 
     if (!value && item.equipment_id && !isPersonalClothing) {
@@ -244,16 +246,7 @@ export default function ChecklistPage() {
   }
 
   async function deleteItem(id: string) {
-    const { error } = await supabase
-      .from("checklist_items")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.log("ERRORE DELETE ITEM:", error);
-      return;
-    }
-
+    await supabase.from("checklist_items").delete().eq("id", id);
     loadChecklist();
   }
 
@@ -262,6 +255,22 @@ export default function ChecklistPage() {
       loadChecklist();
     }
   }, [eventId]);
+
+  const getSeasonBadge = (stg?: string | null) => {
+    if (!stg) return null;
+    const s = stg.toLowerCase();
+    
+    if (s === "estivo") {
+      return { label: "Estivo", icon: "☀️", color: "bg-amber-100 text-amber-900 border-amber-200" };
+    }
+    if (s === "invernale") {
+      return { label: "Invernale", icon: "❄️", color: "bg-blue-100 text-blue-900 border-blue-200" };
+    }
+    if (s === "entrambi") {
+      return { label: "4 Stagioni", icon: "🔄", color: "bg-slate-100 text-slate-800 border-slate-200" };
+    }
+    return null;
+  };
 
   if (loading) {
     return (
@@ -281,16 +290,23 @@ export default function ChecklistPage() {
     ? Math.round((completati / items.length) * 100)
     : 0;
 
-  // Filtraggio degli item in base alla tab attiva
+  // Filtraggio Combinato: Categoria + Colonna stagione da Equipment
   const filteredItems = items.filter((item) => {
-    if (activeTab === "Tutti") return true;
-    return item.category === activeTab;
+    const matchCategory = activeTab === "Tutti" || item.category === activeTab;
+    
+    const itemSeason = item.stagione ? item.stagione.toLowerCase() : null;
+    const matchSeason =
+      seasonFilter === "tutti" ||
+      itemSeason === "entrambi" ||
+      itemSeason === seasonFilter;
+
+    return matchCategory && matchSeason;
   });
 
   return (
     <main className="min-h-screen p-4 sm:p-6 pb-36 max-w-md mx-auto flex flex-col gap-5 select-none">
       
-      {/* 🚀 BARRA TOP & ACTIONS */}
+      {/* 🚀 BARRA TOP */}
       <header className="flex items-center justify-between pt-1">
         <button
           onClick={() => router.back()}
@@ -405,6 +421,7 @@ export default function ChecklistPage() {
                         {catEquipment.map((item) => {
                           const isSelected = selectedEquipment.includes(item.id);
                           const isAlreadyInList = items.some((i) => i.equipment_id === item.id);
+                          const seasonBadge = getSeasonBadge(item.stagione);
 
                           return (
                             <div
@@ -418,17 +435,24 @@ export default function ChecklistPage() {
                                   : "bg-white border-slate-200 hover:bg-slate-50"
                               }`}
                             >
-                              <span className="text-xs font-bold text-[#1b2b25]">
-                                {item.nome}
-                              </span>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-xs font-bold text-[#1b2b25] truncate">
+                                  {item.nome}
+                                </span>
+                                {seasonBadge && (
+                                  <span className={`text-[8px] font-black uppercase px-1.5 py-0.2 rounded-md border ${seasonBadge.color}`}>
+                                    {seasonBadge.icon}
+                                  </span>
+                                )}
+                              </div>
 
                               {isAlreadyInList ? (
-                                <span className="text-[9px] font-black uppercase bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md">
+                                <span className="text-[9px] font-black uppercase bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md shrink-0">
                                   Già in lista
                                 </span>
                               ) : (
                                 <div
-                                  className={`w-5 h-5 rounded-lg border flex items-center justify-center text-xs font-black transition ${
+                                  className={`w-5 h-5 rounded-lg border flex items-center justify-center text-xs font-black transition shrink-0 ${
                                     isSelected
                                       ? "bg-emerald-500 border-emerald-600 text-white"
                                       : "border-slate-300 bg-white"
@@ -483,58 +507,96 @@ export default function ChecklistPage() {
         </form>
       </section>
 
-      {/* 🗂 CATEGORY TABS (Scrollable) */}
+      {/* 🗂 FILTRI: CATEGORIA E STAGIONE DA EQUIPMENT */}
       {items.length > 0 && (
-        <section className="overflow-x-auto no-scrollbar pb-2">
-          <div className="flex items-center gap-2 w-max px-1">
-            {/* Tab: Tutti */}
+        <section className="space-y-3">
+          
+          {/* CATEGORIE (Tab Orizzontale) */}
+          <div className="overflow-x-auto no-scrollbar pb-1">
+            <div className="flex items-center gap-2 w-max px-1">
+              <button
+                onClick={() => setActiveTab("Tutti")}
+                className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
+                  activeTab === "Tutti"
+                    ? "bg-[#1b2b25] text-[#ebdec8] border-[#1b2b25]"
+                    : "bg-white text-[#1b2b25]/70 border-white hover:border-slate-200 shadow-2xs"
+                }`}
+              >
+                Tutti ({items.length})
+              </button>
+
+              {items.some(i => i.category === "Manuale") && (
+                 <button
+                   onClick={() => setActiveTab("Manuale")}
+                   className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
+                     activeTab === "Manuale"
+                       ? "bg-[#1b2b25] text-[#ebdec8] border-[#1b2b25]"
+                       : "bg-white text-[#1b2b25]/70 border-white hover:border-slate-200 shadow-2xs"
+                   }`}
+                 >
+                   <span>✍️</span>
+                   <span>A mano ({items.filter(i => i.category === "Manuale").length})</span>
+                 </button>
+              )}
+
+              {CATEGORIES.map((cat) => {
+                const count = items.filter(i => i.category === cat.id).length;
+                if (count === 0) return null;
+
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveTab(cat.id)}
+                    className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
+                      activeTab === cat.id
+                        ? "bg-[#1b2b25] text-[#ebdec8] border-[#1b2b25]"
+                        : "bg-white text-[#1b2b25]/70 border-white hover:border-slate-200 shadow-2xs"
+                    }`}
+                  >
+                    <span>{cat.icon}</span>
+                    <span>{cat.label}</span>
+                    <span className="font-mono opacity-60">({count})</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* SOTTO-FILTRO STAGIONE (Basato su colonna stagione) */}
+          <div className="grid grid-cols-3 gap-1.5 bg-white/60 p-1 rounded-2xl border border-white backdrop-blur-md shadow-2xs">
             <button
-              onClick={() => setActiveTab("Tutti")}
-              className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
-                activeTab === "Tutti"
-                  ? "bg-[#1b2b25] text-[#ebdec8] border-[#1b2b25]"
-                  : "bg-white text-[#1b2b25]/70 border-white hover:border-slate-200 shadow-2xs"
+              onClick={() => setSeasonFilter("tutti")}
+              className={`py-1.5 px-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                seasonFilter === "tutti"
+                  ? "bg-[#1b2b25] text-white shadow-xs"
+                  : "text-[#1b2b25]/60 hover:bg-white/50"
               }`}
             >
-              Tutti ({items.length})
+              <span>🎒</span>
+              <span>Tutti</span>
             </button>
-
-            {/* Tab: Manuale (solo se ci sono item manuali) */}
-            {items.some(i => i.category === "Manuale") && (
-               <button
-                 onClick={() => setActiveTab("Manuale")}
-                 className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
-                   activeTab === "Manuale"
-                     ? "bg-[#1b2b25] text-[#ebdec8] border-[#1b2b25]"
-                     : "bg-white text-[#1b2b25]/70 border-white hover:border-slate-200 shadow-2xs"
-                 }`}
-               >
-                 <span>✍️</span>
-                 <span>A mano ({items.filter(i => i.category === "Manuale").length})</span>
-               </button>
-            )}
-
-            {/* Tabs per Categorie Standard (solo se ci sono item) */}
-            {CATEGORIES.map((cat) => {
-              const count = items.filter(i => i.category === cat.id).length;
-              if (count === 0) return null; // Non mostriamo tab vuote
-
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveTab(cat.id)}
-                  className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
-                    activeTab === cat.id
-                      ? "bg-[#1b2b25] text-[#ebdec8] border-[#1b2b25]"
-                      : "bg-white text-[#1b2b25]/70 border-white hover:border-slate-200 shadow-2xs"
-                  }`}
-                >
-                  <span>{cat.icon}</span>
-                  <span>{cat.label}</span>
-                  <span className="font-mono opacity-60">({count})</span>
-                </button>
-              );
-            })}
+            <button
+              onClick={() => setSeasonFilter("estivo")}
+              className={`py-1.5 px-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                seasonFilter === "estivo"
+                  ? "bg-amber-500 text-amber-950 shadow-xs border border-amber-600"
+                  : "text-[#1b2b25]/60 hover:bg-white/50"
+              }`}
+            >
+              <span>☀️</span>
+              <span>Estivi</span>
+            </button>
+            <button
+              onClick={() => setSeasonFilter("invernale")}
+              className={`py-1.5 px-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                seasonFilter === "invernale"
+                  ? "bg-blue-600 text-white shadow-xs border border-blue-700"
+                  : "text-[#1b2b25]/60 hover:bg-white/50"
+              }`}
+            >
+              <span>❄️</span>
+              <span>Invernali</span>
+            </button>
           </div>
         </section>
       )}
@@ -554,15 +616,14 @@ export default function ChecklistPage() {
         ) : filteredItems.length === 0 ? (
            <div className="bg-white/70 backdrop-blur-2xl border border-white p-8 rounded-[2.5rem] shadow-sm text-center space-y-2">
             <p className="text-xs font-semibold text-[#1b2b25]/50 italic">
-              Nessun oggetto pronto in questa categoria.
+              Nessun oggetto trovato per la stagione/categoria selezionata.
             </p>
           </div>
         ) : (
           filteredItems.map((item) => {
             const isDone = item.completato;
-            
-            // Recupero info categoria standard (se non è manuale)
             const standardCat = CATEGORIES.find((c) => c.id === item.category);
+            const seasonBadge = getSeasonBadge(item.stagione);
 
             return (
               <div
@@ -590,36 +651,45 @@ export default function ChecklistPage() {
                     ✓
                   </div>
 
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex flex-col items-start gap-1">
                     <span
-                      className={`text-xs font-bold text-[#1b2b25] block truncate ${
+                      className={`text-xs font-bold text-[#1b2b25] block truncate w-full ${
                         isDone ? "line-through text-[#1b2b25]/60" : ""
                       }`}
                     >
                       {item.nome}
                     </span>
 
-                    {/* BADGE CATEGORIA ESATTA (Visibile solo nella tab "Tutti") */}
-                    {activeTab === "Tutti" && (
-                      <span className="text-[9px] font-black uppercase text-[#1b2b25]/70 bg-[#1b2b25]/5 border border-[#1b2b25]/10 px-1.5 py-0.2 rounded-md inline-flex items-center gap-1 mt-0.5 whitespace-nowrap">
-                        {standardCat ? (
-                          <>
-                            <span>{standardCat.icon}</span>
-                            <span>{standardCat.label}</span>
-                          </>
-                        ) : item.category === "Manuale" ? (
-                          <>
-                            <span>✍️</span>
-                            <span>A mano</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>🎒</span>
-                            <span>Equipaggiamento</span>
-                          </>
-                        )}
-                      </span>
-                    )}
+                    {/* BADGES: CATEGORIA + STAGIONE DA EQUIPMENT */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {activeTab === "Tutti" && (
+                        <span className="text-[9px] font-black uppercase text-[#1b2b25]/70 bg-[#1b2b25]/5 border border-[#1b2b25]/10 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 whitespace-nowrap">
+                          {standardCat ? (
+                            <>
+                              <span>{standardCat.icon}</span>
+                              <span>{standardCat.label}</span>
+                            </>
+                          ) : item.category === "Manuale" ? (
+                            <>
+                              <span>✍️</span>
+                              <span>A mano</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>🎒</span>
+                              <span>Equipaggiamento</span>
+                            </>
+                          )}
+                        </span>
+                      )}
+
+                      {seasonBadge && (
+                        <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 whitespace-nowrap border shadow-2xs ${seasonBadge.color}`}>
+                          <span>{seasonBadge.icon}</span>
+                          <span>{seasonBadge.label}</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </label>
 
