@@ -48,7 +48,7 @@ export default function ProfilePage() {
     setPadreFondatore(data?.padre_fondatore || false);
     setAvatarUrl(data?.avatar_url || null);
 
-    // Usa l'asterisco per portare dentro tutte le colonne (tipo, categoria, ecc.) senza errori
+    // Scarichiamo tutti i dati della medaglia (compresa la colonna "tipo")
     const { data: badges } = await supabase
       .from("user_badges")
       .select(`
@@ -142,19 +142,16 @@ export default function ProfilePage() {
     );
   }
 
-  // --- CALCOLO LIVELLO (SOLO ESTIVE E INVERNALI) ---
+  // --- CALCOLO LIVELLO (SOLO MEDAGLIE CON TIPO = 'evento') ---
   const validLevelBadges = myBadges.filter((item: any) => {
     const badge = item.badge;
     if (!badge) return false;
 
-    // Controlliamo in automatico titolo, tipo, categoria o stagione
-    const testStr = String(badge.tipo || badge.categoria || badge.stagione || badge.titolo || "").toLowerCase();
+    // Recupero il valore della colonna "tipo" (o "tipo_medaglia" se l'hai chiamata così)
+    const tipoMedaglia = badge.tipo || badge.tipo_medaglia;
     
-    const isSpecial = testStr.includes("special");
-    const isMainEvent = testStr.includes("estiv") || testStr.includes("invernal");
-
-    // Valida se è estiva o invernale, ma SCARTA le speciali
-    return isMainEvent && !isSpecial;
+    // Controlliamo che il tipo sia esattamente 'evento' (ignorando maiuscole/minuscole e spazi)
+    return tipoMedaglia?.toLowerCase().trim() === "evento";
   });
 
   const levelNumber = Math.max(1, validLevelBadges.length);
@@ -239,7 +236,7 @@ export default function ProfilePage() {
 
         {/* BADGES DI IDENTITÀ & LIVELLO */}
         <div className="flex flex-wrap items-center justify-center gap-2 pt-1 border-t border-[#1b2b25]/10">
-          {/* Livello di Sopravvivenza (Conta solo Estive/Invernali) */}
+          {/* Livello di Sopravvivenza (Conta solo medaglie Evento) */}
           <span className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
             <span>🔥</span> Lvl. {levelNumber} Vet.
           </span>
