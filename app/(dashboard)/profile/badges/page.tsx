@@ -11,6 +11,7 @@ interface Badge {
   tipo?: string;
   immagine_url?: string;
   created_at?: string;
+  ordine_medaglie?: number; // Aggiunto per il type-checking
 }
 
 interface UserBadge {
@@ -62,9 +63,11 @@ export default function BadgesPage() {
 
       setIsAdmin(profile?.ruolo === "admin");
 
+      // Modifica effettuata qui: Ordinamento primario per "ordine_medaglie"
       const { data: badgeData } = await supabase
         .from("badges")
         .select("*")
+        .order("ordine_medaglie", { ascending: true })
         .order("created_at", { ascending: false });
 
       setBadges(badgeData || []);
