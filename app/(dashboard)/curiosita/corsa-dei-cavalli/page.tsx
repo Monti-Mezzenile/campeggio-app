@@ -48,8 +48,8 @@ export default function CorsaDeiCavalliPage() {
         const ctx = new AudioContextClass();
         audioCtxRef.current = ctx;
 
-        // Fetch del file mp3 in public/audio/sparo.mp3
-        const response = await fetch("/audio/sparo.mp3");
+        // Fetch del file mp3 in public/audio/Sparo.mp3
+        const response = await fetch("/audio/Sparo.mp3");
         const arrayBuffer = await response.arrayBuffer();
         const decodedBuffer = await ctx.decodeAudioData(arrayBuffer);
         
@@ -66,7 +66,7 @@ export default function CorsaDeiCavalliPage() {
   const playSparoSound = () => {
     if (!audioCtxRef.current || !audioBufferRef.current) {
       // Fallback classico se Web Audio non è supportato
-      const fallbackAudio = new Audio("/audio/sparo.mp3");
+      const fallbackAudio = new Audio("/audio/Sparo.mp3");
       fallbackAudio.play().catch(() => {});
       return;
     }
