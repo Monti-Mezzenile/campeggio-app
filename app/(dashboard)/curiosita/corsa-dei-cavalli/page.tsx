@@ -7,7 +7,7 @@ import BackButton from "@/components/ui/BackButton";
 function TrophyIcon({ className = "w-6 h-6" }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4a5 5 0 005 5h4a5 5 0 005-5V3M5 3h14M5 3H3v2a4 4 0 004 4h-1m-5 7v3m-4 0h8m-4 0v3m-4 0h8" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4a5 5 0 005 5h4a5 5 0 005-5V3M5 3h14M5 3H3v2a4 4 0 004 4h1m11-6h2a4 4 0 014 4h-1m-5 7v3m-4 0h8m-4 0v3m-4 0h8" />
     </svg>
   );
 }
@@ -203,18 +203,18 @@ export default function CorsaDeiCavalliPage() {
         </div>
       </div>
 
-      {/* 🔫 BOTTONE PISTOLA STARTER */}
+      {/* 🔫 BOTTONE PISTOLA STARTER INGANDITO */}
       <div>
         <button
           onClick={openGunModal}
-          className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-black py-4 px-6 rounded-3xl shadow-xl border border-zinc-700/50 flex items-center justify-center gap-3 active:scale-95 transition-all group"
+          className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-black py-6 px-6 rounded-3xl shadow-xl border border-zinc-700/50 flex items-center justify-center gap-4 active:scale-95 transition-all group"
         >
           <img
             src="/icons/pistola.png"
             alt="Pistola Starter"
-            className="w-8 h-8 object-contain group-hover:scale-110 transition-transform"
+            className="w-14 h-14 object-contain group-hover:scale-110 transition-transform"
           />
-          <span className="text-xs sm:text-sm uppercase tracking-wider text-amber-400">
+          <span className="text-lg sm:text-xl uppercase tracking-wider text-amber-400">
             Fuoco alle polveri
           </span>
         </button>
@@ -456,15 +456,8 @@ export default function CorsaDeiCavalliPage() {
             ✕
           </button>
 
-          {/* Header Istruzione */}
-          <div className="w-full text-center pt-8 pointer-events-none">
-            <span className="inline-block px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black uppercase tracking-widest mb-2">
-              🔫 Segnale di Partenza
-            </span>
-            <p className="text-base sm:text-lg text-white font-black max-w-sm mx-auto animate-pulse">
-              MUOVI IL TELEFONO A FRUSTA<br/>O TOCCA LO SCHERMO!
-            </p>
-          </div>
+          {/* Spaziatore superiore per bilanciare il flex e mantenere la pistola al centro */}
+          <div className="w-full pt-16 pointer-events-none"></div>
 
           {/* Immagine Pistola */}
           <div className="relative w-full max-w-md h-3/5 flex items-center justify-center group my-auto pointer-events-none">
