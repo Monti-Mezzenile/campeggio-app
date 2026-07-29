@@ -48,13 +48,12 @@ export default function ProfilePage() {
     setPadreFondatore(data?.padre_fondatore || false);
     setAvatarUrl(data?.avatar_url || null);
 
+    // Usa l'asterisco per portare dentro tutte le colonne (tipo, categoria, ecc.) senza errori
     const { data: badges } = await supabase
       .from("user_badges")
       .select(`
         badge:badge_id(
-          id,
-          immagine_url,
-          titolo
+          *
         )
       `)
       .eq("user_id", user.id);
@@ -143,8 +142,22 @@ export default function ProfilePage() {
     );
   }
 
-  // Calcolo Livello da Campo e Matricola Unica
-  const levelNumber = Math.max(1, myBadges.length);
+  // --- CALCOLO LIVELLO (SOLO ESTIVE E INVERNALI) ---
+  const validLevelBadges = myBadges.filter((item: any) => {
+    const badge = item.badge;
+    if (!badge) return false;
+
+    // Controlliamo in automatico titolo, tipo, categoria o stagione
+    const testStr = String(badge.tipo || badge.categoria || badge.stagione || badge.titolo || "").toLowerCase();
+    
+    const isSpecial = testStr.includes("special");
+    const isMainEvent = testStr.includes("estiv") || testStr.includes("invernal");
+
+    // Valida se è estiva o invernale, ma SCARTA le speciali
+    return isMainEvent && !isSpecial;
+  });
+
+  const levelNumber = Math.max(1, validLevelBadges.length);
   const matricola = profile?.id ? `#MNT-${profile.id.slice(0, 4).toUpperCase()}` : "#MNT-0000";
 
   return (
@@ -226,7 +239,7 @@ export default function ProfilePage() {
 
         {/* BADGES DI IDENTITÀ & LIVELLO */}
         <div className="flex flex-wrap items-center justify-center gap-2 pt-1 border-t border-[#1b2b25]/10">
-          {/* Livello di Sopravvivenza */}
+          {/* Livello di Sopravvivenza (Conta solo Estive/Invernali) */}
           <span className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
             <span>🔥</span> Lvl. {levelNumber} Vet.
           </span>
