@@ -7,7 +7,7 @@ import BackButton from "@/components/ui/BackButton";
 function TrophyIcon({ className = "w-6 h-6" }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4a5 5 0 005 5h4a5 5 0 005-5V3M5 3h14M5 3H3v2a4 4 0 004 4h1m11-6h2a4 4 0 014 4h-1m-5 7v3m-4 0h8m-4 0v3m-4 0h8" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4a5 5 0 005 5h4a5 5 0 005-5V3M5 3h14M5 3H3v2a4 4 0 004 4h-1m-5 7v3m-4 0h8m-4 0v3m-4 0h8" />
     </svg>
   );
 }
@@ -33,48 +33,79 @@ export default function CorsaDeiCavalliPage() {
   const [isShooting, setIsShooting] = useState(false);
   
   const lastShotTime = useRef<number>(0);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Ref per Web Audio API
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const audioBufferRef = useRef<AudioBuffer | null>(null);
 
-  // Pre-carichiamo l'audio
+  // 1. CARICAMENTO AUDIO BUFFER VIA WEB AUDIO API
   useEffect(() => {
-    audioRef.current = new Audio("/audio/sparo.mp3");
+    const initWebAudio = async () => {
+      try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) return;
+
+        const ctx = new AudioContextClass();
+        audioCtxRef.current = ctx;
+
+        // Fetch del file mp3 in public/audio/sparo.mp3
+        const response = await fetch("/audio/sparo.mp3");
+        const arrayBuffer = await response.arrayBuffer();
+        const decodedBuffer = await ctx.decodeAudioData(arrayBuffer);
+        
+        audioBufferRef.current = decodedBuffer;
+      } catch (err) {
+        console.error("Errore nel caricamento di Web Audio API:", err);
+      }
+    };
+
+    initWebAudio();
   }, []);
 
-  // Funzione per eseguire lo sparo (Flash + Suono)
+  // 2. FUNZIONE PER RIPRODURRE LO SPARO VIA WEB AUDIO
+  const playSparoSound = () => {
+    if (!audioCtxRef.current || !audioBufferRef.current) {
+      // Fallback classico se Web Audio non è supportato
+      const fallbackAudio = new Audio("/audio/sparo.mp3");
+      fallbackAudio.play().catch(() => {});
+      return;
+    }
+
+    const ctx = audioCtxRef.current;
+
+    // Se il contesto è in pausa (suspended), lo riattiviamo
+    if (ctx.state === "suspended") {
+      ctx.resume();
+    }
+
+    // Crea un nuovo nodo sorgente per riprodurre il buffer all'istante
+    const source = ctx.createBufferSource();
+    source.buffer = audioBufferRef.current;
+    source.connect(ctx.destination);
+    source.start(0);
+  };
+
+  // 3. TRIGGER FINALE (FLASH + SUONO)
   const triggerShot = () => {
     const now = Date.now();
-    if (now - lastShotTime.current < 500) return; // Cooldown di 500ms
+    if (now - lastShotTime.current < 400) return; // Cooldown 400ms
     lastShotTime.current = now;
 
-    // 1. Flash Visivo
+    // Flash Visivo
     setIsShooting(true);
     setTimeout(() => setIsShooting(false), 150);
 
-    // 2. Riproduzione Audio
-    if (audioRef.current) {
-      // Usiamo cloneNode per riprodurre l'audio anche in caso di spari ravvicinati
-      const soundClone = audioRef.current.cloneNode(true) as HTMLAudioElement;
-      soundClone.play().catch((err) => {
-        console.log("Errore riproduzione audio:", err);
-        // Fallback su elemento principale
-        if (audioRef.current) {
-          audioRef.current.currentTime = 0;
-          audioRef.current.play().catch(() => {});
-        }
-      });
-    }
+    // Suono
+    playSparoSound();
   };
 
-  // Apertura modale e sblocco contestuale dell'audio (fondamentale per iOS/Android)
+  // 4. APERTURA MODALE + SBLOCCO TOTALE CONTESTO AUDIO
   const openGunModal = async () => {
-    // SBLOCCO AUDIO: Avviamo e mettiamo in pausa immediatamente durante il CLICK
-    if (audioRef.current) {
-      audioRef.current.play().then(() => {
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current.currentTime = 0;
-        }
-      }).catch((err) => console.log("Audio unlock error:", err));
+    // Sblocca immediatamente l'AudioContext durante il CLICK dell'utente
+    if (audioCtxRef.current) {
+      if (audioCtxRef.current.state === "suspended") {
+        await audioCtxRef.current.resume();
+      }
     }
 
     // Richiesta permessi sensori per dispositivi iOS
@@ -88,10 +119,11 @@ export default function CorsaDeiCavalliPage() {
         console.error("Errore richiesta permessi accelerometro:", err);
       }
     }
+
     setShowGunModal(true);
   };
 
-  // Listener per l'accelerometro
+  // 5. ACCELEROMETRO
   useEffect(() => {
     if (!showGunModal) return;
 
@@ -105,7 +137,7 @@ export default function CorsaDeiCavalliPage() {
 
       const magnitude = Math.sqrt(x * x + y * y + z * z);
 
-      // Soglia movimento (colpo secco a frusta)
+      // Soglia scossone/frustata
       if (magnitude > 15) {
         triggerShot();
       }
@@ -162,7 +194,7 @@ export default function CorsaDeiCavalliPage() {
           È condizione vincolante ed essenziale che durante tutta la durata della corsa venga riprodotta a tutto volume per mantenere al massimo la carica drammatica!
         </p>
 
-        {/* Lettore Audio */}
+        {/* Lettore Audio Fanfara */}
         <div className="pt-2">
           <audio controls className="w-full rounded-xl shadow-inner bg-white/80">
             <source src="/audio/corsa-dei-cavalli.mp3" type="audio/mpeg" />
@@ -191,7 +223,6 @@ export default function CorsaDeiCavalliPage() {
       {/* SHOWCASE CREATIVO DEI 4 CAVALLI IN GARA */}
       <div className="bg-white/80 border border-white/90 rounded-[2.5rem] p-5 sm:p-6 shadow-xl backdrop-blur-md space-y-5 relative overflow-hidden">
         
-        {/* Glow di sfondo */}
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex flex-col gap-2 border-b border-zinc-200/80 pb-3">
@@ -304,7 +335,6 @@ export default function CorsaDeiCavalliPage() {
         {/* FASI DEL GIOCO */}
         <div className="bg-white/80 border border-white/90 rounded-[2.5rem] p-6 shadow-md backdrop-blur-md space-y-5">
           
-          {/* FASE 1: PREPARAZIONE */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-zinc-900 text-white text-xs font-black flex items-center justify-center shrink-0">
@@ -327,7 +357,6 @@ export default function CorsaDeiCavalliPage() {
 
           <hr className="border-zinc-200/80" />
 
-          {/* FASE 2: SCOMMESSE */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-zinc-900 text-white text-xs font-black flex items-center justify-center shrink-0">
@@ -344,7 +373,6 @@ export default function CorsaDeiCavalliPage() {
 
           <hr className="border-zinc-200/80" />
 
-          {/* FASE 3: SVOLGIMENTO */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-zinc-900 text-white text-xs font-black flex items-center justify-center shrink-0">
@@ -381,7 +409,6 @@ export default function CorsaDeiCavalliPage() {
         {/* TAB VITTORIA & SCONFITTA */}
         <div className="grid grid-cols-1 gap-4">
           
-          {/* TAB VITTORIA */}
           <div className="bg-emerald-600 text-white border-2 border-emerald-400 rounded-3xl p-5 shadow-lg backdrop-blur-md space-y-2">
             <div className="flex items-center gap-2 text-white">
               <TrophyIcon className="w-6 h-6 text-emerald-200" />
@@ -394,7 +421,6 @@ export default function CorsaDeiCavalliPage() {
             </p>
           </div>
 
-          {/* TAB SCONFITTA */}
           <div className="bg-rose-600 text-white border-2 border-rose-400 rounded-3xl p-5 shadow-lg backdrop-blur-md space-y-2">
             <div className="flex items-center gap-2 text-white">
               <BeerIcon className="w-6 h-6 text-rose-200" />
@@ -455,7 +481,7 @@ export default function CorsaDeiCavalliPage() {
           {/* Footer */}
           <div className="pb-4 text-center pointer-events-none">
             <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
-              Audio e flash pronti per lo sparo
+              Scontro diretto Web Audio API
             </p>
           </div>
         </div>
