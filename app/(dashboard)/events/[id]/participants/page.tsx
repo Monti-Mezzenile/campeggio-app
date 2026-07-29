@@ -162,7 +162,7 @@ export default function ParticipantsPage() {
         </div>
       </section>
 
-      {/* 👥 LISTA PARTECI PANTI */}
+      {/* 👥 LISTA PARTECIPANTI */}
       {participants.length === 0 ? (
         <div className="bg-white/70 backdrop-blur-2xl border border-white p-8 rounded-[2.5rem] shadow-sm text-center">
           <CustomIcon name="profilo" size={60} className="mx-auto mb-3 opacity-40" />
@@ -200,6 +200,7 @@ function ParticipantCard({
   const profile = person.profile;
   const isMe = user?.id === person.user_id;
 
+  // Variabili di Stile per lo Stato
   let borderAccent = "border-l-amber-500";
   let statusBadgeBg = "bg-amber-100 text-amber-900 border-amber-200";
   let statoLabel = "In Forse";
@@ -217,7 +218,10 @@ function ParticipantCard({
     statusDot = "🔴";
   }
 
-  const isPadreFondatore = profile?.ruolo === "admin" || profile?.ruolo === "Padre Fondatore";
+  // Estrazione Ruolo e Nome Coniglio
+  const ruolo = profile?.ruolo;
+  const nomeConiglio = profile?.nome_coniglio;
+  const isPadreFondatore = ruolo?.toLowerCase() === "admin" || ruolo?.toLowerCase() === "padre fondatore";
 
   function formatTimeDetail(date: string, time: string) {
     if (!date) return "Non specificato";
@@ -234,54 +238,79 @@ function ParticipantCard({
       className={`group bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-white border-l-4 ${borderAccent} shadow-sm cursor-pointer active:scale-[0.99] transition-all overflow-hidden`}
     >
       {/* HEADER CARD */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0">
+          
+          {/* Avatar (Allineato in alto per non sfasare i testi) */}
           {profile?.avatar_url ? (
             <img
               src={profile.avatar_url}
               alt={profile?.nome || "Avatar"}
-              className="w-12 h-12 rounded-2xl object-cover border border-white shadow-2xs shrink-0"
+              className="w-12 h-12 rounded-2xl object-cover border border-white shadow-2xs shrink-0 mt-0.5"
             />
           ) : (
-            <div className="w-12 h-12 rounded-2xl bg-[#ebdec8] flex items-center justify-center border border-white shrink-0 font-black text-[#1b2b25] text-lg">
+            <div className="w-12 h-12 rounded-2xl bg-[#ebdec8] flex items-center justify-center border border-white shrink-0 font-black text-[#1b2b25] text-lg mt-0.5 shadow-2xs">
               {profile?.nome ? profile.nome.charAt(0).toUpperCase() : "U"}
             </div>
           )}
 
-          <div className="min-w-0">
+          {/* Dati Esploratore */}
+          <div className="min-w-0 flex flex-col gap-1.5">
+            
+            {/* Riga 1: Nome + Badge Tu */}
             <div className="flex items-center gap-1.5 flex-wrap">
               <h3 className="text-sm font-black text-[#1b2b25] truncate">
                 {profile?.nome || "Esploratore"}
               </h3>
-
               {isMe && (
-                <span className="px-2 py-0.5 rounded-md bg-[#ebdec8] text-[#1b2b25] text-[9px] font-black uppercase border border-white">
+                <span className="px-1.5 py-0.5 rounded-md bg-[#ebdec8] text-[#1b2b25] text-[9px] font-black uppercase border border-white shadow-xs">
                   Tu
-                </span>
-              )}
-
-              {isPadreFondatore && (
-                <span className="px-1.5 py-0.5 rounded-md bg-[#1b2b25] text-[#ebdec8] text-[9px] font-black uppercase" title="Padre Fondatore">
-                  🐴
                 </span>
               )}
             </div>
 
-            <span className={`inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-wider ${statusBadgeBg}`}>
-              <span>{statusDot}</span>
-              <span>{statoLabel}</span>
-            </span>
+            {/* Riga 2: Ruolo & Nome Coniglio (Le nuove chicche!) */}
+            {(ruolo || nomeConiglio) && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {/* Badge Ruolo */}
+                {isPadreFondatore ? (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#1b2b25] text-[#ebdec8] text-[9px] font-black uppercase tracking-wider shadow-xs">
+                    <span>🐴</span> Padre Fondatore
+                  </span>
+                ) : ruolo ? (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-200 text-slate-700 text-[9px] font-black uppercase tracking-wider shadow-xs border border-white">
+                    <span>⛺</span> {ruolo}
+                  </span>
+                ) : null}
+
+                {/* Badge Nome Coniglio */}
+                {nomeConiglio && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-900 border border-amber-500/20 text-[10px] font-extrabold italic shadow-xs">
+                    <span>🐰</span> {nomeConiglio}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Riga 3: Stato Presenza */}
+            <div className="mt-0.5">
+              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-wider ${statusBadgeBg}`}>
+                <span>{statusDot}</span>
+                <span>{statoLabel}</span>
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="w-8 h-8 rounded-xl bg-slate-100/80 flex items-center justify-center text-[#1b2b25] text-xs font-black shrink-0">
+        {/* Freccia espansione */}
+        <div className="w-8 h-8 rounded-xl bg-slate-100/80 flex items-center justify-center text-[#1b2b25] text-xs font-black shrink-0 mt-0.5 shadow-xs border border-white">
           {open ? "▲" : "▼"}
         </div>
       </div>
 
       {/* DETTAGLI ESPANDIBILI */}
       {open && (
-        <div className="mt-4 pt-3 border-t border-[#1b2b25]/10 space-y-3 text-xs" onClick={(e) => e.stopPropagation()}>
+        <div className="mt-4 pt-4 border-t border-[#1b2b25]/10 space-y-3 text-xs" onClick={(e) => e.stopPropagation()}>
           
           {/* SELETTORE STATO (SE È L'UTENTE LOGGATO) */}
           {isMe && (
@@ -354,7 +383,7 @@ function ParticipantCard({
           {profile?.telefono && (
             <a
               href={`tel:${profile.telefono}`}
-              className="flex items-center justify-between p-2.5 rounded-xl bg-[#ebdec8] text-[#1b2b25] font-black text-xs border border-white shadow-2xs active:scale-95 transition"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-[#ebdec8] text-[#1b2b25] font-black text-xs border border-white shadow-2xs active:scale-95 transition mt-2"
             >
               <div className="flex items-center gap-2">
                 <span>📞</span>
