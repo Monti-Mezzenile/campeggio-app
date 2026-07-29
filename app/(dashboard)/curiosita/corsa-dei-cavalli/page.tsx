@@ -7,7 +7,7 @@ import BackButton from "@/components/ui/BackButton";
 function TrophyIcon({ className = "w-6 h-6" }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4a5 5 0 005 5h4a5 5 0 005-5V3M5 3h14M5 3H3v2a4 4 0 004 4h-1m-5 7v3m-4 0h8m-4 0v3m-4 0h8" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4a5 5 0 005 5h4a5 5 0 005-5V3M5 3h14M5 3H3v2a4 4 0 014 4h-1m-5 7v3m-4 0h8m-4 0v3m-4 0h8" />
     </svg>
   );
 }
@@ -34,11 +34,11 @@ export default function CorsaDeiCavalliPage() {
   
   const lastShotTime = useRef<number>(0);
   
-  // Ref per Web Audio API
+  // Ref per Web Audio API (risposta istantanea a bassissima latenza)
   const audioCtxRef = useRef<AudioContext | null>(null);
   const audioBufferRef = useRef<AudioBuffer | null>(null);
 
-  // 1. CARICAMENTO AUDIO BUFFER VIA WEB AUDIO API
+  // Caricamento del file audio in memoria
   useEffect(() => {
     const initWebAudio = async () => {
       try {
@@ -48,106 +48,60 @@ export default function CorsaDeiCavalliPage() {
         const ctx = new AudioContextClass();
         audioCtxRef.current = ctx;
 
-        // Fetch del file mp3 in public/audio/sparo.mp3
         const response = await fetch("/audio/sparo.mp3");
         const arrayBuffer = await response.arrayBuffer();
         const decodedBuffer = await ctx.decodeAudioData(arrayBuffer);
         
         audioBufferRef.current = decodedBuffer;
       } catch (err) {
-        console.error("Errore nel caricamento di Web Audio API:", err);
+        console.error("Errore Web Audio API:", err);
       }
     };
 
     initWebAudio();
   }, []);
 
-  // 2. FUNZIONE PER RIPRODURRE LO SPARO VIA WEB AUDIO
+  // Riproduzione dello sparo
   const playSparoSound = () => {
     if (!audioCtxRef.current || !audioBufferRef.current) {
-      // Fallback classico se Web Audio non è supportato
+      // Fallback HTML5 Audio classico
       const fallbackAudio = new Audio("/audio/sparo.mp3");
       fallbackAudio.play().catch(() => {});
       return;
     }
 
     const ctx = audioCtxRef.current;
-
-    // Se il contesto è in pausa (suspended), lo riattiviamo
     if (ctx.state === "suspended") {
       ctx.resume();
     }
 
-    // Crea un nuovo nodo sorgente per riprodurre il buffer all'istante
     const source = ctx.createBufferSource();
     source.buffer = audioBufferRef.current;
     source.connect(ctx.destination);
     source.start(0);
   };
 
-  // 3. TRIGGER FINALE (FLASH + SUONO)
+  // Esecuzione dello sparo (Flash + Audio al Tocco)
   const triggerShot = () => {
     const now = Date.now();
-    if (now - lastShotTime.current < 400) return; // Cooldown 400ms
+    if (now - lastShotTime.current < 250) return; // Cooldown di 250ms per raffiche veloci
     lastShotTime.current = now;
 
     // Flash Visivo
     setIsShooting(true);
-    setTimeout(() => setIsShooting(false), 150);
+    setTimeout(() => setIsShooting(false), 120);
 
-    // Suono
+    // Suono Sparo
     playSparoSound();
   };
 
-  // 4. APERTURA MODALE + SBLOCCO TOTALE CONTESTO AUDIO
-  const openGunModal = async () => {
-    // Sblocca immediatamente l'AudioContext durante il CLICK dell'utente
-    if (audioCtxRef.current) {
-      if (audioCtxRef.current.state === "suspended") {
-        await audioCtxRef.current.resume();
-      }
+  // Apertura Modale
+  const openGunModal = () => {
+    if (audioCtxRef.current && audioCtxRef.current.state === "suspended") {
+      audioCtxRef.current.resume();
     }
-
-    // Richiesta permessi sensori per dispositivi iOS
-    if (
-      typeof (DeviceMotionEvent as any) !== "undefined" &&
-      typeof (DeviceMotionEvent as any).requestPermission === "function"
-    ) {
-      try {
-        await (DeviceMotionEvent as any).requestPermission();
-      } catch (err) {
-        console.error("Errore richiesta permessi accelerometro:", err);
-      }
-    }
-
     setShowGunModal(true);
   };
-
-  // 5. ACCELEROMETRO
-  useEffect(() => {
-    if (!showGunModal) return;
-
-    const handleMotion = (event: DeviceMotionEvent) => {
-      const acc = event.acceleration || event.accelerationIncludingGravity;
-      if (!acc) return;
-
-      const x = acc.x || 0;
-      const y = acc.y || 0;
-      const z = acc.z || 0;
-
-      const magnitude = Math.sqrt(x * x + y * y + z * z);
-
-      // Soglia scossone/frustata
-      if (magnitude > 15) {
-        triggerShot();
-      }
-    };
-
-    window.addEventListener("devicemotion", handleMotion);
-    return () => {
-      window.removeEventListener("devicemotion", handleMotion);
-    };
-  }, [showGunModal]);
 
   return (
     <main className="min-h-screen p-4 sm:p-6 pb-36 max-w-md mx-auto flex flex-col gap-5 text-zinc-900 select-none">
@@ -437,7 +391,7 @@ export default function CorsaDeiCavalliPage() {
 
       </div>
 
-      {/* 🔴 MODALE PISTOLA A SCHERMO INTERO */}
+      {/* 🔴 MODALE PISTOLA A SCHERMO INTERO (ATTIVAZIONE ESCLUSIVAMENTE AL TOCCO) */}
       {showGunModal && (
         <div 
           onClick={triggerShot}
@@ -461,8 +415,8 @@ export default function CorsaDeiCavalliPage() {
             <span className="inline-block px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black uppercase tracking-widest mb-2">
               🔫 Segnale di Partenza
             </span>
-            <p className="text-base sm:text-lg text-white font-black max-w-sm mx-auto animate-pulse">
-              MUOVI IL TELEFONO A FRUSTA<br/>O TOCCA LO SCHERMO!
+            <p className="text-lg sm:text-xl text-white font-black max-w-sm mx-auto animate-pulse">
+              TOCCA LO SCHERMO PER SPARARE!
             </p>
           </div>
 
@@ -481,7 +435,7 @@ export default function CorsaDeiCavalliPage() {
           {/* Footer */}
           <div className="pb-4 text-center pointer-events-none">
             <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
-              Scontro diretto Web Audio API
+              Tocca qualsiasi punto per riprodurre lo sparo
             </p>
           </div>
         </div>
