@@ -1,5 +1,5 @@
 "use client";
-
+/*Test*/
 import BackButton from "@/components/ui/BackButton";
 
 // --- SVG Icons Minimal & Affilate ---
@@ -361,7 +361,7 @@ export default function BucockPage() {
                 </span>
                 <div>
                   <h3 className="text-sm font-black text-amber-950 uppercase tracking-wide">
-                    Il Ritual del Bucock
+                    Il Rituale del Bucock
                   </h3>
                   <span className="text-[10px] font-bold text-amber-900 block">
                     La carta da cui il gioco prende il nome
