@@ -1,5 +1,6 @@
 "use client";
-/* Test */
+
+/*Test*/
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -218,10 +219,9 @@ function ParticipantCard({
     statusDot = "🔴";
   }
 
-  // Estrazione precisa di titolo_campo e nome_coniglio
+  // Estrazione diretta di titolo_campo e nome_coniglio
   const titoloCampo = profile?.titolo_campo;
   const nomeConiglio = profile?.nome_coniglio;
-  const isPadreFondatore = profile?.ruolo?.toLowerCase() === "admin" || profile?.ruolo?.toLowerCase() === "padre fondatore";
 
   function formatTimeDetail(date: string, time: string) {
     if (!date) return "Non specificato";
@@ -269,18 +269,11 @@ function ParticipantCard({
               )}
             </div>
 
-            {/* Riga 2: Titolo da Campo / Padre Fondatore & Nome Coniglio */}
-            {(isPadreFondatore || titoloCampo || nomeConiglio) && (
+            {/* Riga 2: Titolo da Campo puro e semplice & Nome Coniglio */}
+            {(titoloCampo || nomeConiglio) && (
               <div className="flex items-center gap-1.5 flex-wrap">
-                {/* Badge Padre Fondatore */}
-                {isPadreFondatore && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#1b2b25] text-[#ebdec8] text-[9px] font-black uppercase tracking-wider shadow-xs">
-                    <span>🐴</span> Padre Fondatore
-                  </span>
-                )}
-
-                {/* Badge Titolo da Campo (dalla colonna titolo_campo) */}
-                {titoloCampo && !isPadreFondatore && (
+                {/* Badge Titolo da Campo */}
+                {titoloCampo && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-200 text-slate-800 text-[9px] font-black uppercase tracking-wider shadow-xs border border-white">
                     <span>⛺</span> {titoloCampo}
                   </span>
