@@ -32,11 +32,44 @@ export default function CorsaDeiCavalliPage() {
   const [showGunModal, setShowGunModal] = useState(false);
   const [isShooting, setIsShooting] = useState(false);
   
-  // Usiamo un ref per tracciare l'orario dell'ultimo sparo ed evitare mitragliatrici involontarie
+  // Ref per tracciare l'ultimo sparo (cooldown) e l'audio precaricato
   const lastShotTime = useRef<number>(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Funzione per aprire la modale e chiedere i permessi per i sensori (obbligatorio su iOS)
+  // Pre-carichiamo l'audio `/audio/sparo.mp3`
+  useEffect(() => {
+    audioRef.current = new Audio("/audio/sparo.mp3");
+  }, []);
+
+  // Funzione per eseguire lo sparo: combina FLASH + AUDIO
+  const triggerShot = () => {
+    const now = Date.now();
+    if (now - lastShotTime.current < 600) return; // Cooldown di 600ms per evitare spari sovrapposti
+    lastShotTime.current = now;
+
+    // 1. EFFETTO FLASH VISIVO
+    setIsShooting(true);
+    setTimeout(() => setIsShooting(false), 150);
+
+    // 2. RIPRODUZIONE AUDIO "/audio/sparo.mp3"
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {
+        // Fallback istanza audio separata
+        const fallbackAudio = new Audio("/audio/sparo.mp3");
+        fallbackAudio.play().catch((err) => console.log("Errore audio:", err));
+      });
+    }
+  };
+
+  // Apertura modale con sblocco sensori e audio per iOS/Android
   const openGunModal = async () => {
+    // Sblocca il contesto audio al tocco dell'utente
+    if (audioRef.current) {
+      audioRef.current.load();
+    }
+
+    // Richiesta permessi sensori per dispositivi iOS
     if (
       typeof (DeviceMotionEvent as any) !== "undefined" &&
       typeof (DeviceMotionEvent as any).requestPermission === "function"
@@ -44,7 +77,7 @@ export default function CorsaDeiCavalliPage() {
       try {
         const permission = await (DeviceMotionEvent as any).requestPermission();
         if (permission !== "granted") {
-          console.warn("Permesso per il sensore di movimento negato.");
+          console.warn("Permesso accelerometro non concesso");
         }
       } catch (err) {
         console.error("Errore richiesta permessi accelerometro:", err);
@@ -53,28 +86,11 @@ export default function CorsaDeiCavalliPage() {
     setShowGunModal(true);
   };
 
-  // Funzione per riprodurre lo sparo e l'effetto visivo
-  const playSparoAudio = () => {
-    // Evita di accavallare troppi spari in pochi millisecondi (cooldown di 800ms)
-    const now = Date.now();
-    if (now - lastShotTime.current < 800) return;
-    lastShotTime.current = now;
-
-    // Effetto Flash Visivo
-    setIsShooting(true);
-    setTimeout(() => setIsShooting(false), 150);
-
-    // Audio
-    const audio = new Audio("/audio/sparo.mp3");
-    audio.play().catch((err) => console.log("Errore nella riproduzione dell'audio:", err));
-  };
-
-  // Listener per l'accelerometro (scuotimento/movimento netto)
+  // Listener per l'accelerometro (scuotimento / colpo a frusta verso il basso)
   useEffect(() => {
     if (!showGunModal) return;
 
     const handleMotion = (event: DeviceMotionEvent) => {
-      // Usiamo l'accelerazione senza gravità (più precisa) o con gravità come fallback
       const acc = event.acceleration || event.accelerationIncludingGravity;
       if (!acc) return;
 
@@ -82,12 +98,12 @@ export default function CorsaDeiCavalliPage() {
       const y = acc.y || 0;
       const z = acc.z || 0;
 
-      // Calcoliamo la "forza" totale del movimento
+      // Forza totale dell'accelerazione
       const magnitude = Math.sqrt(x * x + y * y + z * z);
 
-      // Se il movimento supera la soglia di 15 (un bel colpo secco)
+      // Soglia d'innesco movimento
       if (magnitude > 15) {
-        playSparoAudio();
+        triggerShot();
       }
     };
 
@@ -98,14 +114,15 @@ export default function CorsaDeiCavalliPage() {
   }, [showGunModal]);
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 pb-32 max-w-2xl mx-auto text-zinc-900">
+    <main className="min-h-screen p-4 sm:p-6 pb-36 max-w-md mx-auto flex flex-col gap-5 text-zinc-900 select-none">
+      
       {/* Tasto Indietro */}
-      <div className="mb-4">
+      <div className="pt-1">
         <BackButton label="Indietro" />
       </div>
 
       {/* HEADER BANNER */}
-      <div className="relative overflow-hidden bg-white/80 border border-white/90 rounded-3xl p-6 sm:p-8 shadow-xl backdrop-blur-md mb-6">
+      <div className="relative overflow-hidden bg-white/80 border border-white/90 rounded-[2.5rem] p-6 shadow-xl backdrop-blur-md">
         <div className="absolute top-0 right-0 -mr-8 -mt-8 w-36 h-36 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
 
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-950 text-[10px] font-black uppercase tracking-wider mb-3">
@@ -122,7 +139,7 @@ export default function CorsaDeiCavalliPage() {
       </div>
 
       {/* REQUISITO ESSENZIALE: AUDIO FANFARA */}
-      <div className="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-md backdrop-blur-md mb-4 space-y-3">
+      <div className="bg-amber-500/10 border border-amber-500/30 rounded-[2.5rem] p-5 sm:p-6 shadow-md backdrop-blur-md space-y-3">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-2xl bg-amber-500 text-amber-950 shadow-md animate-pulse">
             <VolumeUpIcon className="w-6 h-6" />
@@ -151,7 +168,7 @@ export default function CorsaDeiCavalliPage() {
       </div>
 
       {/* 🔫 BOTTONE PISTOLA STARTER */}
-      <div className="mb-6">
+      <div>
         <button
           onClick={openGunModal}
           className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-black py-4 px-6 rounded-3xl shadow-xl border border-zinc-700/50 flex items-center justify-center gap-3 active:scale-95 transition-all group"
@@ -168,27 +185,27 @@ export default function CorsaDeiCavalliPage() {
       </div>
 
       {/* SHOWCASE CREATIVO DEI 4 CAVALLI IN GARA */}
-      <div className="bg-white/80 border border-white/90 rounded-3xl p-5 sm:p-7 shadow-xl backdrop-blur-md mb-6 space-y-5 relative overflow-hidden">
+      <div className="bg-white/80 border border-white/90 rounded-[2.5rem] p-5 sm:p-6 shadow-xl backdrop-blur-md space-y-5 relative overflow-hidden">
         
-        {/* Glow di sfondo alla sezione */}
+        {/* Glow di sfondo */}
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-200/80 pb-4">
+        <div className="flex flex-col gap-2 border-b border-zinc-200/80 pb-3">
           <div>
             <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 block">
               Griglia di Partenza
             </span>
             <h2 className="text-xl font-black text-zinc-950 tracking-tight">
-              I Quattro Cavalli Campioni
+              I 4 Cavalli Campioni
             </h2>
           </div>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900 text-white text-[10px] font-black uppercase tracking-wider self-start sm:self-auto shadow-sm">
+          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900 text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
             ⚡ Scegli la tua Fazione
           </span>
         </div>
 
         {/* GRIGLIA CARDS CAVALLI */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           
           {/* BASTONI */}
           <div className="group relative bg-gradient-to-b from-amber-500/15 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl p-4 flex flex-col items-center justify-between transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-amber-500/20 hover:border-amber-500/60 overflow-hidden">
@@ -196,18 +213,18 @@ export default function CorsaDeiCavalliPage() {
               N° 1
             </div>
             
-            <div className="my-3 relative flex items-center justify-center">
-              <div className="absolute w-20 h-20 bg-amber-500/20 rounded-full blur-xl group-hover:scale-125 transition-transform" />
+            <div className="my-2 relative flex items-center justify-center">
+              <div className="absolute w-16 h-16 bg-amber-500/20 rounded-full blur-xl group-hover:scale-125 transition-transform" />
               <img 
                 src="/corsa/Bastoni.png" 
                 alt="Bastoni" 
-                className="relative w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-xl group-hover:scale-110 transition-transform duration-300" 
+                className="relative w-20 h-20 object-contain drop-shadow-xl group-hover:scale-110 transition-transform duration-300" 
               />
             </div>
 
             <div className="text-center w-full pt-2 border-t border-amber-500/20">
-              <h3 className="text-sm sm:text-base font-black text-zinc-950 uppercase tracking-wider">Bastoni</h3>
-              <span className="text-[10px] font-bold text-amber-900/80 block italic">"La Forza Bruta"</span>
+              <h3 className="text-sm font-black text-zinc-950 uppercase tracking-wider">Bastoni</h3>
+              <span className="text-[9px] font-bold text-amber-900/80 block italic">"La Forza Bruta"</span>
             </div>
           </div>
 
@@ -217,18 +234,18 @@ export default function CorsaDeiCavalliPage() {
               N° 2
             </div>
 
-            <div className="my-3 relative flex items-center justify-center">
-              <div className="absolute w-20 h-20 bg-yellow-400/30 rounded-full blur-xl group-hover:scale-125 transition-transform" />
+            <div className="my-2 relative flex items-center justify-center">
+              <div className="absolute w-16 h-16 bg-yellow-400/30 rounded-full blur-xl group-hover:scale-125 transition-transform" />
               <img 
                 src="/corsa/ori.png" 
                 alt="Ori" 
-                className="relative w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-xl group-hover:scale-110 transition-transform duration-300" 
+                className="relative w-20 h-20 object-contain drop-shadow-xl group-hover:scale-110 transition-transform duration-300" 
               />
             </div>
 
             <div className="text-center w-full pt-2 border-t border-yellow-500/20">
-              <h3 className="text-sm sm:text-base font-black text-zinc-950 uppercase tracking-wider">Ori</h3>
-              <span className="text-[10px] font-bold text-yellow-900/80 block italic">"Il Favorito"</span>
+              <h3 className="text-sm font-black text-zinc-950 uppercase tracking-wider">Ori</h3>
+              <span className="text-[9px] font-bold text-yellow-900/80 block italic">"Il Favorito"</span>
             </div>
           </div>
 
@@ -238,18 +255,18 @@ export default function CorsaDeiCavalliPage() {
               N° 3
             </div>
 
-            <div className="my-3 relative flex items-center justify-center">
-              <div className="absolute w-20 h-20 bg-slate-400/20 rounded-full blur-xl group-hover:scale-125 transition-transform" />
+            <div className="my-2 relative flex items-center justify-center">
+              <div className="absolute w-16 h-16 bg-slate-400/20 rounded-full blur-xl group-hover:scale-125 transition-transform" />
               <img 
                 src="/corsa/Spade.png" 
                 alt="Spade" 
-                className="relative w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-xl group-hover:scale-110 transition-transform duration-300" 
+                className="relative w-20 h-20 object-contain drop-shadow-xl group-hover:scale-110 transition-transform duration-300" 
               />
             </div>
 
             <div className="text-center w-full pt-2 border-t border-slate-400/20">
-              <h3 className="text-sm sm:text-base font-black text-zinc-950 uppercase tracking-wider">Spade</h3>
-              <span className="text-[10px] font-bold text-slate-800 block italic">"L'Affilato"</span>
+              <h3 className="text-sm font-black text-zinc-950 uppercase tracking-wider">Spade</h3>
+              <span className="text-[9px] font-bold text-slate-800 block italic">"L'Affilato"</span>
             </div>
           </div>
 
@@ -259,18 +276,18 @@ export default function CorsaDeiCavalliPage() {
               N° 4
             </div>
 
-            <div className="my-3 relative flex items-center justify-center">
-              <div className="absolute w-20 h-20 bg-rose-500/20 rounded-full blur-xl group-hover:scale-125 transition-transform" />
+            <div className="my-2 relative flex items-center justify-center">
+              <div className="absolute w-16 h-16 bg-rose-500/20 rounded-full blur-xl group-hover:scale-125 transition-transform" />
               <img 
                 src="/corsa/coppe.png" 
                 alt="Coppe" 
-                className="relative w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-xl group-hover:scale-110 transition-transform duration-300" 
+                className="relative w-20 h-20 object-contain drop-shadow-xl group-hover:scale-110 transition-transform duration-300" 
               />
             </div>
 
             <div className="text-center w-full pt-2 border-t border-rose-500/20">
-              <h3 className="text-sm sm:text-base font-black text-zinc-950 uppercase tracking-wider">Coppe</h3>
-              <span className="text-[10px] font-bold text-rose-900/80 block italic">"Il Sacro Graal"</span>
+              <h3 className="text-sm font-black text-zinc-950 uppercase tracking-wider">Coppe</h3>
+              <span className="text-[9px] font-bold text-rose-900/80 block italic">"Il Sacro Graal"</span>
             </div>
           </div>
 
@@ -281,7 +298,7 @@ export default function CorsaDeiCavalliPage() {
       <div className="space-y-4">
         
         {/* FASI DEL GIOCO */}
-        <div className="bg-white/80 border border-white/90 rounded-3xl p-6 shadow-md backdrop-blur-md space-y-5">
+        <div className="bg-white/80 border border-white/90 rounded-[2.5rem] p-6 shadow-md backdrop-blur-md space-y-5">
           
           {/* FASE 1: PREPARAZIONE */}
           <div className="space-y-2">
@@ -295,10 +312,10 @@ export default function CorsaDeiCavalliPage() {
             </div>
             <ul className="text-xs sm:text-sm text-zinc-700 space-y-1.5 pl-8 font-medium leading-relaxed list-disc">
               <li>
-                Dal mazzo di carte (tipicamente napoletane e soprattutto <strong>GRANDI</strong>) vengono estratti i quattro cavalli, uno per ciascun seme: <strong>Bastoni, Ori, Spade e Coppe</strong>.
+                Dal mazzo di carte (tipicamente napoletane e <strong>GRANDI</strong>) si estraggono i quattro cavalli: <strong>Bastoni, Ori, Spade e Coppe</strong>.
               </li>
               <li>
-                Vengono disposte <strong>8 Carte coperte in linea</strong> che segnano gli step che i cavalli compiranno durante la gara.
+                Vengono disposte <strong>8 Carte coperte in linea</strong> che segnano gli step.
               </li>
               <li>I cavalli vengono schierati sulla linea di partenza.</li>
             </ul>
@@ -317,7 +334,7 @@ export default function CorsaDeiCavalliPage() {
               </h3>
             </div>
             <p className="text-xs sm:text-sm text-zinc-700 pl-8 font-medium leading-relaxed">
-              Ogni partecipante o gruppo di partecipanti sceglie ed esprime apertamente la propria lealtà incondizionata a uno dei quattro cavalli in gara.
+              Ogni partecipante sceglie ed esprime apertamente la propria lealtà a uno dei quattro cavalli in gara.
             </p>
           </div>
 
@@ -337,19 +354,19 @@ export default function CorsaDeiCavalliPage() {
               <li className="flex items-start gap-2">
                 <span className="text-amber-600 font-bold">•</span>
                 <span>
-                  Il mazziere mescola le carte rimanenti e comincia a girarle una ad una singolarmente.
+                  Il mazziere mescola le carte rimanenti e comincia a girarle una ad una.
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-amber-600 font-bold">•</span>
                 <span>
-                  Ogni volta che esce una carta di un determinato seme, il cavallo corrispondente avanza di una posizione verso il traguardo.
+                  Ogni volta che esce una carta di un seme, il cavallo corrispondente avanza di una posizione.
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-amber-600 font-bold">•</span>
                 <span>
-                  Quando <strong>tutti e quattro i cavalli superano uno step</strong> (segnato da una delle 8 carte laterali), la carta di quello step viene girata e il seme raffigurato farà avanzare ulteriormente quel cavallo!
+                  Quando <strong>tutti i cavalli superano uno step</strong>, la carta laterale coperta viene svelata e il seme raffigurato farà avanzare ulteriormente quel cavallo!
                 </span>
               </li>
             </ul>
@@ -357,8 +374,8 @@ export default function CorsaDeiCavalliPage() {
 
         </div>
 
-        {/* TAB VITTORIA & SCONFITTA (FONT CHIARO E BOLD) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* TAB VITTORIA & SCONFITTA */}
+        <div className="grid grid-cols-1 gap-4">
           
           {/* TAB VITTORIA */}
           <div className="bg-emerald-600 text-white border-2 border-emerald-400 rounded-3xl p-5 shadow-lg backdrop-blur-md space-y-2">
@@ -369,7 +386,7 @@ export default function CorsaDeiCavalliPage() {
               </h3>
             </div>
             <p className="text-xs sm:text-sm font-bold text-emerald-50 leading-relaxed tracking-wide">
-              Il primo cavallo che raggiunge la fine del percorso stabilito decreta la vittoria trionfale di tutti i giocatori che avevano scommesso su quel seme!
+              Il primo cavallo che raggiunge la fine del percorso stabilito decreta la vittoria trionfale di tutti i giocatori che avevano scommesso su di lui!
             </p>
           </div>
 
@@ -382,7 +399,7 @@ export default function CorsaDeiCavalliPage() {
               </h3>
             </div>
             <p className="text-xs sm:text-sm font-bold text-rose-50 leading-relaxed tracking-wide">
-              L'ultimo cavallo a tagliare il traguardo segna la sconfitta di chi ha creduto in lui. A causa di questo fallimento, ogni suo fedele sostenitore sarà <span className="underline decoration-2 underline-offset-2">costretto a bere!</span>
+              L'ultimo cavallo a tagliare il traguardo segna la sconfitta di chi ha creduto in lui. Ogni suo fedele sostenitore sarà <span className="underline decoration-2 underline-offset-2">costretto a bere!</span>
             </p>
           </div>
 
@@ -390,10 +407,10 @@ export default function CorsaDeiCavalliPage() {
 
       </div>
 
-      {/* 🔴 MODALE PISTOLA A SCHERMO INTERO CLICCABILE */}
+      {/* 🔴 MODALE PISTOLA A SCHERMO INTERO (TRIGGER MOVIMENTO + TAP) */}
       {showGunModal && (
         <div 
-          onClick={playSparoAudio}
+          onClick={triggerShot}
           className={`fixed inset-0 z-50 flex flex-col items-center justify-between p-6 cursor-pointer select-none transition-colors duration-100 ${
             isShooting ? "bg-white" : "bg-black/95 backdrop-blur-xl"
           }`}
@@ -401,7 +418,7 @@ export default function CorsaDeiCavalliPage() {
           {/* Tasto Chiudi X in alto a destra */}
           <button
             onClick={(e) => {
-              e.stopPropagation(); // Evita di sparare quando si chiude
+              e.stopPropagation(); // Evita di sparare durante la chiusura
               setShowGunModal(false);
             }}
             className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white font-black text-xl flex items-center justify-center border border-white/20 transition-all active:scale-90 z-10 shadow-lg"
@@ -419,7 +436,7 @@ export default function CorsaDeiCavalliPage() {
             </p>
           </div>
 
-          {/* Immagine Grande della Pistola al centro */}
+          {/* Immagine Grande della Pistola con reazione visiva al rinculo */}
           <div className="relative w-full max-w-md h-3/5 flex items-center justify-center group my-auto pointer-events-none">
             <div className={`absolute inset-0 bg-amber-500/10 rounded-full blur-3xl transition-all ${isShooting ? 'scale-150 opacity-0' : 'scale-100 opacity-100'}`} />
             <img
@@ -434,7 +451,7 @@ export default function CorsaDeiCavalliPage() {
           {/* Footer Avviso */}
           <div className="pb-4 text-center pointer-events-none">
             <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
-              L'accelerometro e lo schermo sono pronti
+              Accelerometro e Flash attivi per /audio/sparo.mp3
             </p>
           </div>
         </div>
