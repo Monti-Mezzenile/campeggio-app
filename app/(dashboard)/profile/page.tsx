@@ -228,12 +228,10 @@ export default function ProfilePage() {
       {/* 🪪 1. CARD PROFILO (TESSERINO DA CAMPO) */}
       <section className="relative rounded-[2.5rem] bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-white text-center overflow-hidden">
         
-        {/* Matricola identificativa in alto a destra */}
         <div className="absolute top-4 right-4 bg-[#1b2b25]/10 px-2.5 py-1 rounded-full text-[9px] font-mono font-bold text-[#1b2b25]/60 tracking-wider uppercase border border-black/5">
           {matricola}
         </div>
 
-        {/* Foto Profilo con Gestione Immagine Custom */}
         <div className="relative mx-auto w-24 h-24 mb-3 mt-1">
           {avatarUrl ? (
             <img
@@ -246,29 +244,23 @@ export default function ProfilePage() {
               <CustomIcon name={padreFondatore ? "cavallo" : "coniglio"} size={50} />
             </div>
           )}
-
-          {/* Icona status nell'angolo */}
           <div className="absolute -bottom-2 -right-2 drop-shadow-md transform hover:scale-110 transition-transform">
             <CustomIcon name={padreFondatore ? "cavallo" : "coniglio"} size={36} />
           </div>
         </div>
 
-        {/* NOME COMPLETO */}
         <h2 className="text-2xl font-black text-[#1b2b25] tracking-tight leading-tight">
           {profile?.nome || "Esploratore Ignoto"}
         </h2>
 
-        {/* RUOLO / TITOLO DA CAMPO */}
         <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#1b2b25]/10 text-[#1b2b25] font-black text-[10px] uppercase tracking-widest mt-1 mb-2">
           <span>⛺</span> {profile?.titolo_campo || "Mastro Fuochista"}
         </div>
 
-        {/* MOTTO PERSONALE */}
         <p className="text-xs italic font-medium text-[#1b2b25]/75 max-w-xs mx-auto mb-4 bg-white/40 py-1.5 px-3 rounded-xl border border-white/60">
           "{profile?.motto || "Sempre pronto alla grigliata."}"
         </p>
 
-        {/* BADGES DI IDENTITÀ & LIVELLO */}
         <div className="flex flex-wrap items-center justify-center gap-2 pt-1 border-t border-[#1b2b25]/10">
           <span className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
             <span>🔥</span> Lvl. {levelNumber} Vet.
@@ -290,7 +282,6 @@ export default function ProfilePage() {
           </span>
         </div>
 
-        {/* ✏️ FORM MODIFICA FLUIDO E COMPLETO */}
         {editing && (
           <div className="mt-6 pt-5 border-t border-[#1b2b25]/10 space-y-4 animate-in fade-in slide-in-from-top-2 text-left">
             <h3 className="text-[11px] font-black uppercase tracking-widest text-[#1b2b25]/60 text-center mb-1">
@@ -303,228 +294,46 @@ export default function ProfilePage() {
               </label>
               <label className="flex items-center justify-center gap-2 w-full rounded-2xl px-4 py-3 bg-white/90 text-[#1b2b25] font-bold text-xs shadow-inner border border-white cursor-pointer hover:bg-white transition">
                 <span>{uploading ? "Caricamento in corso..." : "📷 Scegli o Scatta Foto"}</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  disabled={uploading}
-                  className="hidden"
-                />
+                <input type="file" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} className="hidden" />
               </label>
             </div>
 
             <div>
-              <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">
-                Nome & Cognome
-              </label>
-              <input
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Es. Mario Rossi"
-                className="w-full rounded-2xl px-4 py-2.5 bg-white/90 text-[#1b2b25] font-bold text-xs shadow-inner border border-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
+              <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">Nome & Cognome</label>
+              <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Es. Mario Rossi" className="w-full rounded-2xl px-4 py-2.5 bg-white/90 text-[#1b2b25] font-bold text-xs shadow-inner border border-white focus:outline-none focus:ring-2 focus:ring-amber-400" />
             </div>
 
             <div>
-              <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">
-                Ruolo / Mansione da Campo
-              </label>
-              <input
-                value={titoloCampo}
-                onChange={(e) => setTitoloCampo(e.target.value)}
-                placeholder="Es. Mastro Fuochista, Luppolo Sommelier..."
-                className="w-full rounded-2xl px-4 py-2.5 bg-white/90 text-[#1b2b25] font-bold text-xs shadow-inner border border-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
+              <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">Ruolo / Mansione da Campo</label>
+              <input value={titoloCampo} onChange={(e) => setTitoloCampo(e.target.value)} placeholder="Es. Mastro Fuochista, Luppolo Sommelier..." className="w-full rounded-2xl px-4 py-2.5 bg-white/90 text-[#1b2b25] font-bold text-xs shadow-inner border border-white focus:outline-none focus:ring-2 focus:ring-amber-400" />
             </div>
 
             <div>
-              <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">
-                Motto / Frase d'Ordinanza
-              </label>
-              <input
-                value={motto}
-                onChange={(e) => setMotto(e.target.value)}
-                placeholder="Es. Chi dorme non piglia salsicce..."
-                className="w-full rounded-2xl px-4 py-2.5 bg-white/90 text-[#1b2b25] font-bold text-xs shadow-inner border border-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
+              <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">Motto / Frase d'Ordinanza</label>
+              <input value={motto} onChange={(e) => setMotto(e.target.value)} placeholder="Es. Chi dorme non piglia salsicce..." className="w-full rounded-2xl px-4 py-2.5 bg-white/90 text-[#1b2b25] font-bold text-xs shadow-inner border border-white focus:outline-none focus:ring-2 focus:ring-amber-400" />
             </div>
 
             <div>
-              <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">
-                Nome da Coniglio
-              </label>
-              <input
-                value={nomeConiglio}
-                onChange={(e) => setNomeConiglio(e.target.value)}
-                placeholder="Inserisci soprannome..."
-                className="w-full rounded-2xl px-4 py-2.5 bg-white/90 text-[#1b2b25] font-bold text-xs shadow-inner border border-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
+              <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">Nome da Coniglio</label>
+              <input value={nomeConiglio} onChange={(e) => setNomeConiglio(e.target.value)} placeholder="Inserisci soprannome..." className="w-full rounded-2xl px-4 py-2.5 bg-white/90 text-[#1b2b25] font-bold text-xs shadow-inner border border-white focus:outline-none focus:ring-2 focus:ring-amber-400" />
             </div>
 
             <div className="flex items-center justify-between bg-white/60 p-3 rounded-2xl border border-white">
-              <span className="text-xs font-black text-[#1b2b25]">
-                Padre Fondatore?
-              </span>
+              <span className="text-xs font-black text-[#1b2b25]">Padre Fondatore?</span>
               <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => setPadreFondatore(true)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 ${
-                    padreFondatore
-                      ? "bg-[#1b2b25] text-white shadow-md"
-                      : "bg-transparent text-[#1b2b25]/50 hover:bg-white"
-                  }`}
-                >
-                  <CustomIcon name="cavallo" size={14} /> SI
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPadreFondatore(false)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 ${
-                    !padreFondatore
-                      ? "bg-red-500 text-white shadow-md"
-                      : "bg-transparent text-[#1b2b25]/50 hover:bg-white"
-                  }`}
-                >
-                  <CustomIcon name="coniglio" size={14} /> NO
-                </button>
+                <button type="button" onClick={() => setPadreFondatore(true)} className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 ${padreFondatore ? "bg-[#1b2b25] text-white shadow-md" : "bg-transparent text-[#1b2b25]/50 hover:bg-white"}`}><CustomIcon name="cavallo" size={14} /> SI</button>
+                <button type="button" onClick={() => setPadreFondatore(false)} className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 ${!padreFondatore ? "bg-red-500 text-white shadow-md" : "bg-transparent text-[#1b2b25]/50 hover:bg-white"}`}><CustomIcon name="coniglio" size={14} /> NO</button>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={saveProfile}
-              disabled={saving || uploading}
-              className="w-full rounded-2xl py-3.5 bg-gradient-to-r from-amber-400 to-amber-500 text-amber-950 font-black text-xs uppercase tracking-wider active:scale-95 transition shadow-md border border-amber-300"
-            >
+            <button type="button" onClick={saveProfile} disabled={saving || uploading} className="w-full rounded-2xl py-3.5 bg-gradient-to-r from-amber-400 to-amber-500 text-amber-950 font-black text-xs uppercase tracking-wider active:scale-95 transition shadow-md border border-amber-300">
               {saving ? "Aggiornamento Tesserino..." : "Salva Tesserino"}
             </button>
           </div>
         )}
       </section>
 
-      {/* 🐾 2. SCHEDA MASCOTTE / BESTIA PERSONALE */}
-      <section className="rounded-[2.5rem] bg-zinc-900/90 text-white p-5 shadow-xl border border-white/10 backdrop-blur-xl relative overflow-hidden">
-        <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🐺</span>
-            <div>
-              <h3 className="text-xs font-black uppercase tracking-widest text-amber-400">
-                Stato della Bestia
-              </h3>
-              <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
-                Fase {mascotFase} • {mascotDef.name}
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/mascotte"
-            className="px-3 py-1.5 rounded-xl bg-amber-500 text-zinc-950 font-black text-[10px] uppercase tracking-wider shadow-md hover:bg-amber-400 transition-colors active:scale-95"
-          >
-            Vai in Stalla →
-          </Link>
-        </div>
-
-        {mascot ? (
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            {/* AVATAR EVOLUZIONE MASCOTTE */}
-            <div className="relative w-24 h-24 bg-black/60 rounded-2xl border border-white/10 flex items-center justify-center p-2 shrink-0 shadow-inner">
-              <img
-                src={mascotDef.image}
-                alt={mascotDef.name}
-                className={`w-full h-full object-contain ${
-                  isMascotCritical ? "grayscale opacity-75" : "drop-shadow-[0_4px_10px_rgba(245,158,11,0.3)]"
-                }`}
-              />
-              {isMascotCritical && (
-                <div className="absolute top-1 right-1 bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md animate-pulse">
-                  SOS
-                </div>
-              )}
-            </div>
-
-            {/* BARRE STATISTICHE & PROGRESSO EXP */}
-            <div className="w-full space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-black text-white truncate max-w-[140px]">
-                  {mascot.nome_mascotte || "Senza Nome"}
-                </span>
-                <span className="text-[9px] font-bold text-amber-400">
-                  {mascot.exp || 0} / {mascotNextExp} XP
-                </span>
-              </div>
-
-              {/* Progress EXP */}
-              <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden border border-white/5">
-                <div
-                  className="bg-amber-400 h-full transition-all duration-300"
-                  style={{ width: `${mascotExpPercent}%` }}
-                />
-              </div>
-
-              {/* Mini barre stat */}
-              <div className="grid grid-cols-3 gap-2 pt-1">
-                {/* FAME */}
-                <div className="bg-black/40 p-1.5 rounded-xl border border-white/5 text-center">
-                  <div className="text-[8px] font-black text-zinc-400 uppercase flex items-center justify-between mb-0.5">
-                    <span>Fame</span>
-                    <span className={mascot.fame < 20 ? "text-red-400 font-bold" : ""}>
-                      {Math.round(mascot.fame ?? 50)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-zinc-800 h-1 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${mascot.fame < 20 ? "bg-red-500 animate-pulse" : "bg-rose-500"}`}
-                      style={{ width: `${Math.min(100, Math.max(0, mascot.fame ?? 50))}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* SETE */}
-                <div className="bg-black/40 p-1.5 rounded-xl border border-white/5 text-center">
-                  <div className="text-[8px] font-black text-zinc-400 uppercase flex items-center justify-between mb-0.5">
-                    <span>Sete</span>
-                    <span className={mascot.sete < 20 ? "text-red-400 font-bold" : ""}>
-                      {Math.round(mascot.sete ?? 50)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-zinc-800 h-1 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${mascot.sete < 20 ? "bg-red-500 animate-pulse" : "bg-sky-500"}`}
-                      style={{ width: `${Math.min(100, Math.max(0, mascot.sete ?? 50))}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* SVAGO */}
-                <div className="bg-black/40 p-1.5 rounded-xl border border-white/5 text-center">
-                  <div className="text-[8px] font-black text-zinc-400 uppercase flex items-center justify-between mb-0.5">
-                    <span>Svago</span>
-                    <span className={mascot.svago < 20 ? "text-red-400 font-bold" : ""}>
-                      {Math.round(mascot.svago ?? 50)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-zinc-800 h-1 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${mascot.svago < 20 ? "bg-red-500 animate-pulse" : "bg-emerald-500"}`}
-                      style={{ width: `${Math.min(100, Math.max(0, mascot.svago ?? 50))}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-black/40 p-4 rounded-2xl text-center border border-white/5">
-            <p className="text-xs text-zinc-400 font-bold">Nessuna mascotte adottata al momento.</p>
-            <Link href="/mascotte" className="inline-block mt-2 text-xs text-amber-400 font-black uppercase underline">
-              Crea subito la tua mascotte →
-            </Link>
-          </div>
-        )}
-      </section>
-
-      {/* ⛺ 3. HUB RISORSE (Bento Grid) */}
+      {/* ⛺ 2. HUB RISORSE (Bento Grid) - ORA SOPRA LA MASCOTTE */}
       <section className="rounded-[2.5rem] bg-white/40 backdrop-blur-xl p-5 shadow-sm border border-white space-y-5">
         <div>
           <div className="flex justify-between items-center mb-3 px-1">
@@ -622,6 +431,129 @@ export default function ProfilePage() {
             </div>
           </button>
         </div>
+      </section>
+
+      {/* 🐾 3. SCHEDA MASCOTTE / BESTIA PERSONALE (Spostata Sotto, Layout Orizzontale) */}
+      <section className="rounded-[2.5rem] bg-zinc-900/90 text-white p-5 shadow-xl border border-white/10 backdrop-blur-xl relative overflow-hidden">
+        <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🐺</span>
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-widest text-amber-400">
+                Stato della Bestia
+              </h3>
+              <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
+                Fase {mascotFase} • {mascotDef.name}
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/mascotte"
+            className="px-3 py-1.5 rounded-xl bg-amber-500 text-zinc-950 font-black text-[10px] uppercase tracking-wider shadow-md hover:bg-amber-400 transition-colors active:scale-95"
+          >
+            Vai in Stalla →
+          </Link>
+        </div>
+
+        {mascot ? (
+          <div className="flex flex-col gap-3">
+            {/* RIGA Orizzontale: AVATAR + TESTI */}
+            <div className="flex items-center gap-4">
+              
+              {/* AVATAR (Più compatto) */}
+              <div className="relative w-20 h-20 bg-black/60 rounded-2xl border border-white/10 flex items-center justify-center p-1.5 shrink-0 shadow-inner">
+                <img
+                  src={mascotDef.image}
+                  alt={mascotDef.name}
+                  className={`w-full h-full object-contain ${
+                    isMascotCritical ? "grayscale opacity-75" : "drop-shadow-[0_4px_10px_rgba(245,158,11,0.3)]"
+                  }`}
+                />
+                {isMascotCritical && (
+                  <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md animate-pulse shadow-md">
+                    SOS
+                  </div>
+                )}
+              </div>
+
+              {/* COLONNA INFORMAZIONI (Espansa) */}
+              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <h4 className="text-sm font-black text-white leading-tight break-words mb-1 pr-1">
+                  {mascot.nome_mascotte || "Senza Nome"}
+                </h4>
+                <p className="text-[10px] font-bold text-amber-400 mb-1.5">
+                  {mascot.exp || 0} / {mascotNextExp} XP
+                </p>
+                {/* Barra EXP */}
+                <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden border border-white/5">
+                  <div
+                    className="bg-amber-400 h-full transition-all duration-300"
+                    style={{ width: `${mascotExpPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* BARRE STATISTICHE INFERIORI */}
+            <div className="grid grid-cols-3 gap-2 mt-1">
+              {/* FAME */}
+              <div className="bg-black/40 p-2 rounded-xl border border-white/5 text-center">
+                <div className="text-[8px] font-black text-zinc-400 uppercase flex items-center justify-between mb-1">
+                  <span>Fame</span>
+                  <span className={mascot.fame < 20 ? "text-red-400 font-bold" : ""}>
+                    {Math.round(mascot.fame ?? 50)}%
+                  </span>
+                </div>
+                <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${mascot.fame < 20 ? "bg-red-500 animate-pulse" : "bg-rose-500"}`}
+                    style={{ width: `${Math.min(100, Math.max(0, mascot.fame ?? 50))}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* SETE */}
+              <div className="bg-black/40 p-2 rounded-xl border border-white/5 text-center">
+                <div className="text-[8px] font-black text-zinc-400 uppercase flex items-center justify-between mb-1">
+                  <span>Sete</span>
+                  <span className={mascot.sete < 20 ? "text-red-400 font-bold" : ""}>
+                    {Math.round(mascot.sete ?? 50)}%
+                  </span>
+                </div>
+                <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${mascot.sete < 20 ? "bg-red-500 animate-pulse" : "bg-sky-500"}`}
+                    style={{ width: `${Math.min(100, Math.max(0, mascot.sete ?? 50))}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* SVAGO */}
+              <div className="bg-black/40 p-2 rounded-xl border border-white/5 text-center">
+                <div className="text-[8px] font-black text-zinc-400 uppercase flex items-center justify-between mb-1">
+                  <span>Svago</span>
+                  <span className={mascot.svago < 20 ? "text-red-400 font-bold" : ""}>
+                    {Math.round(mascot.svago ?? 50)}%
+                  </span>
+                </div>
+                <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${mascot.svago < 20 ? "bg-red-500 animate-pulse" : "bg-emerald-500"}`}
+                    style={{ width: `${Math.min(100, Math.max(0, mascot.svago ?? 50))}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+          </div>
+        ) : (
+          <div className="bg-black/40 p-4 rounded-2xl text-center border border-white/5">
+            <p className="text-xs text-zinc-400 font-bold">Nessuna mascotte adottata al momento.</p>
+            <Link href="/mascotte" className="inline-block mt-2 text-xs text-amber-400 font-black uppercase underline">
+              Crea subito la tua mascotte →
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* 🚪 4. ACCOUNT & LOGOUT */}

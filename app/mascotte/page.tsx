@@ -202,7 +202,7 @@ export default function MascottePage() {
   const isCriticalState = mascot.fame < 20 || mascot.sete < 20 || mascot.svago < 20;
 
   return (
-    <div className="flex flex-col items-center min-h-dvh bg-zinc-950 text-white p-4 pt-8 sm:pt-12 overflow-y-auto pb-28 select-none">
+    <div className="flex flex-col items-center min-h-dvh bg-zinc-950 text-white p-4 pt-20 sm:pt-24 overflow-y-auto pb-28 select-none">
       
       {/* 🔙 PULSANTE PER TORNARE INDIETRO */}
       <div className="w-full max-w-md flex justify-start mb-4 z-20">
