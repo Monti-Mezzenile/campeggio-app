@@ -56,44 +56,44 @@ const SUONI = [
 
 export default function SuoniPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Utilizziamo un dizionario di refs per controllare gli elementi audio precaricati
+  const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
 
-  const currentTrack = SUONI.find((s) => s.id === activeId);
+  const playSound = (id: string) => {
+    const targetAudio = audioRefs.current[id];
 
-  const stopAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    setActiveId(null);
-  };
-
-  const playSound = (id: string, file: string) => {
+    // Se l'audio cliccato è già in riproduzione, lo fermiamo
     if (activeId === id) {
-      stopAudio();
+      if (targetAudio) {
+        targetAudio.pause();
+        targetAudio.currentTime = 0;
+      }
+      setActiveId(null);
       return;
     }
 
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+    // Se c'è un audio attivo diverso, lo stoppiamo prima di far partire il nuovo
+    if (activeId && audioRefs.current[activeId]) {
+      const prevAudio = audioRefs.current[activeId];
+      if (prevAudio) {
+        prevAudio.pause();
+        prevAudio.currentTime = 0;
+      }
     }
 
-    const audio = new Audio(file);
-    audioRef.current = audio;
-    setActiveId(id);
-
-    audio.play().catch((e) => console.error("Errore audio:", e));
-
-    audio.onended = () => {
-      setActiveId(null);
-    };
+    // Fai partire istantaneamente il nuovo audio (essendo precaricato)
+    if (targetAudio) {
+      targetAudio.currentTime = 0;
+      targetAudio.play().catch((e) => console.error("Errore audio:", e));
+      setActiveId(id);
+    }
   };
 
   const playRandomSound = () => {
     const randomIndex = Math.floor(Math.random() * SUONI.length);
     const randomSuono = SUONI[randomIndex];
-    playSound(randomSuono.id, randomSuono.file);
+    playSound(randomSuono.id);
   };
 
   return (
@@ -103,6 +103,17 @@ export default function SuoniPage() {
         className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat pointer-events-none"
         style={{ backgroundImage: "url('/background/background_day.png')" }}
       />
+
+      {/* 🎵 Elementi Audio Invisibili per il PRE-LOAD a latenza zero */}
+      {SUONI.map((suono) => (
+        <audio
+          key={suono.id}
+          ref={(el) => { audioRefs.current[suono.id] = el; }}
+          src={suono.file}
+          preload="auto"
+          onEnded={() => setActiveId(null)}
+        />
+      ))}
 
       <main className="min-h-dvh p-4 sm:p-6 pb-40 max-w-xl mx-auto text-zinc-900 select-none space-y-6 relative">
         
@@ -153,7 +164,7 @@ export default function SuoniPage() {
             return (
               <button
                 key={suono.id}
-                onClick={() => playSound(suono.id, suono.file)}
+                onClick={() => playSound(suono.id)}
                 className={`relative overflow-hidden p-4 rounded-3xl border transition-all duration-200 flex flex-col justify-between items-center text-center h-36 sm:h-40 group ${
                   isPlaying
                     ? "bg-amber-500 border-amber-600 text-white shadow-inner translate-y-1 scale-[0.98]"
@@ -201,35 +212,6 @@ export default function SuoniPage() {
             );
           })}
         </div>
-
-        {/* 🎵 Mini Player Fluttuante Glass */}
-        {currentTrack && (
-          <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md bg-zinc-950/90 text-white backdrop-blur-2xl border border-white/20 p-3.5 rounded-3xl shadow-2xl flex items-center justify-between animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="flex items-center gap-3 overflow-hidden">
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0 p-1.5">
-                <img 
-                  src={currentTrack.icona} 
-                  alt={currentTrack.titolo} 
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div className="truncate">
-                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                  In Riproduzione
-                </span>
-                <h4 className="text-xs font-black truncate text-white">{currentTrack.titolo}</h4>
-              </div>
-            </div>
-
-            <button
-              onClick={stopAudio}
-              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black transition-all shadow-sm active:scale-95 shrink-0"
-            >
-              Stop ⏹️
-            </button>
-          </div>
-        )}
 
       </main>
     </div>
