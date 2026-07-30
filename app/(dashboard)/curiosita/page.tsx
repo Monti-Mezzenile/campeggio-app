@@ -57,7 +57,7 @@ export default function CuriositaPage() {
   async function deleteCuriosita(item: any, e: React.MouseEvent) {
     e.stopPropagation();
 
-    const conferma = confirm("Sei sicuro di voler eliminare questo aneddoto per sempre?");
+    const conferma = confirm("Sei sicuro di voler eliminare questo aneddoto?");
     if (!conferma) return;
 
     if (item.immagine_url) {
@@ -102,7 +102,7 @@ export default function CuriositaPage() {
   return (
     <main className="min-h-dvh p-4 sm:p-6 pb-36 max-w-3xl mx-auto select-none space-y-8 text-zinc-900 bg-transparent">
       
-      {/* 💡 HERO HEADER COMPATTO */}
+      {/* 💡 HERO HEADER */}
       <header className="relative overflow-hidden bg-white/80 border border-white/90 rounded-3xl p-6 shadow-xl backdrop-blur-md text-center">
         <div className="absolute top-0 right-1/2 translate-x-1/2 -mt-10 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
 
@@ -121,17 +121,17 @@ export default function CuriositaPage() {
               />
             </div>
             <h1 className="text-3xl sm:text-4xl font-black text-zinc-950 tracking-tight">
-              Lore di Campo
+              Lore & Strumenti
             </h1>
           </div>
 
           <p className="text-xs sm:text-sm font-medium text-zinc-600 max-w-md mx-auto leading-relaxed">
-            I miti, le regole assurde e i ricordi compromettenti che hanno plasmato le generazioni del campeggio.
+            Storie sacre, tradizioni discutibili e i tool necessari per sopravvivere alla democrazia del campeggio.
           </p>
         </div>
       </header>
 
-      {/* 📜 CATEGORIA 1: I TESTI SACRI */}
+      {/* 📜 CATEGORIA 1: I TESTI SACRI (Storia di Monti + Il Cavallo) */}
       <section className="space-y-3">
         <div className="flex items-center gap-2 px-2">
           <span className="text-xl">📜</span>
@@ -158,38 +158,39 @@ export default function CuriositaPage() {
             </div>
             <div className="relative z-10 w-full pt-8">
               <h3 className="font-black text-emerald-950 text-sm leading-tight tracking-tight">Storia di Monti</h3>
-              <p className="text-[10px] font-bold text-emerald-900/60 mt-0.5">La Filosofia del Campeggio</p>
+              <p className="text-[10px] font-bold text-emerald-900/60 mt-0.5">La Filosofia Fondante</p>
             </div>
           </button>
 
-          {/* Card: Bucock */}
+          {/* Card: Cavallo (Spostato qui!) */}
           <button
-            onClick={() => router.push("/curiosita/bookock")}
-            className="group relative h-40 rounded-3xl bg-white/80 backdrop-blur-md border border-purple-500/30 shadow-md flex flex-col justify-between p-4 text-left transition-all hover:-translate-y-1 overflow-hidden"
+            onClick={() => router.push("/curiosita/cavallo")}
+            className="group relative h-40 rounded-3xl bg-white/80 backdrop-blur-md border border-blue-500/30 shadow-md flex flex-col justify-between p-4 text-left transition-all hover:-translate-y-1 overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-28 h-28 bg-purple-500/15 rounded-full blur-2xl group-hover:scale-150 transition-transform pointer-events-none" />
+            <div className="absolute top-0 right-0 w-28 h-28 bg-blue-500/15 rounded-full blur-2xl group-hover:scale-150 transition-transform pointer-events-none" />
             <div className="relative z-10">
-              <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-950 text-purple-300 shadow-xs">
-                Tradizioni
+              <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-950 text-blue-300 shadow-xs">
+                Mito
               </span>
             </div>
             <div className="absolute top-2 right-2 w-28 h-28 flex items-center justify-center pointer-events-none opacity-90 group-hover:scale-110 transition-transform">
-              <img src="/curiosity/bockok.png" alt="Bucock" className="w-full h-full object-contain drop-shadow-md" />
+              <img src="/curiosity/cavallo.png" alt="Cavallo" className="w-full h-full object-contain drop-shadow-md" />
             </div>
             <div className="relative z-10 w-full pt-8">
-              <h3 className="font-black text-purple-950 text-sm leading-tight tracking-tight">Bucock</h3>
-              <p className="text-[10px] font-bold text-purple-900/60 mt-0.5">L'arte del disagio notturno</p>
+              <h3 className="font-black text-blue-950 text-sm leading-tight tracking-tight">Il Cavallo</h3>
+              <p className="text-[10px] font-bold text-blue-900/60 mt-0.5">La Mascotte di Monti</p>
             </div>
           </button>
+
         </div>
       </section>
 
-      {/* ⚖️ CATEGORIA 2: DEMOCRAZIA & DISAGIO (In Evidenza!) */}
+      {/* ⚖️ CATEGORIA 2: DEMOCRAZIA & SCOMMESSE */}
       <section className="space-y-3">
         <div className="flex items-center gap-2 px-2">
           <span className="text-xl">⚖️</span>
           <h2 className="text-xs font-black uppercase tracking-widest text-zinc-950">
-            Democrazia & Scommesse
+            Democrazia & Dissenso
           </h2>
         </div>
 
@@ -197,11 +198,9 @@ export default function CuriositaPage() {
           onClick={() => router.push("/curiosita/ruota-del-pentimento")}
           className="group w-full relative rounded-3xl bg-gradient-to-r from-red-600 via-rose-600 to-red-600 p-5 text-left border border-red-400/50 shadow-xl overflow-hidden active:scale-[0.98] transition-all"
         >
-          {/* Overlay Sfocato */}
           <div className="absolute top-0 right-0 w-48 h-48 bg-black/20 rounded-full blur-3xl pointer-events-none" />
           
           <div className="flex items-center gap-4 relative z-10">
-            {/* Icona Ruota Disegnata con Emoji */}
             <div className="w-16 h-16 shrink-0 bg-white/10 rounded-full flex items-center justify-center border-4 border-white/20 shadow-inner group-hover:rotate-[360deg] transition-transform duration-1000">
               <span className="text-3xl">🎡</span>
             </div>
@@ -214,73 +213,121 @@ export default function CuriositaPage() {
                 La Ruota dell'Insolenza
               </h3>
               <p className="text-[11px] font-medium text-red-100/90 leading-tight">
-                Sei in minoranza? Gira la ruota e sfida il fato. Ma preparati a pagare.
+                Sei in minoranza? Gira la ruota e sfida il voto del Popolo.
               </p>
             </div>
           </div>
         </button>
       </section>
 
-      {/* 🦄 CATEGORIA 3: ICONOGRAFIA & FOLKLORE */}
+      {/* 🛠️ CATEGORIA 3: STRUMENTI INTERATTIVI (I 2 Tools!) */}
       <section className="space-y-3">
-        <div className="flex items-center gap-2 px-2">
-          <span className="text-xl">🦄</span>
-          <h2 className="text-xs font-black uppercase tracking-widest text-zinc-950">
-            Iconografia & Folklore
-          </h2>
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🛠️</span>
+            <h2 className="text-xs font-black uppercase tracking-widest text-zinc-950">
+              Tool & Utility
+            </h2>
+          </div>
+          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Interattivi</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+        <div className="grid grid-cols-2 gap-3.5 sm:gap-4">
           
-          {/* Card: Cavallo */}
+          {/* Tool 1: I Pezzi (Soundboard) */}
           <button
-            onClick={() => router.push("/curiosita/cavallo")}
-            className="group relative h-28 sm:h-32 rounded-3xl bg-white/80 backdrop-blur-md border border-blue-500/30 shadow-md flex items-center justify-between px-5 transition-all hover:-translate-y-1 overflow-hidden"
+            onClick={() => router.push("/suoni")}
+            className="group relative h-36 rounded-3xl bg-gradient-to-br from-rose-500 to-pink-600 text-white p-4 text-left shadow-lg overflow-hidden transition-all hover:-translate-y-1 active:scale-95 border border-rose-400/30"
           >
-            <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative z-10 w-2/3 text-left">
-              <h3 className="font-black text-blue-950 text-sm leading-tight tracking-tight">Il Cavallo</h3>
-              <p className="text-[10px] font-bold text-blue-900/60 mt-0.5">Mito e Leggenda</p>
+            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform" />
+            <div className="flex justify-between items-start relative z-10">
+              <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/30 text-rose-100 border border-white/10">
+                Soundboard
+              </span>
+              <span className="text-2xl">🔊</span>
             </div>
-            <div className="w-16 h-16 relative z-10 group-hover:scale-110 transition-transform drop-shadow-md">
-              <img src="/curiosity/cavallo.png" alt="Cavallo" className="w-full h-full object-contain" />
+            <div className="relative z-10 pt-4">
+              <h3 className="font-black text-white text-base leading-none tracking-tight">I Pezzi</h3>
+              <p className="text-[10px] font-medium text-rose-100/80 mt-1.5 leading-tight">Hit, Urla & Audio Cult da sparare a cassa</p>
             </div>
           </button>
 
-          {/* Card: Corsa dei Cavalli */}
-          <button
-            onClick={() => router.push("/curiosita/corsa-dei-cavalli")}
-            className="group relative h-28 sm:h-32 rounded-3xl bg-white/80 backdrop-blur-md border border-amber-500/30 shadow-md flex items-center justify-between px-5 transition-all hover:-translate-y-1 overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative z-10 w-2/3 text-left">
-              <h3 className="font-black text-amber-950 text-sm leading-tight tracking-tight line-clamp-2">La Corsa dei Cavalli</h3>
-              <p className="text-[10px] font-bold text-amber-900/60 mt-0.5">Regolamento</p>
-            </div>
-            <div className="w-16 h-16 relative z-10 group-hover:scale-110 transition-transform drop-shadow-md">
-              <img src="/curiosity/corsa.png" alt="Corsa" className="w-full h-full object-contain" />
-            </div>
-          </button>
-
-          {/* Card: Sviolinata */}
+          {/* Tool 2: La Sviolinata */}
           <button
             onClick={() => router.push("/sviolinata")}
-            className="group relative h-28 sm:h-32 rounded-3xl bg-white/80 backdrop-blur-md border border-indigo-500/30 shadow-md flex items-center justify-between px-5 transition-all hover:-translate-y-1 overflow-hidden"
+            className="group relative h-36 rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white p-4 text-left shadow-lg overflow-hidden transition-all hover:-translate-y-1 active:scale-95 border border-indigo-400/30"
           >
-            <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative z-10 w-2/3 text-left">
-              <h3 className="font-black text-indigo-950 text-sm leading-tight tracking-tight">La Sviolinata</h3>
-              <p className="text-[10px] font-bold text-indigo-900/60 mt-0.5">Sarcasmo a 4 corde</p>
+            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform" />
+            <div className="flex justify-between items-start relative z-10">
+              <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/30 text-indigo-100 border border-white/10">
+                Generator
+              </span>
+              <span className="text-2xl">🎻</span>
             </div>
-            <div className="w-16 h-16 relative z-10 group-hover:scale-110 transition-transform drop-shadow-md">
-              <img src="/curiosity/violino.png" alt="Sviolinata" className="w-full h-full object-contain" />
+            <div className="relative z-10 pt-4">
+              <h3 className="font-black text-white text-base leading-none tracking-tight">La Sviolinata</h3>
+              <p className="text-[10px] font-medium text-indigo-100/80 mt-1.5 leading-tight">Per chi piange troppo o la tocca piano</p>
             </div>
           </button>
 
         </div>
       </section>
 
-      {/* 📚 CATEGORIA 4: LE CRONACHE DELLA COMMUNITY */}
+      {/* 🎭 CATEGORIA 4: TRADIZIONI & GIOCHI (Bucock + Corsa dei Cavalli) */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2 px-2">
+          <span className="text-xl">🎭</span>
+          <h2 className="text-xs font-black uppercase tracking-widest text-zinc-950">
+            Tradizioni & Giochi
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3.5 sm:gap-4">
+          
+          {/* Bucock (Spostato qui!) */}
+          <button
+            onClick={() => router.push("/curiosita/bookock")}
+            className="group relative h-36 rounded-3xl bg-white/80 backdrop-blur-md border border-purple-500/30 shadow-md flex flex-col justify-between p-4 text-left transition-all hover:-translate-y-1 overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/15 rounded-full blur-2xl group-hover:scale-150 transition-transform pointer-events-none" />
+            <div className="relative z-10">
+              <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-950 text-purple-300 shadow-xs">
+                Gioco
+              </span>
+            </div>
+            <div className="absolute top-1 right-1 w-24 h-24 flex items-center justify-center pointer-events-none opacity-90 group-hover:scale-110 transition-transform">
+              <img src="/curiosity/bockok.png" alt="Bucock" className="w-full h-full object-contain drop-shadow-md" />
+            </div>
+            <div className="relative z-10 w-full pt-6">
+              <h3 className="font-black text-purple-950 text-xs sm:text-sm leading-tight tracking-tight">Bucock</h3>
+              <p className="text-[10px] font-bold text-purple-900/60 mt-0.5">Disagio notturno</p>
+            </div>
+          </button>
+
+          {/* Corsa dei Cavalli */}
+          <button
+            onClick={() => router.push("/curiosita/corsa-dei-cavalli")}
+            className="group relative h-36 rounded-3xl bg-white/80 backdrop-blur-md border border-amber-500/30 shadow-md flex flex-col justify-between p-4 text-left transition-all hover:-translate-y-1 overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/15 rounded-full blur-2xl group-hover:scale-150 transition-transform pointer-events-none" />
+            <div className="relative z-10">
+              <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-300 shadow-xs">
+                Gara
+              </span>
+            </div>
+            <div className="absolute top-1 right-1 w-24 h-24 flex items-center justify-center pointer-events-none opacity-90 group-hover:scale-110 transition-transform">
+              <img src="/curiosity/corsa.png" alt="Corsa" className="w-full h-full object-contain drop-shadow-md" />
+            </div>
+            <div className="relative z-10 w-full pt-6">
+              <h3 className="font-black text-amber-950 text-xs sm:text-sm leading-tight tracking-tight">Corsa Cavalli</h3>
+              <p className="text-[10px] font-bold text-amber-900/60 mt-0.5">Regolamento</p>
+            </div>
+          </button>
+
+        </div>
+      </section>
+
+      {/* 📸 CATEGORIA 5: LE CRONACHE DELLA COMMUNITY */}
       <section className="space-y-4 pt-4 border-t border-zinc-300">
         
         <div className="flex justify-between items-center px-2">
