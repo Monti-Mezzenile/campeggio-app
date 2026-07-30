@@ -152,7 +152,7 @@ export default function BottomNav() {
                 className="w-full h-full object-contain drop-shadow-xs"
               />
             </div>
-            <span className="text-[9px] font-black uppercase tracking-tight">Mascotte</span>
+            <span className="text-[9px] font-black uppercase tracking-tight">La cavia</span>
           </button>
 
           {/* 4. STORICO */}
