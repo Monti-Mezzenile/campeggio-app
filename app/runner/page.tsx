@@ -36,24 +36,25 @@ interface Entity {
 
 export default function RunnerPage() {
   const [gameState, setGameState] = useState<'START' | 'PLAYING' | 'GAMEOVER'>('START');
-  const [score, setScore] = useState(0);
+  const [score, setScore] = useState(0); // Score visivo per UI
   const [expEarned, setExpEarned] = useState(0);
   const [mascotImg, setMascotImg] = useState('/tamagotchi/fase1_coniglio_piccolo.png');
   const [mascotId, setMascotId] = useState<string | null>(null);
   const [currentExp, setCurrentExp] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Fisica Mascotte
+  // Fisica Mascotte per UI
   const [mascotY, setMascotY] = useState(0);
   const [entities, setEntities] = useState<Entity[]>([]);
 
-  // Ref per il Game Loop a 60fps
+  // Ref per il Game Loop a 60fps (Prestazioni Ottimali)
   const mascotYRef = useRef(0);
   const velocityRef = useRef(0);
   const isJumpingRef = useRef(false);
   const entitiesRef = useRef<Entity[]>([]);
   const requestRef = useRef<number>(0);
   const lastSpawnTime = useRef<number>(0);
+  const scoreRef = useRef(0); // Tracking sincrono del punteggio!
 
   // 1️⃣ CARICAMENTO MASCOTTE
   useEffect(() => {
@@ -98,6 +99,7 @@ export default function RunnerPage() {
   };
 
   const startGame = () => {
+    scoreRef.current = 0;
     setScore(0);
     setExpEarned(0);
     mascotYRef.current = 0;
@@ -110,7 +112,7 @@ export default function RunnerPage() {
     lastSpawnTime.current = Date.now();
   };
 
-  // 3️⃣ GAME LOOP
+  // 3️⃣ GAME LOOP FISICO
   useEffect(() => {
     if (gameState !== 'PLAYING') return;
 
@@ -126,10 +128,10 @@ export default function RunnerPage() {
       }
       setMascotY(mascotYRef.current);
 
-      // SPAWN DIVERSIFICATO
+      // SPAWN DIVERSIFICATO (Ostacoli vs Bonus)
       const now = Date.now();
       if (now - lastSpawnTime.current > Math.random() * 700 + 1200) {
-        const isBonus = Math.random() < 0.4;
+        const isBonus = Math.random() < 0.4; // 40% probabilità che sia un oggetto bonus
         
         if (isBonus) {
           const item = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
@@ -137,7 +139,7 @@ export default function RunnerPage() {
           entitiesRef.current.push({
             id: now,
             x: 520,
-            yOffset: inAir ? 65 : 12,
+            yOffset: inAir ? 75 : 12, // Se vola, mettilo abbastanza alto da richiedere un salto
             width: item.width,
             height: item.height,
             icon: item.icon,
@@ -163,10 +165,11 @@ export default function RunnerPage() {
       const nextEntities: Entity[] = [];
       let gameOverTriggered = false;
 
+      // Hitbox Mascotte
       const mascotLeft = 40;
-      const mascotRight = 105;
+      const mascotRight = 100;
       const mascotBottom = mascotYRef.current;
-      const mascotTop = mascotYRef.current + 85;
+      const mascotTop = mascotYRef.current + 80;
 
       for (const ent of entitiesRef.current) {
         ent.x -= OBSTACLE_SPEED;
@@ -176,22 +179,26 @@ export default function RunnerPage() {
         const entBottom = ent.yOffset;
         const entTop = ent.yOffset + ent.height;
 
+        // Collision Check (AABB)
         const isColliding = 
           entLeft < mascotRight &&
           entRight > mascotLeft &&
-          mascotBottom < entTop - 8 &&
-          mascotTop > entBottom;
+          mascotBottom < entTop - 10 &&
+          mascotTop > entBottom + 10;
 
         if (isColliding) {
           if (ent.isCollectible) {
-            setScore((prev) => prev + (ent.points || 50));
-            continue;
+            // 🎉 RACCOLTO! Aggiungi punti via ref e NON pusharlo nel next frame
+            scoreRef.current += ent.points || 50;
+            continue; // Salta il push, l'oggetto scompare
           } else {
+            // 💥 SCHIANTO!
             gameOverTriggered = true;
-            break;
+            break; // Ferma il check
           }
         }
 
+        // Tieni l'oggetto solo se è ancora visibile nello schermo
         if (ent.x > -80) {
           nextEntities.push(ent);
         }
@@ -202,9 +209,13 @@ export default function RunnerPage() {
         return;
       }
 
+      // Aggiorna lo stato per il rendering
       entitiesRef.current = nextEntities;
       setEntities([...nextEntities]);
-      setScore((prev) => prev + 1);
+      
+      // Incremento naturale punteggio corsa + aggiornamento UI
+      scoreRef.current += 1;
+      setScore(scoreRef.current); 
 
       requestRef.current = requestAnimationFrame(updateGame);
     };
@@ -213,10 +224,11 @@ export default function RunnerPage() {
     return () => cancelAnimationFrame(requestRef.current);
   }, [gameState]);
 
-  // 4️⃣ GAMEOVER
+  // 4️⃣ GAMEOVER & SALVATAGGIO EXP
   const endGame = async () => {
     setGameState('GAMEOVER');
-    const gained = Math.floor(score / 12);
+    // Conversione punteggio totale (inclusi bonus) in EXP reale (es: 1 EXP ogni 15 punti)
+    const gained = Math.floor(scoreRef.current / 15);
     setExpEarned(gained);
 
     if (mascotId && gained > 0) {
@@ -229,6 +241,7 @@ export default function RunnerPage() {
     }
   };
 
+  // 🐰 CARICAMENTO
   if (loading) {
     return (
       <div className="min-h-dvh bg-zinc-950 flex flex-col items-center justify-center p-4">
@@ -273,8 +286,9 @@ export default function RunnerPage() {
         >
           ← Torna al Campo
         </Link>
-        <div className="bg-amber-500/20 border border-amber-500/40 backdrop-blur-md px-5 py-2 rounded-2xl font-black text-amber-400 text-sm tracking-wider shadow-lg">
-          PUNTI: {score}
+        <div className="bg-amber-500/20 border border-amber-500/40 backdrop-blur-md px-5 py-2 rounded-2xl font-black text-amber-400 text-sm tracking-wider shadow-lg flex items-center gap-2">
+          <span>PUNTI:</span>
+          <span className="text-lg">{score}</span>
         </div>
       </div>
 
@@ -324,7 +338,7 @@ export default function RunnerPage() {
               src={ent.icon} 
               alt="Item" 
               className={`w-full h-full object-contain ${
-                ent.isCollectible ? 'drop-shadow-[0_0_12px_rgba(245,158,11,0.8)] animate-pulse' : 'drop-shadow-[0_6px_6px_rgba(0,0,0,0.8)]'
+                ent.isCollectible ? 'drop-shadow-[0_0_15px_rgba(245,158,11,1)] animate-pulse' : 'drop-shadow-[0_6px_6px_rgba(0,0,0,0.8)]'
               }`}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/icons/warning.png';
