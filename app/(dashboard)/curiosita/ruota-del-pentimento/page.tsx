@@ -10,7 +10,7 @@ const WHEEL_OPTIONS = [
   { id: 0, label: "Bevi alla Goccia", type: "bad", weight: 35, color: "bg-red-600", textMsg: "Il Popolo non perdona la tua insolenza. Svuota quel bicchiere, ORA." },
   { id: 1, label: "Colpo di Stato!", type: "good", weight: 5, color: "bg-amber-400", textMsg: "MIRACOLO! Annulli il voto del Popolo e decidi tu per tutti." },
   { id: 2, label: "Muto per 15 Min", type: "bad", weight: 20, color: "bg-rose-800", textMsg: "Hai perso il diritto di parola. Al primo suono che emetti, bevi." },
-  { id: 3, label: "Cameriere", type: "bad", weight: 20, color: "bg-orange-600", textMsg: "La punizione per l'insolenza è la servitù: servi da bere e sparecchia per la prossima ora." },
+  { id: 3, label: "Cameriere", type: "bad", weight: 20, color: "bg-orange-600", textMsg: "La punizione per l'insolenza è la servitù: Lavi le stoviglie del prossimo pasto." },
   { id: 4, label: "Veto Assoluto", type: "good", weight: 10, color: "bg-emerald-500", textMsg: "Ti sei salvato per miracolo. Sei immune dalla decisione." },
   { id: 5, label: "Fai 10 Flessioni", type: "bad", weight: 10, color: "bg-red-900", textMsg: "Giù a terra, soldato. L'insolenza si paga col sudore." },
 ];
