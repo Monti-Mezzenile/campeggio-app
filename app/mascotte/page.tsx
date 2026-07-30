@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useAnimation } from 'framer-motion';
-import { supabase } from '@/lib/supabase'; // Import corretto
+import { supabase } from '@/lib/supabase';
 
 // 📊 SOGLIE DI ESPERIENZA PER LE FASI
 const EXP_THRESHOLDS: Record<number, number> = {
@@ -23,7 +23,7 @@ const EVOLUTION_STAGES: Record<number, { name: string; image: string }> = {
   9: { name: 'Cavallo Supremo', image: '/tamagotchi/fase9_cavallo_supremo.png' },
 };
 
-// 🎒 OGGETTI (Ora con i valori di ESPERIENZA)
+// 🎒 OGGETTI (Con esperienza)
 const ITEMS = [
   { id: 'carota', label: 'Carota', type: 'fame', val: 15, exp: 5, icon: '/icons/carota.png' },
   { id: 'cosciotto', label: 'Cosciotto', type: 'fame', val: 35, exp: 12, icon: '/icons/cosciotto.png' },
@@ -34,7 +34,7 @@ const ITEMS = [
 ];
 
 export default function MascottePage() {
-  const [mascot, setMascot] = useState({ id: null, fame: 50, sete: 50, svago: 50, exp: 0, fase: 1, nome: 'Cucciolo' });
+  const [mascot, setMascot] = useState({ id: null as string | null, fame: 50, sete: 50, svago: 50, exp: 0, fase: 1, nome: 'Cucciolo' });
   const [loading, setLoading] = useState(true);
   const [warningMsg, setWarningMsg] = useState('');
   
@@ -44,48 +44,95 @@ export default function MascottePage() {
   // 1️⃣ CARICAMENTO INIZIALE E CALCOLO DECADIMENTO
   useEffect(() => {
     const loadAndDecay = async () => {
-      // Prendi l'utente loggato
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setWarningMsg('Devi fare il login per avere la tua mascotte!');
+      try {
+        setLoading(true);
+
+        // Prendi l'utente loggato
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setWarningMsg('Devi fare il login per accedere alla tua mascotte!');
+          return;
+        }
+
+        // Cerca la mascotte dell'utente usando maybeSingle() per evitare errori 406
+        let { data: myMascot, error } = await supabase
+          .from('mascots')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error("Errore durante il recupero della mascotte:", error);
+        }
+
+        // Se non esiste, viene creata con i valori iniziali di default
+        if (!myMascot) {
+          const { data: newMascot, error: createError } = await supabase
+            .from('mascots')
+            .insert([{
+              user_id: user.id,
+              fame: 100,
+              sete: 100,
+              svago: 100,
+              exp: 0,
+              fase: 1,
+              nome_mascotte: 'Cucciolo',
+              last_updated_at: new Date().toISOString()
+            }])
+            .select()
+            .single();
+
+          if (createError) {
+            console.error("Errore durante la creazione della mascotte:", createError);
+            setWarningMsg("Impossibile creare la mascotte. Verifica le permissioni della tabella.");
+            return;
+          }
+
+          myMascot = newMascot;
+        }
+
+        // 🧮 CALCOLO DECADIMENTO OFFLINE
+        const now = new Date();
+        const lastUpdate = myMascot.last_updated_at ? new Date(myMascot.last_updated_at) : new Date();
+        const hoursPassed = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60);
+
+        let currentFame = myMascot.fame ?? 100;
+        let currentSete = myMascot.sete ?? 100;
+        let currentSvago = myMascot.svago ?? 100;
+
+        if (hoursPassed > 0.5) { // Applica decadimento se è passata più di mezz'ora
+          const fameDecay = Math.floor(hoursPassed * 1.5);
+          const seteDecay = Math.floor(hoursPassed * 2.0);
+          const svagoDecay = Math.floor(hoursPassed * 1.2);
+
+          currentFame = Math.max(0, currentFame - fameDecay);
+          currentSete = Math.max(0, currentSete - seteDecay);
+          currentSvago = Math.max(0, currentSvago - svagoDecay);
+          
+          // Salva i nuovi valori decaduti nel DB
+          await supabase.from('mascots').update({ 
+            fame: currentFame,
+            sete: currentSete,
+            svago: currentSvago,
+            last_updated_at: new Date().toISOString()
+          }).eq('id', myMascot.id);
+        }
+
+        setMascot({ 
+          id: myMascot.id,
+          fame: currentFame,
+          sete: currentSete, 
+          svago: currentSvago,
+          exp: myMascot.exp ?? 0,
+          fase: myMascot.fase ?? 1,
+          nome: myMascot.nome_mascotte || 'Cucciolo' 
+        });
+
+      } catch (err) {
+        console.error("Errore generico mascotte:", err);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      // Cerca la mascotte dell'utente
-      let { data: myMascot, error } = await supabase.from('mascots').select('*').eq('user_id', user.id).single();
-
-      // Se non esiste, la crea da zero!
-      if (!myMascot || error) {
-        const { data: newMascot } = await supabase.from('mascots').insert({ user_id: user.id }).select().single();
-        myMascot = newMascot;
-      }
-
-      // 🧮 CALCOLO DECADIMENTO OFFLINE
-      const now = new Date();
-      const lastUpdate = new Date(myMascot.last_updated_at);
-      const hoursPassed = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60);
-
-      if (hoursPassed > 0.5) { // Applica decadimento se è passata più di mezz'ora
-        const fameDecay = Math.floor(hoursPassed * 1.5);
-        const seteDecay = Math.floor(hoursPassed * 2.0);
-        const svagoDecay = Math.floor(hoursPassed * 1.2);
-
-        myMascot.fame = Math.max(0, myMascot.fame - fameDecay);
-        myMascot.sete = Math.max(0, myMascot.sete - seteDecay);
-        myMascot.svago = Math.max(0, myMascot.svago - svagoDecay);
-        
-        // Salva i nuovi valori decaduti nel DB
-        await supabase.from('mascots').update({ 
-          fame: myMascot.fame, sete: myMascot.sete, svago: myMascot.svago, last_updated_at: new Date().toISOString()
-        }).eq('id', myMascot.id);
-      }
-
-      setMascot({ 
-        id: myMascot.id, fame: myMascot.fame, sete: myMascot.sete, 
-        svago: myMascot.svago, exp: myMascot.exp, fase: myMascot.fase, nome: myMascot.nome_mascotte 
-      });
-      setLoading(false);
     };
 
     loadAndDecay();
@@ -96,20 +143,27 @@ export default function MascottePage() {
     if (!mascotRef.current || !mascot.id) return;
 
     const rect = mascotRef.current.getBoundingClientRect();
-    const isOver = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    
+    // Usa info.point per il calcolo delle coordinate (compatibile sia con Touch che con Mouse)
+    const dropX = info.point.x;
+    const dropY = info.point.y;
+
+    const isOver = dropX >= rect.left && dropX <= rect.right && dropY >= rect.top && dropY <= rect.bottom;
 
     if (isOver) {
       // ⚠️ MALUS: Se ha troppa fame (<15%), è nervosa e prende metà EXP!
       const isHangry = mascot.fame < 15;
-      const expGained = isHangry ? Math.floor(item.exp / 2) : item.exp;
 
       if (isHangry && item.type !== 'fame') {
         alert("La mascotte è troppo affamata! Dalle cibo prima di giocare o bere!");
         return;
       }
 
+      const expGained = isHangry ? Math.floor(item.exp / 2) : item.exp;
+      const statKey = item.type as 'fame' | 'sete' | 'svago';
+
       // Calcola nuove statistiche
-      const newStatValue = Math.min(100, mascot[item.type as 'fame' | 'sete' | 'svago'] + item.val);
+      const newStatValue = Math.min(100, mascot[statKey] + item.val);
       const newExp = mascot.exp + expGained;
 
       // 🌟 CHECK EVOLUZIONE
@@ -121,7 +175,7 @@ export default function MascottePage() {
 
       const updatedMascot = { 
         ...mascot, 
-        [item.type]: newStatValue, 
+        [statKey]: newStatValue, 
         exp: newExp, 
         fase: newFase 
       };
@@ -131,7 +185,7 @@ export default function MascottePage() {
 
       // Salva su Supabase
       await supabase.from('mascots').update({
-        [item.type]: newStatValue,
+        [statKey]: newStatValue,
         exp: newExp,
         fase: newFase,
         last_updated_at: new Date().toISOString(),
@@ -146,8 +200,8 @@ export default function MascottePage() {
     }
   };
 
-  if (loading) return <div className="min-h-dvh bg-zinc-950 text-white flex items-center justify-center">Caricamento mascotte...</div>;
-  if (warningMsg) return <div className="min-h-dvh bg-zinc-950 text-white flex items-center justify-center p-6 text-center">{warningMsg}</div>;
+  if (loading) return <div className="min-h-dvh bg-zinc-950 text-white flex items-center justify-center font-bold">Caricamento mascotte...</div>;
+  if (warningMsg) return <div className="min-h-dvh bg-zinc-950 text-white flex items-center justify-center p-6 text-center font-medium">{warningMsg}</div>;
 
   const currentDef = EVOLUTION_STAGES[mascot.fase] || EVOLUTION_STAGES[1];
   const nextExpThreshold = mascot.fase < 9 ? EXP_THRESHOLDS[mascot.fase + 1] : mascot.exp;
@@ -163,7 +217,7 @@ export default function MascottePage() {
         
         {/* Barra EXP */}
         <div className="mt-2 w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
-          <div className="bg-amber-400 h-full" style={{ width: `${progressPercent}%` }} />
+          <div className="bg-amber-400 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
         </div>
         <p className="text-[9px] text-zinc-400 mt-1 uppercase font-bold tracking-wider">
           {mascot.fase === 9 ? 'Livello Massimo' : `EXP: ${mascot.exp} / ${nextExpThreshold}`}
@@ -176,7 +230,7 @@ export default function MascottePage() {
           <div key={key} className="space-y-1.5">
             <div className="flex justify-between text-[10px] font-black uppercase tracking-wider text-zinc-300">
               <span>{key} {mascot[key] < 15 && '⚠️'}</span>
-              <span className={mascot[key] < 15 ? 'text-red-400' : ''}>{mascot[key]}%</span>
+              <span className={mascot[key] < 15 ? 'text-red-400 font-bold' : ''}>{mascot[key]}%</span>
             </div>
             <div className="w-full h-3.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
               <div
