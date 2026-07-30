@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { motion, useAnimation } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 
@@ -309,7 +310,7 @@ export default function MascottePage() {
       </div>
 
       {/* 🟢 SEZIONE 4: INVENTARIO */}
-      <div className="w-full max-w-md bg-zinc-900/80 backdrop-blur-md border border-white/20 p-4 rounded-3xl z-10 mb-8">
+      <div className="w-full max-w-md bg-zinc-900/80 backdrop-blur-md border border-white/20 p-4 rounded-3xl z-10">
         <h2 className="text-xs font-black uppercase tracking-wider text-zinc-400 mb-3 text-center">Rifornimenti (Mantenimento)</h2>
         <div className="grid grid-cols-3 gap-3">
           {ITEMS.map((item) => (
@@ -327,6 +328,30 @@ export default function MascottePage() {
             </motion.div>
           ))}
         </div>
+      </div>
+
+      {/* 🟢 SEZIONE INTERMEDIA: TASTO PER ACCEDERE AL MINIGAME RUNNER */}
+      <div className="w-full max-w-md my-6 z-10">
+        <Link href="/runner" className="block w-full">
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="relative overflow-hidden bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 p-4 rounded-3xl text-zinc-950 font-black shadow-xl border border-amber-400/50 flex items-center justify-between group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="bg-zinc-950/20 p-2.5 rounded-2xl text-2xl">
+                🏃
+              </div>
+              <div className="text-left">
+                <div className="text-[10px] uppercase tracking-wider text-zinc-900/80 font-extrabold">Minigame Rischioso</div>
+                <div className="text-base font-black tracking-tight text-zinc-950 uppercase leading-none mt-0.5">Fuga nel Bosco</div>
+              </div>
+            </div>
+            <div className="bg-zinc-950 text-amber-400 text-xs px-3.5 py-2 rounded-xl font-black uppercase tracking-wider group-hover:bg-zinc-900 transition-colors shadow-md">
+              GIOCA →
+            </div>
+          </motion.div>
+        </Link>
       </div>
 
       {/* 🟢 SEZIONE 5: ALTRE MASCOTTE DEL CAMPEGGIO (SPAZIO AMPLIATO) */}
