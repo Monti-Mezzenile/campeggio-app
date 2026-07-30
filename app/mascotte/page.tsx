@@ -47,14 +47,12 @@ export default function MascottePage() {
       try {
         setLoading(true);
 
-        // Prendi l'utente loggato
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           setWarningMsg('Devi fare il login per accedere alla tua mascotte!');
           return;
         }
 
-        // Cerca la mascotte dell'utente usando maybeSingle() per evitare errori 406
         let { data: myMascot, error } = await supabase
           .from('mascots')
           .select('*')
@@ -65,7 +63,6 @@ export default function MascottePage() {
           console.error("Errore durante il recupero della mascotte:", error);
         }
 
-        // Se non esiste, viene creata con i valori iniziali di default
         if (!myMascot) {
           const { data: newMascot, error: createError } = await supabase
             .from('mascots')
@@ -100,7 +97,7 @@ export default function MascottePage() {
         let currentSete = myMascot.sete ?? 100;
         let currentSvago = myMascot.svago ?? 100;
 
-        if (hoursPassed > 0.5) { // Applica decadimento se è passata più di mezz'ora
+        if (hoursPassed > 0.5) { 
           const fameDecay = Math.floor(hoursPassed * 1.5);
           const seteDecay = Math.floor(hoursPassed * 2.0);
           const svagoDecay = Math.floor(hoursPassed * 1.2);
@@ -109,7 +106,6 @@ export default function MascottePage() {
           currentSete = Math.max(0, currentSete - seteDecay);
           currentSvago = Math.max(0, currentSvago - svagoDecay);
           
-          // Salva i nuovi valori decaduti nel DB
           await supabase.from('mascots').update({ 
             fame: currentFame,
             sete: currentSete,
@@ -143,24 +139,29 @@ export default function MascottePage() {
     if (!mascotRef.current || !mascot.id) return;
 
     const rect = mascotRef.current.getBoundingClientRect();
-    
-    // Usa info.point per il calcolo delle coordinate (compatibile sia con Touch che con Mouse)
     const dropX = info.point.x;
     const dropY = info.point.y;
 
     const isOver = dropX >= rect.left && dropX <= rect.right && dropY >= rect.top && dropY <= rect.bottom;
 
     if (isOver) {
-      // ⚠️ MALUS: Se ha troppa fame (<15%), è nervosa e prende metà EXP!
+      const statKey = item.type as 'fame' | 'sete' | 'svago';
+
+      // 🛑 1. LIMITAZIONE ANTI-SPAM: Soglia Abbassata all'80%
+      if (mascot[statKey] > 80) {
+        alert(`🛑 Troppo pieno! La barra ${statKey.toUpperCase()} è sopra l'80%. Lascialo digerire e torna più tardi per prendere altra esperienza.`);
+        return;
+      }
+
+      // ⚠️ 2. MALUS: Se ha troppa fame (<15%)
       const isHangry = mascot.fame < 15;
 
       if (isHangry && item.type !== 'fame') {
-        alert("La mascotte è troppo affamata! Dalle cibo prima di giocare o bere!");
+        alert("😡 La mascotte è troppo affamata! Dalle cibo prima di giocare o bere!");
         return;
       }
 
       const expGained = isHangry ? Math.floor(item.exp / 2) : item.exp;
-      const statKey = item.type as 'fame' | 'sete' | 'svago';
 
       // Calcola nuove statistiche
       const newStatValue = Math.min(100, mascot[statKey] + item.val);
@@ -180,10 +181,8 @@ export default function MascottePage() {
         fase: newFase 
       };
 
-      // Aggiorna UI istantaneamente
       setMascot(updatedMascot);
 
-      // Salva su Supabase
       await supabase.from('mascots').update({
         [statKey]: newStatValue,
         exp: newExp,
@@ -191,7 +190,6 @@ export default function MascottePage() {
         last_updated_at: new Date().toISOString(),
       }).eq('id', mascot.id);
 
-      // Animazione di reazione
       mascotControls.start({
         scale: [1, 1.25, 0.9, 1],
         rotate: [0, -10, 10, 0],
@@ -261,7 +259,9 @@ export default function MascottePage() {
               key={item.id} drag dragSnapToOrigin={true}
               onDragEnd={(e: any, info: any) => handleDragEnd(e, info, item)}
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center justify-center p-3 bg-zinc-900/60 rounded-2xl border border-white/10 cursor-grab hover:bg-zinc-800 transition-colors shadow-sm"
+              className={`flex flex-col items-center justify-center p-3 rounded-2xl border cursor-grab hover:bg-zinc-800 transition-colors shadow-sm ${
+                mascot[item.type as 'fame' | 'sete' | 'svago'] > 80 ? 'bg-zinc-900/30 border-red-500/20 opacity-50' : 'bg-zinc-900/60 border-white/10'
+              }`}
             >
               <img src={item.icon} alt={item.label} className="w-8 h-8 pointer-events-none mb-1 drop-shadow-md" />
               <span className="text-[9px] font-black text-zinc-300">{item.label}</span>
