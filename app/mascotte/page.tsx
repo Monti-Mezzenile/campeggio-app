@@ -31,7 +31,7 @@ const EVOLUTION_STAGES: Record<number, { name: string; image: string }> = {
   9: { name: 'Cavallo Supremo', image: '/tamagotchi/fase9_cavallo_supremo.png' },
 };
 
-// 🎒 OGGETTI BILANCIATI (EXP Ridotta)
+// 🎒 OGGETTI BILANCIATI
 const ITEMS = [
   { id: 'carota', label: 'Carota', type: 'fame', val: 15, exp: 1, icon: '/icons/carota.png' },
   { id: 'cosciotto', label: 'Cosciotto', type: 'fame', val: 35, exp: 3, icon: '/icons/cosciotto.png' },
@@ -172,7 +172,6 @@ export default function MascottePage() {
     }
   };
 
-  // Funzione Sabotaggio Rivali
   const handleSabotage = (rivalName: string) => {
     setToastMsg(`🎯 Hai tirato una pigna in faccia a ${rivalName}. Non serve a nulla, ma fa ridere.`);
     setTimeout(() => setToastMsg(null), 3500);
@@ -203,8 +202,18 @@ export default function MascottePage() {
   const isCriticalState = mascot.fame < 20 || mascot.sete < 20 || mascot.svago < 20;
 
   return (
-    <div className="flex flex-col items-center min-h-dvh bg-zinc-950 text-white p-4 pt-10 sm:pt-14 overflow-y-auto pb-28 select-none">
+    <div className="flex flex-col items-center min-h-dvh bg-zinc-950 text-white p-4 pt-8 sm:pt-12 overflow-y-auto pb-28 select-none">
       
+      {/* 🔙 PULSANTE PER TORNARE INDIETRO */}
+      <div className="w-full max-w-md flex justify-start mb-4 z-20">
+        <Link 
+          href="/" 
+          className="bg-zinc-900/90 border border-white/20 text-xs font-black px-4 py-2.5 rounded-2xl hover:bg-zinc-800 transition-colors shadow-lg backdrop-blur-md uppercase tracking-wider text-zinc-300"
+        >
+          ← SCAPPA DA QUI
+        </Link>
+      </div>
+
       {/* HEADER MASCOTTE */}
       <div className="text-center w-full max-w-md z-10">
         <span className="text-[10px] uppercase tracking-widest text-amber-500 font-black">
@@ -319,7 +328,7 @@ export default function MascottePage() {
         </Link>
       </div>
 
-      {/* SUPERSTITI DEL CAMPEGGIO (RIVALI CON SABOTAGGIO) */}
+      {/* SUPERSTITI DEL CAMPEGGIO */}
       <div className="w-full max-w-md border-t border-white/10 pt-6 z-10">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-black uppercase tracking-widest text-amber-500 flex items-center gap-2">

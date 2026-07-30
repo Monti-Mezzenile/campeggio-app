@@ -2,14 +2,34 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import LogoutButton from "@/components/ui/LogoutButton";
 import { supabase } from "@/lib/supabase";
 import CustomIcon from "@/components/ui/CustomIcon";
+
+// 🖼️ MAPPA EVOLUZIONI PER PROFILO
+const EVOLUTION_STAGES: Record<number, { name: string; image: string }> = {
+  1: { name: 'Coniglio Piccolo', image: '/tamagotchi/fase1_coniglio_piccolo.png' },
+  2: { name: 'Coniglio Medio', image: '/tamagotchi/fase2_coniglio_medio.png' },
+  3: { name: 'Lepre', image: '/tamagotchi/fase3_lepre.png' },
+  4: { name: 'Lepre Muscolosa', image: '/tamagotchi/fase4_lepre_muscolosa.png' },
+  5: { name: 'Lepre Centauro', image: '/tamagotchi/fase5_lepre_centauro.png.png' }, 
+  6: { name: 'Pony', image: '/tamagotchi/fase6_pony.png' },
+  7: { name: 'Cavallo Medio', image: '/tamagotchi/fase7_cavallo_medio.png' },
+  8: { name: 'Cavallo Grande', image: '/tamagotchi/fase8_cavallo_grande.png' },
+  9: { name: 'Cavallo Supremo', image: '/tamagotchi/fase9_cavallo_supremo.png' },
+};
+
+const EXP_THRESHOLDS: Record<number, number> = {
+  1: 0, 2: 300, 3: 900, 4: 2000, 5: 4000,
+  6: 7500, 7: 12500, 8: 19000, 9: 30000
+};
 
 export default function ProfilePage() {
   const router = useRouter();
 
   const [profile, setProfile] = useState<any>(null);
+  const [mascot, setMascot] = useState<any>(null);
   const [myBadges, setMyBadges] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,21 +54,31 @@ export default function ProfilePage() {
       return;
     }
 
-    const { data } = await supabase
+    // 1. Profilo Utente
+    const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
       .single();
 
-    setProfile(data);
-    setNome(data?.nome || "");
-    setTitoloCampo(data?.titolo_campo || "Mastro Fuochista");
-    setMotto(data?.motto || "Sempre pronto alla grigliata.");
-    setNomeConiglio(data?.nome_coniglio || "");
-    setPadreFondatore(data?.padre_fondatore || false);
-    setAvatarUrl(data?.avatar_url || null);
+    setProfile(profileData);
+    setNome(profileData?.nome || "");
+    setTitoloCampo(profileData?.titolo_campo || "Mastro Fuochista");
+    setMotto(profileData?.motto || "Sempre pronto alla grigliata.");
+    setNomeConiglio(profileData?.nome_coniglio || "");
+    setPadreFondatore(profileData?.padre_fondatore || false);
+    setAvatarUrl(profileData?.avatar_url || null);
 
-    // Scarichiamo tutti i dati della medaglia (compresa la colonna "tipo")
+    // 2. Mascotte Personale
+    const { data: mascotData } = await supabase
+      .from("mascots")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    setMascot(mascotData);
+
+    // 3. Medaglie
     const { data: badges } = await supabase
       .from("user_badges")
       .select(`
@@ -147,15 +177,19 @@ export default function ProfilePage() {
     const badge = item.badge;
     if (!badge) return false;
 
-    // Recupero il valore della colonna "tipo" (o "tipo_medaglia" se l'hai chiamata così)
     const tipoMedaglia = badge.tipo || badge.tipo_medaglia;
-    
-    // Controlliamo che il tipo sia esattamente 'evento' (ignorando maiuscole/minuscole e spazi)
     return tipoMedaglia?.toLowerCase().trim() === "evento";
   });
 
   const levelNumber = Math.max(1, validLevelBadges.length);
   const matricola = profile?.id ? `#MNT-${profile.id.slice(0, 4).toUpperCase()}` : "#MNT-0000";
+
+  // Dati Mascotte
+  const mascotFase = mascot?.fase || 1;
+  const mascotDef = EVOLUTION_STAGES[mascotFase] || EVOLUTION_STAGES[1];
+  const mascotNextExp = mascotFase < 9 ? EXP_THRESHOLDS[mascotFase + 1] : (mascot?.exp || 0);
+  const mascotExpPercent = mascotFase < 9 && mascotNextExp > 0 ? Math.min(100, ((mascot?.exp || 0) / mascotNextExp) * 100) : 100;
+  const isMascotCritical = mascot && (mascot.fame < 20 || mascot.sete < 20 || mascot.svago < 20);
 
   return (
     <main className="min-h-dvh p-4 sm:p-6 pb-36 max-w-md mx-auto flex flex-col gap-6 select-none bg-transparent">
@@ -236,17 +270,14 @@ export default function ProfilePage() {
 
         {/* BADGES DI IDENTITÀ & LIVELLO */}
         <div className="flex flex-wrap items-center justify-center gap-2 pt-1 border-t border-[#1b2b25]/10">
-          {/* Livello di Sopravvivenza (Conta solo medaglie Evento) */}
           <span className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
             <span>🔥</span> Lvl. {levelNumber} Vet.
           </span>
 
-          {/* Soprannome Coniglio */}
           <span className="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-900 border border-amber-200/50 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
             <span>🐰</span> {nomeConiglio || "Nessun soprannome"}
           </span>
 
-          {/* Padre Fondatore */}
           <span
             className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 ${
               padreFondatore
@@ -266,7 +297,6 @@ export default function ProfilePage() {
               Modifica Dati Tesserino
             </h3>
 
-            {/* CARICAMENTO FOTO */}
             <div>
               <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">
                 Foto Profilo
@@ -283,7 +313,6 @@ export default function ProfilePage() {
               </label>
             </div>
 
-            {/* NOME COMPLETO */}
             <div>
               <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">
                 Nome & Cognome
@@ -296,7 +325,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* RANGO / TITOLO DA CAMPO */}
             <div>
               <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">
                 Ruolo / Mansione da Campo
@@ -309,7 +337,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* MOTTO PERSONALE */}
             <div>
               <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">
                 Motto / Frase d'Ordinanza
@@ -322,7 +349,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* NOME CONIGLIO */}
             <div>
               <label className="text-[10px] uppercase tracking-widest font-black text-[#1b2b25]/70 block mb-1">
                 Nome da Coniglio
@@ -335,7 +361,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* PADRE FONDATORE */}
             <div className="flex items-center justify-between bg-white/60 p-3 rounded-2xl border border-white">
               <span className="text-xs font-black text-[#1b2b25]">
                 Padre Fondatore?
@@ -378,7 +403,128 @@ export default function ProfilePage() {
         )}
       </section>
 
-      {/* ⛺ 2. HUB RISORSE (Bento Grid) */}
+      {/* 🐾 2. SCHEDA MASCOTTE / BESTIA PERSONALE */}
+      <section className="rounded-[2.5rem] bg-zinc-900/90 text-white p-5 shadow-xl border border-white/10 backdrop-blur-xl relative overflow-hidden">
+        <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🐺</span>
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-widest text-amber-400">
+                Stato della Bestia
+              </h3>
+              <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
+                Fase {mascotFase} • {mascotDef.name}
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/mascotte"
+            className="px-3 py-1.5 rounded-xl bg-amber-500 text-zinc-950 font-black text-[10px] uppercase tracking-wider shadow-md hover:bg-amber-400 transition-colors active:scale-95"
+          >
+            Vai in Stalla →
+          </Link>
+        </div>
+
+        {mascot ? (
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            {/* AVATAR EVOLUZIONE MASCOTTE */}
+            <div className="relative w-24 h-24 bg-black/60 rounded-2xl border border-white/10 flex items-center justify-center p-2 shrink-0 shadow-inner">
+              <img
+                src={mascotDef.image}
+                alt={mascotDef.name}
+                className={`w-full h-full object-contain ${
+                  isMascotCritical ? "grayscale opacity-75" : "drop-shadow-[0_4px_10px_rgba(245,158,11,0.3)]"
+                }`}
+              />
+              {isMascotCritical && (
+                <div className="absolute top-1 right-1 bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md animate-pulse">
+                  SOS
+                </div>
+              )}
+            </div>
+
+            {/* BARRE STATISTICHE & PROGRESSO EXP */}
+            <div className="w-full space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-black text-white truncate max-w-[140px]">
+                  {mascot.nome_mascotte || "Senza Nome"}
+                </span>
+                <span className="text-[9px] font-bold text-amber-400">
+                  {mascot.exp || 0} / {mascotNextExp} XP
+                </span>
+              </div>
+
+              {/* Progress EXP */}
+              <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden border border-white/5">
+                <div
+                  className="bg-amber-400 h-full transition-all duration-300"
+                  style={{ width: `${mascotExpPercent}%` }}
+                />
+              </div>
+
+              {/* Mini barre stat */}
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                {/* FAME */}
+                <div className="bg-black/40 p-1.5 rounded-xl border border-white/5 text-center">
+                  <div className="text-[8px] font-black text-zinc-400 uppercase flex items-center justify-between mb-0.5">
+                    <span>Fame</span>
+                    <span className={mascot.fame < 20 ? "text-red-400 font-bold" : ""}>
+                      {Math.round(mascot.fame ?? 50)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-zinc-800 h-1 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${mascot.fame < 20 ? "bg-red-500 animate-pulse" : "bg-rose-500"}`}
+                      style={{ width: `${Math.min(100, Math.max(0, mascot.fame ?? 50))}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* SETE */}
+                <div className="bg-black/40 p-1.5 rounded-xl border border-white/5 text-center">
+                  <div className="text-[8px] font-black text-zinc-400 uppercase flex items-center justify-between mb-0.5">
+                    <span>Sete</span>
+                    <span className={mascot.sete < 20 ? "text-red-400 font-bold" : ""}>
+                      {Math.round(mascot.sete ?? 50)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-zinc-800 h-1 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${mascot.sete < 20 ? "bg-red-500 animate-pulse" : "bg-sky-500"}`}
+                      style={{ width: `${Math.min(100, Math.max(0, mascot.sete ?? 50))}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* SVAGO */}
+                <div className="bg-black/40 p-1.5 rounded-xl border border-white/5 text-center">
+                  <div className="text-[8px] font-black text-zinc-400 uppercase flex items-center justify-between mb-0.5">
+                    <span>Svago</span>
+                    <span className={mascot.svago < 20 ? "text-red-400 font-bold" : ""}>
+                      {Math.round(mascot.svago ?? 50)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-zinc-800 h-1 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${mascot.svago < 20 ? "bg-red-500 animate-pulse" : "bg-emerald-500"}`}
+                      style={{ width: `${Math.min(100, Math.max(0, mascot.svago ?? 50))}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-black/40 p-4 rounded-2xl text-center border border-white/5">
+            <p className="text-xs text-zinc-400 font-bold">Nessuna mascotte adottata al momento.</p>
+            <Link href="/mascotte" className="inline-block mt-2 text-xs text-amber-400 font-black uppercase underline">
+              Crea subito la tua mascotte →
+            </Link>
+          </div>
+        )}
+      </section>
+
+      {/* ⛺ 3. HUB RISORSE (Bento Grid) */}
       <section className="rounded-[2.5rem] bg-white/40 backdrop-blur-xl p-5 shadow-sm border border-white space-y-5">
         <div>
           <div className="flex justify-between items-center mb-3 px-1">
@@ -478,7 +624,7 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* 🚪 3. ACCOUNT & LOGOUT */}
+      {/* 🚪 4. ACCOUNT & LOGOUT */}
       <section className="bg-red-500/10 backdrop-blur-md border border-red-500/20 rounded-[2rem] p-4 flex items-center justify-between shadow-sm">
         <div className="text-left">
           <p className="text-xs font-bold text-red-950">Account & Sessione</p>
