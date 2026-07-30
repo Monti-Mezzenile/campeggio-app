@@ -239,8 +239,8 @@ export default function MascottePage() {
                 type="text"
                 value={tempName}
                 onChange={(e) => setTempName(e.target.value)}
-                maxLength={20}
-                className="bg-zinc-900 border border-amber-500/50 text-white text-lg font-black text-center rounded-xl px-3 py-1 outline-none w-48"
+                maxLength={24}
+                className="bg-zinc-900 border border-amber-500/50 text-white text-lg font-black text-center rounded-xl px-3 py-1 outline-none w-52"
                 autoFocus
               />
               <button onClick={handleSaveName} className="bg-amber-500 text-black font-black text-xs px-3 py-2 rounded-xl active:scale-95">
@@ -264,7 +264,7 @@ export default function MascottePage() {
       </div>
 
       {/* 🟢 SEZIONE 2: BARRE STATISTICHE PERSONALI */}
-      <div className="w-full max-w-md bg-white/10 backdrop-blur-md p-4 rounded-3xl border border-white/20 space-y-3 shadow-xl z-10 mt-4">
+      <div className="w-full max-w-md bg-zinc-900/80 backdrop-blur-md p-4 rounded-3xl border border-white/20 space-y-3 shadow-xl z-10 mt-4">
         {(['fame', 'sete', 'svago'] as const).map((key) => (
           <div key={key} className="space-y-1.5">
             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-zinc-300">
@@ -274,7 +274,7 @@ export default function MascottePage() {
               </span>
               <span className={mascot[key] < 15 ? 'text-red-400 font-bold' : ''}>{mascot[key]}%</span>
             </div>
-            <div className="w-full h-3.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
+            <div className="w-full h-3.5 bg-black/50 rounded-full overflow-hidden border border-white/5">
               <div
                 className={`h-full transition-all duration-500 ${
                   mascot[key] < 15 ? 'bg-red-600 animate-pulse' :
@@ -287,16 +287,29 @@ export default function MascottePage() {
         ))}
       </div>
 
-      {/* 🟢 SEZIONE 3: MASCOTTE DINAMICA */}
-      <div className="relative my-4 flex items-center justify-center py-4 z-0">
-        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full blur-3xl pointer-events-none ${mascot.fame < 15 ? 'bg-red-500/20' : 'bg-amber-500/20'}`} />
-        <motion.div ref={mascotRef} animate={mascotControls} className="relative w-56 h-56 flex items-center justify-center cursor-pointer">
-          <img src={currentDef.image} alt={currentDef.name} className={`w-full h-full object-contain pointer-events-none drop-shadow-[0_15px_25px_rgba(0,0,0,0.6)] ${mascot.fame < 15 ? 'grayscale opacity-80' : ''}`} />
+      {/* 🟢 SEZIONE 3: MASCOTTE CON SFONDO SCENICO PIXEL ART */}
+      <div className="relative w-full max-w-md my-4 rounded-3xl overflow-hidden border border-white/10 flex items-center justify-center min-h-[320px] shadow-2xl">
+        {/* Immagine di Sfondo Pixel Art */}
+        <img
+          src="/Backgr.png"
+          alt="Camping Pixel Landscape"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        />
+        
+        {/* Sfocatura/Dissolvenza sfumata verso il nero in basso */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-zinc-950/20 to-zinc-950 pointer-events-none" />
+
+        {/* Glow circolare dinamico attorno al personaggio */}
+        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full blur-3xl pointer-events-none ${mascot.fame < 15 ? 'bg-red-500/30' : 'bg-amber-500/20'}`} />
+
+        {/* Mascotte Animata */}
+        <motion.div ref={mascotRef} animate={mascotControls} className="relative w-56 h-56 flex items-center justify-center cursor-pointer z-10">
+          <img src={currentDef.image} alt={currentDef.name} className={`w-full h-full object-contain pointer-events-none drop-shadow-[0_20px_30px_rgba(0,0,0,0.9)] ${mascot.fame < 15 ? 'grayscale opacity-80' : ''}`} />
         </motion.div>
       </div>
 
       {/* 🟢 SEZIONE 4: INVENTARIO */}
-      <div className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-3xl z-10 mb-8">
+      <div className="w-full max-w-md bg-zinc-900/80 backdrop-blur-md border border-white/20 p-4 rounded-3xl z-10 mb-8">
         <h2 className="text-xs font-black uppercase tracking-wider text-zinc-400 mb-3 text-center">Rifornimenti (Mantenimento)</h2>
         <div className="grid grid-cols-3 gap-3">
           {ITEMS.map((item) => (
@@ -316,7 +329,7 @@ export default function MascottePage() {
         </div>
       </div>
 
-      {/* 🟢 SEZIONE 5: ALTRE MASCOTTE DEL CAMPEGGIO */}
+      {/* 🟢 SEZIONE 5: ALTRE MASCOTTE DEL CAMPEGGIO (SPAZIO AMPLIATO) */}
       <div className="w-full max-w-md border-t border-white/10 pt-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-black uppercase tracking-wider text-amber-400 flex items-center gap-2">
@@ -335,51 +348,59 @@ export default function MascottePage() {
             {otherMascots.map((other, idx) => {
               const otherDef = EVOLUTION_STAGES[other.fase] || EVOLUTION_STAGES[1];
               return (
-                <div key={other.id || idx} className="flex items-center justify-between bg-zinc-900/70 border border-white/10 p-3 rounded-2xl shadow-md gap-3">
+                <div key={other.id || idx} className="flex flex-col sm:flex-row sm:items-center justify-between bg-zinc-900/80 border border-white/10 p-4 rounded-2xl shadow-md gap-3">
                   
-                  {/* Left: Avatar + Names */}
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className="relative w-11 h-11 bg-white/5 rounded-xl flex items-center justify-center p-1 border border-white/10 shrink-0">
+                  {/* Avatar + Info Mascotte (Spazio generoso per il nome) */}
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="relative w-14 h-14 bg-black/40 rounded-xl flex items-center justify-center p-1 border border-white/10 shrink-0 shadow-inner">
                       <img src={otherDef.image} alt={otherDef.name} className="w-full h-full object-contain" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-xs font-black text-white truncate max-w-[110px]">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-black text-white break-words leading-tight">
                           {other.nome_mascotte || 'Anonimo'}
                         </span>
-                        <span className="text-[8px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 font-bold rounded-md shrink-0 whitespace-nowrap">
+                        <span className="text-[9px] px-2 py-0.5 bg-amber-500/20 text-amber-400 font-bold rounded-md shrink-0 border border-amber-500/30">
                           Fase {other.fase}
                         </span>
                       </div>
-                      <p className="text-[9px] text-zinc-400 font-medium truncate mt-0.5">{otherDef.name} • {other.exp || 0} XP</p>
+                      <p className="text-[10px] text-zinc-400 font-medium">{otherDef.name} • {other.exp || 0} XP</p>
                     </div>
                   </div>
 
-                  {/* Right: Stats Bars */}
-                  <div className="flex flex-col gap-1 w-20 shrink-0">
-                    <div className="flex items-center justify-between text-[8px] font-bold text-zinc-400">
-                      <span>FAME</span>
-                      <span className={other.fame < 15 ? 'text-red-400' : ''}>{other.fame ?? 50}%</span>
-                    </div>
-                    <div className="w-full bg-black/50 h-1 rounded-full overflow-hidden">
-                      <div className={`h-full ${other.fame < 15 ? 'bg-red-500' : 'bg-rose-500'}`} style={{ width: `${other.fame ?? 50}%` }} />
-                    </div>
-
-                    <div className="flex items-center justify-between text-[8px] font-bold text-zinc-400">
-                      <span>SETE</span>
-                      <span className={other.sete < 15 ? 'text-red-400' : ''}>{other.sete ?? 50}%</span>
-                    </div>
-                    <div className="w-full bg-black/50 h-1 rounded-full overflow-hidden">
-                      <div className={`h-full ${other.sete < 15 ? 'bg-red-500' : 'bg-sky-500'}`} style={{ width: `${other.sete ?? 50}%` }} />
+                  {/* Statistiche Avversario */}
+                  <div className="flex flex-col gap-1.5 w-full sm:w-28 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
+                    
+                    <div className="space-y-0.5">
+                      <div className="flex items-center justify-between text-[8px] font-bold text-zinc-400">
+                        <span>FAME</span>
+                        <span className={other.fame < 15 ? 'text-red-400' : ''}>{other.fame ?? 50}%</span>
+                      </div>
+                      <div className="w-full bg-black/60 h-1.5 rounded-full overflow-hidden border border-white/5">
+                        <div className={`h-full ${other.fame < 15 ? 'bg-red-500 animate-pulse' : 'bg-rose-500'}`} style={{ width: `${other.fame ?? 50}%` }} />
+                      </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[8px] font-bold text-zinc-400">
-                      <span>SVAGO</span>
-                      <span className={other.svago < 15 ? 'text-red-400' : ''}>{other.svago ?? 50}%</span>
+                    <div className="space-y-0.5">
+                      <div className="flex items-center justify-between text-[8px] font-bold text-zinc-400">
+                        <span>SETE</span>
+                        <span className={other.sete < 15 ? 'text-red-400' : ''}>{other.sete ?? 50}%</span>
+                      </div>
+                      <div className="w-full bg-black/60 h-1.5 rounded-full overflow-hidden border border-white/5">
+                        <div className={`h-full ${other.sete < 15 ? 'bg-red-500 animate-pulse' : 'bg-sky-500'}`} style={{ width: `${other.sete ?? 50}%` }} />
+                      </div>
                     </div>
-                    <div className="w-full bg-black/50 h-1 rounded-full overflow-hidden">
-                      <div className={`h-full ${other.svago < 15 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${other.svago ?? 50}%` }} />
+
+                    <div className="space-y-0.5">
+                      <div className="flex items-center justify-between text-[8px] font-bold text-zinc-400">
+                        <span>SVAGO</span>
+                        <span className={other.svago < 15 ? 'text-red-400' : ''}>{other.svago ?? 50}%</span>
+                      </div>
+                      <div className="w-full bg-black/60 h-1.5 rounded-full overflow-hidden border border-white/5">
+                        <div className={`h-full ${other.svago < 15 ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} style={{ width: `${other.svago ?? 50}%` }} />
+                      </div>
                     </div>
+
                   </div>
 
                 </div>
