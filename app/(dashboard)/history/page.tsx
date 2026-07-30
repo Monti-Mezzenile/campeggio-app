@@ -43,7 +43,7 @@ export default function HistoryAndVideosPage() {
         supabase
           .from("videos")
           .select("*")
-          .order("created_at", { ascending: false }),
+          .order("titolo", { ascending: true }), // ⬅️ Modificato: ordine alfabetico per nome/titolo
       ]);
 
       if (eventsRes.error)
