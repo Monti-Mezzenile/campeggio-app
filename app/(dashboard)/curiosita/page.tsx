@@ -300,10 +300,10 @@ export default function CuriositaPage() {
           {/* Tool 1: I Pezzi (Verde Salvia del Sito #507c6c) */}
           <button
             onClick={() => router.push("/suoni")}
-            className="group relative h-40 rounded-2xl bg-[#507c6c] text-white p-4 text-left shadow-md overflow-hidden transition-all hover:-translate-y-1 active:scale-95 border border-[#42695c]"
+            className="group relative h-40 rounded-2xl bg-[#507c6c] text-white p-4 text-left shadow-md overflow-hidden transition-all hover:-translate-y-1 active:scale-95 border border-[#42695c] flex flex-col justify-between"
           >
             <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform" />
-            <div className="flex justify-between items-start relative z-10">
+            <div className="flex justify-between items-center relative z-10 w-full">
               <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#1c2421]/40 text-white border border-white/10">
                 Soundboard
               </span>
@@ -311,7 +311,7 @@ export default function CuriositaPage() {
                 <SpeakerIcon className="w-4 h-4 text-white" />
               </div>
             </div>
-            <div className="relative z-10 pt-6">
+            <div className="relative z-10 w-full">
               <h3 className="font-black text-white text-base leading-none tracking-tight">I Pezzi</h3>
               <p className="text-[10px] font-medium text-white/80 mt-1.5 leading-tight">Hit, Urla & Audio Cult da sparare a cassa</p>
             </div>
@@ -320,10 +320,10 @@ export default function CuriositaPage() {
           {/* Tool 2: La Sviolinata (Scuro / Pino del Sito #1c2421) */}
           <button
             onClick={() => router.push("/sviolinata")}
-            className="group relative h-40 rounded-2xl bg-[#1c2421] text-white p-4 text-left shadow-md overflow-hidden transition-all hover:-translate-y-1 active:scale-95 border border-black"
+            className="group relative h-40 rounded-2xl bg-[#1c2421] text-white p-4 text-left shadow-md overflow-hidden transition-all hover:-translate-y-1 active:scale-95 border border-black flex flex-col justify-between"
           >
             <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-[#507c6c]/20 rounded-full blur-xl group-hover:scale-150 transition-transform" />
-            <div className="flex justify-between items-start relative z-10">
+            <div className="flex justify-between items-center relative z-10 w-full">
               <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#507c6c]/40 text-white border border-white/10">
                 Generator
               </span>
@@ -331,7 +331,7 @@ export default function CuriositaPage() {
                 <MusicIcon className="w-4 h-4 text-white" />
               </div>
             </div>
-            <div className="relative z-10 pt-6">
+            <div className="relative z-10 w-full">
               <h3 className="font-black text-white text-base leading-none tracking-tight">La Sviolinata</h3>
               <p className="text-[10px] font-medium text-[#f4efe6]/80 mt-1.5 leading-tight">
                 Dedicato al sapientino di turno che sa sempre tutto lui. Toccagliela piano.
