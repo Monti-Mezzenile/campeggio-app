@@ -7,9 +7,9 @@ import { supabase } from '@/lib/supabase';
 
 // ⚙️ TASSI DI DECADIMENTO ORARIO
 const DECAY_RATES = {
-  fame: 3.5, // % all'ora
-  sete: 4.5, // % all'ora
-  svago: 3.0, // % all'ora
+  fame: 3.5, 
+  sete: 4.5, 
+  svago: 3.0, 
 };
 
 // 📊 SOGLIE DI ESPERIENZA PER LE FASI
@@ -42,21 +42,12 @@ const ITEMS = [
 ];
 
 export default function MascottePage() {
-  const [mascot, setMascot] = useState({ 
-    id: null as string | null, 
-    fame: 50, 
-    sete: 50, 
-    svago: 50, 
-    exp: 0, 
-    fase: 1, 
-    nome: 'Essere Infelice' 
-  });
+  const [mascot, setMascot] = useState({ id: null as string | null, fame: 50, sete: 50, svago: 50, exp: 0, fase: 1, nome: 'Vittima del Campeggio' });
   const [otherMascots, setOtherMascots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [warningMsg, setWarningMsg] = useState('');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   
-  // Gestione editer nome
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState('');
 
@@ -71,42 +62,19 @@ export default function MascottePage() {
 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          setWarningMsg('Nessuna sessione attiva. Effettua il login prima di accedere al campeggio.');
+          setWarningMsg("Ehi fantasma, vedi di loggarti prima di mettere piede in questo campeggio.");
           return;
         }
 
-        let { data: myMascot, error } = await supabase
-          .from('mascots')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (error) console.error("Errore recupero mascotte:", error);
+        let { data: myMascot } = await supabase.from('mascots').select('*').eq('user_id', user.id).maybeSingle();
 
         if (!myMascot) {
-          const { data: newMascot, error: createError } = await supabase
-            .from('mascots')
-            .insert([{
-              user_id: user.id,
-              fame: 100,
-              sete: 100,
-              svago: 100,
-              exp: 0,
-              fase: 1,
-              nome_mascotte: 'Vittima del Campeggio',
-              last_updated_at: new Date().toISOString()
-            }])
-            .select()
-            .single();
-
-          if (createError) {
-            setWarningMsg("Impossibile creare la mascotte. Verificare le politiche RLS di Supabase.");
-            return;
-          }
+          const { data: newMascot } = await supabase.from('mascots').insert([{
+            user_id: user.id, fame: 100, sete: 100, svago: 100, exp: 0, fase: 1, nome_mascotte: 'Scarto di Natura', last_updated_at: new Date().toISOString()
+          }]).select().single();
           myMascot = newMascot;
         }
 
-        // Calcolo Decadimento Temporale
         const now = new Date();
         const lastUpdate = myMascot.last_updated_at ? new Date(myMascot.last_updated_at) : new Date();
         const hoursPassed = Math.max(0, (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60));
@@ -121,7 +89,6 @@ export default function MascottePage() {
           currentSete = Math.max(0, currentSete - hoursPassed * DECAY_RATES.sete);
           currentSvago = Math.max(0, currentSvago - hoursPassed * DECAY_RATES.svago);
 
-          // Penalità da abbandono (<10% per più di 2 ore)
           if (currentFame < 10 || currentSete < 10 || currentSvago < 10) {
             const penaltyHours = Math.floor(hoursPassed);
             if (penaltyHours > 2) {
@@ -130,33 +97,17 @@ export default function MascottePage() {
           }
 
           await supabase.from('mascots').update({ 
-            fame: currentFame,
-            sete: currentSete,
-            svago: currentSvago,
-            exp: currentExp,
-            last_updated_at: new Date().toISOString()
+            fame: currentFame, sete: currentSete, svago: currentSvago, exp: currentExp, last_updated_at: new Date().toISOString()
           }).eq('id', myMascot.id);
         }
 
-        const mascotName = myMascot.nome_mascotte || 'Vittima del Campeggio';
         setMascot({ 
-          id: myMascot.id,
-          fame: currentFame,
-          sete: currentSete, 
-          svago: currentSvago,
-          exp: currentExp,
-          fase: myMascot.fase ?? 1,
-          nome: mascotName 
+          id: myMascot.id, fame: currentFame, sete: currentSete, svago: currentSvago, exp: currentExp, 
+          fase: myMascot.fase ?? 1, nome: myMascot.nome_mascotte || 'Bestia Anonima' 
         });
-        setTempName(mascotName);
+        setTempName(myMascot.nome_mascotte || 'Bestia Anonima');
 
-        // Caricamento rivali
-        const { data: others } = await supabase
-          .from('mascots')
-          .select('*')
-          .neq('user_id', user.id)
-          .order('exp', { ascending: false });
-
+        const { data: others } = await supabase.from('mascots').select('*').neq('user_id', user.id).order('exp', { ascending: false });
         if (others) setOtherMascots(others);
 
       } catch (err) {
@@ -169,39 +120,28 @@ export default function MascottePage() {
     loadData();
   }, []);
 
-  // 2️⃣ SALVATAGGIO NOME
   const handleSaveName = async () => {
     if (!tempName.trim() || !mascot.id) return;
     const cleanName = tempName.trim();
     setMascot(prev => ({ ...prev, nome: cleanName }));
     setIsEditingName(false);
-
-    await supabase.from('mascots').update({
-      nome_mascotte: cleanName
-    }).eq('id', mascot.id);
+    await supabase.from('mascots').update({ nome_mascotte: cleanName }).eq('id', mascot.id);
   };
 
-  // 3️⃣ DRAG & DROP LOGIC
   const handleDragEnd = async (event: any, info: any, item: typeof ITEMS[0]) => {
     if (!mascotRef.current || !mascot.id) return;
-
     const rect = mascotRef.current.getBoundingClientRect();
-    const dropX = info.point.x;
-    const dropY = info.point.y;
-
-    const isOver = dropX >= rect.left && dropX <= rect.right && dropY >= rect.top && dropY <= rect.bottom;
+    const isOver = info.point.x >= rect.left && info.point.x <= rect.right && info.point.y >= rect.top && info.point.y <= rect.bottom;
 
     if (isOver) {
       const statKey = item.type as 'fame' | 'sete' | 'svago';
 
-      // Blocco Anti-Spam (>80%)
       if (mascot[statKey] >= 80) {
-        setToastMsg(`🛑 La barra ${statKey.toUpperCase()} è oltre l'80%! Aspetta prima di riempirla.`);
+        setToastMsg(`🛑 Ingordo. La stat ${statKey.toUpperCase()} esplode. Datti una calmata.`);
         setTimeout(() => setToastMsg(null), 3000);
         return;
       }
 
-      // Controllo Stato Critico (<20%)
       const isCritical = mascot.fame < 20 || mascot.sete < 20 || mascot.svago < 20;
       const expGained = isCritical ? 0 : item.exp;
 
@@ -211,54 +151,39 @@ export default function MascottePage() {
       let newFase = mascot.fase;
       if (mascot.fase < 9 && newExp >= EXP_THRESHOLDS[mascot.fase + 1]) {
         newFase = mascot.fase + 1;
-        setToastMsg(`🎉 EVOLUZIONE! La tua mascotte è diventata: ${EVOLUTION_STAGES[newFase].name}!`);
+        setToastMsg(`🧬 BOTOX NATURALE! Si è evoluto in: ${EVOLUTION_STAGES[newFase].name}!`);
       } else {
         if (isCritical) {
-          setToastMsg(`⚠️ Statistica ripristinata, ma 0 XP guadagnati! La mascotte è in Stato Critico (<20%).`);
+          setToastMsg(`⚠️ Curato a stento. Zero EXP finché non tiri su le altre barre rosse, genio.`);
         } else {
-          setToastMsg(`+${item.val}% ${statKey.toUpperCase()} | +${expGained} XP!`);
+          setToastMsg(`Sbem! +${item.val}% ${statKey.toUpperCase()} e +${expGained} miseri XP.`);
         }
       }
       setTimeout(() => setToastMsg(null), 3500);
 
-      const updatedMascot = { 
-        ...mascot, 
-        [statKey]: newStatValue, 
-        exp: newExp, 
-        fase: newFase 
-      };
-
+      const updatedMascot = { ...mascot, [statKey]: newStatValue, exp: newExp, fase: newFase };
       setMascot(updatedMascot);
 
       await supabase.from('mascots').update({
-        [statKey]: newStatValue,
-        exp: newExp,
-        fase: newFase,
-        last_updated_at: new Date().toISOString(),
+        [statKey]: newStatValue, exp: newExp, fase: newFase, last_updated_at: new Date().toISOString(),
       }).eq('id', mascot.id);
 
-      mascotControls.start({
-        scale: [1, 1.2, 0.95, 1],
-        rotate: [0, -8, 8, 0],
-        transition: { duration: 0.35 },
-      });
+      mascotControls.start({ scale: [1, 1.2, 0.95, 1], rotate: [0, -8, 8, 0], transition: { duration: 0.35 } });
     }
   };
 
-  // 🐰 4️⃣ CARICAMENTO CON ICONA CONIGLIO IN CENTRO
+  // Funzione Sabotaggio Rivali
+  const handleSabotage = (rivalName: string) => {
+    setToastMsg(`🎯 Hai tirato una pigna in faccia a ${rivalName}. Non serve a nulla, ma fa ridere.`);
+    setTimeout(() => setToastMsg(null), 3500);
+  };
+
   if (loading) {
     return (
       <div className="min-h-dvh bg-zinc-950 flex flex-col items-center justify-center p-4">
         <div className="relative flex items-center justify-center">
           <div className="absolute w-28 h-28 bg-amber-500/20 rounded-full blur-2xl animate-pulse" />
-          <img
-            src="/tamagotchi/fase1_coniglio_piccolo.png"
-            alt="Loading..."
-            className="w-24 h-24 object-contain animate-bounce z-10"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/icons/coniglio.png';
-            }}
-          />
+          <img src="/tamagotchi/fase1_coniglio_piccolo.png" alt="Loading..." className="w-24 h-24 object-contain animate-bounce z-10" onError={(e) => { (e.target as HTMLImageElement).src = '/icons/coniglio.png'; }} />
         </div>
       </div>
     );
@@ -280,27 +205,17 @@ export default function MascottePage() {
   return (
     <div className="flex flex-col items-center min-h-dvh bg-zinc-950 text-white p-4 pt-10 sm:pt-14 overflow-y-auto pb-28 select-none">
       
-      {/* 🟢 SEZIONE 1: INTESTAZIONE & EXP */}
+      {/* HEADER MASCOTTE */}
       <div className="text-center w-full max-w-md z-10">
         <span className="text-[10px] uppercase tracking-widest text-amber-500 font-black">
           Fase {mascot.fase} / 9 • {currentDef.name}
         </span>
         
-        {/* EDIT NOME MASCOTTE */}
         <div className="flex items-center justify-center gap-2 mt-1">
           {isEditingName ? (
             <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={tempName}
-                onChange={(e) => setTempName(e.target.value)}
-                maxLength={24}
-                className="bg-zinc-900 border border-amber-500/50 text-white text-lg font-black text-center rounded-xl px-3 py-1 outline-none w-52"
-                autoFocus
-              />
-              <button onClick={handleSaveName} className="bg-amber-500 text-black font-black text-xs px-3 py-2 rounded-xl active:scale-95">
-                OK
-              </button>
+              <input type="text" value={tempName} onChange={(e) => setTempName(e.target.value)} maxLength={24} className="bg-zinc-900 border border-amber-500/50 text-white text-lg font-black text-center rounded-xl px-3 py-1 outline-none w-52" autoFocus />
+              <button onClick={handleSaveName} className="bg-amber-500 text-black font-black text-xs px-3 py-2 rounded-xl active:scale-95">OK</button>
             </div>
           ) : (
             <button onClick={() => setIsEditingName(true)} className="group flex items-center gap-2 text-2xl font-black text-white tracking-tight hover:text-amber-400 transition-colors">
@@ -310,78 +225,61 @@ export default function MascottePage() {
           )}
         </div>
 
-        <div className="mt-3 w-full bg-white/10 rounded-full h-2 overflow-hidden border border-white/5">
+        <div className="mt-3 w-full bg-white/10 rounded-full h-2 overflow-hidden border border-white/5 shadow-inner">
           <div className="bg-amber-400 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
         </div>
         <p className="text-[9px] text-zinc-400 mt-1 uppercase font-bold tracking-wider">
-          {mascot.fase === 9 ? 'Livello Massimo Raggiunto' : `EXP: ${mascot.exp} / ${nextExpThreshold}`}
+          {mascot.fase === 9 ? 'IL MOSTRO FINALE' : `GRINDING: ${mascot.exp} / ${nextExpThreshold}`}
         </p>
       </div>
 
-      {/* 🔔 TOAST NOTIFICHE */}
+      {/* TOAST NOTIFICHE */}
       {toastMsg && (
-        <div className="w-full max-w-md mt-3 bg-zinc-900 border border-amber-500/50 text-amber-300 text-xs font-bold text-center py-2.5 px-4 rounded-2xl shadow-xl animate-in fade-in zoom-in-95 z-20">
+        <div className="w-full max-w-md mt-3 bg-zinc-900 border border-amber-500/50 text-amber-300 text-xs font-black tracking-wide text-center py-3 px-4 rounded-2xl shadow-xl animate-in fade-in zoom-in-95 z-20">
           {toastMsg}
         </div>
       )}
 
-      {/* ⚠️ AVVISO STATO CRITICO */}
+      {/* AVVISO STATO CRITICO */}
       {isCriticalState && (
-        <div className="w-full max-w-md mt-3 bg-red-500/20 border border-red-500/50 p-3 rounded-2xl text-center animate-pulse z-10">
-          <p className="text-xs font-black text-red-400 uppercase tracking-wide">⚠️ STATO CRITICO (&lt;20%)</p>
-          <p className="text-[10px] text-red-300">Riporta le statistiche sopra il 20% per guadagnare di nuovo punti EXP dagli oggetti!</p>
+        <div className="w-full max-w-md mt-3 bg-red-950/60 border border-red-500/50 p-3 rounded-2xl text-center animate-pulse z-10 shadow-lg">
+          <p className="text-xs font-black text-red-500 uppercase tracking-widest">⚠️ STATO PATETICO (&lt;20%)</p>
+          <p className="text-[10px] text-red-300/80 font-medium">Questa bestia sta morendo. Cura il rosso o scordati i punti EXP.</p>
         </div>
       )}
 
-      {/* 🟢 SEZIONE 2: BARRE STATISTICHE PERSONALI */}
+      {/* BARRE STATISTICHE PERSONALI */}
       <div className="w-full max-w-md bg-zinc-900/80 backdrop-blur-md p-4 rounded-3xl border border-white/10 space-y-3 shadow-xl z-10 mt-4">
         {(['fame', 'sete', 'svago'] as const).map((key) => (
           <div key={key} className="space-y-1.5">
-            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-zinc-300">
+            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-zinc-300">
               <span className="flex items-center gap-1">
                 {key}
                 {mascot[key] < 20 && <img src="/icons/warning.png" alt="Warning" className="w-3.5 h-3.5 animate-bounce" />}
               </span>
-              <span className={mascot[key] < 20 ? 'text-red-400 font-bold' : ''}>{Math.round(mascot[key])}%</span>
+              <span className={mascot[key] < 20 ? 'text-red-500 font-black text-xs' : ''}>{Math.round(mascot[key])}%</span>
             </div>
             <div className="w-full h-3.5 bg-black/50 rounded-full overflow-hidden border border-white/5">
-              <div
-                className={`h-full transition-all duration-500 ${
-                  mascot[key] < 20 ? 'bg-red-600 animate-pulse' :
-                  key === 'fame' ? 'bg-rose-500' : key === 'sete' ? 'bg-sky-500' : 'bg-emerald-500'
-                }`}
-                style={{ width: `${Math.min(100, Math.max(0, mascot[key]))}%` }}
-              />
+              <div className={`h-full transition-all duration-500 ${mascot[key] < 20 ? 'bg-red-600 animate-pulse' : key === 'fame' ? 'bg-rose-500' : key === 'sete' ? 'bg-sky-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, Math.max(0, mascot[key]))}%` }} />
             </div>
           </div>
         ))}
       </div>
 
-      {/* 🟢 SEZIONE 3: MASCOTTE CON SFONDO SCENICO PIXEL ART */}
+      {/* MASCOTTE SCENICA */}
       <div className="relative w-full max-w-md my-4 rounded-3xl overflow-hidden border border-white/10 flex items-center justify-center min-h-[320px] shadow-2xl">
-        <img
-          src="/Backgr.png"
-          alt="Camping Pixel Landscape"
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        />
+        <img src="/Backgr.png" alt="Camping Pixel Landscape" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-zinc-950/20 to-zinc-950 pointer-events-none" />
-
         <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full blur-3xl pointer-events-none ${isCriticalState ? 'bg-red-500/30' : 'bg-amber-500/20'}`} />
 
         <motion.div ref={mascotRef} animate={mascotControls} className="relative w-56 h-56 flex items-center justify-center cursor-pointer z-10">
-          <img 
-            src={currentDef.image} 
-            alt={currentDef.name} 
-            className={`w-full h-full object-contain pointer-events-none drop-shadow-[0_20px_30px_rgba(0,0,0,0.9)] ${
-              isCriticalState ? 'grayscale opacity-80' : ''
-            }`} 
-          />
+          <img src={currentDef.image} alt={currentDef.name} className={`w-full h-full object-contain pointer-events-none drop-shadow-[0_20px_30px_rgba(0,0,0,0.9)] ${isCriticalState ? 'grayscale opacity-70 sepia-[.3]' : ''}`} />
         </motion.div>
       </div>
 
-      {/* 🟢 SEZIONE 4: INVENTARIO DRAG & DROP */}
+      {/* INVENTARIO */}
       <div className="w-full max-w-md bg-zinc-900/80 backdrop-blur-md border border-white/10 p-4 rounded-3xl z-10">
-        <h2 className="text-xs font-black uppercase tracking-wider text-zinc-400 mb-3 text-center">Rifornimenti (Trascina sulla Mascotte)</h2>
+        <h2 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3 text-center">Spazzatura Utile (Trascina Su)</h2>
         <div className="grid grid-cols-3 gap-3">
           {ITEMS.map((item) => {
             const currentStatVal = mascot[item.type as 'fame' | 'sete' | 'svago'];
@@ -389,115 +287,97 @@ export default function MascottePage() {
 
             return (
               <motion.div
-                key={item.id} 
-                drag={!isDisabled}
-                dragSnapToOrigin={true}
-                onDragEnd={(e: any, info: any) => handleDragEnd(e, info, item)}
-                whileHover={{ scale: isDisabled ? 1 : 1.05 }} 
-                whileTap={{ scale: isDisabled ? 1 : 0.95 }}
-                className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-colors shadow-sm ${
-                  isDisabled 
-                    ? 'bg-zinc-900/30 border-red-500/20 opacity-40 cursor-not-allowed' 
-                    : 'bg-zinc-900/60 border-white/10 cursor-grab active:cursor-grabbing hover:bg-zinc-800'
-                }`}
+                key={item.id} drag={!isDisabled} dragSnapToOrigin={true} onDragEnd={(e: any, info: any) => handleDragEnd(e, info, item)} whileHover={{ scale: isDisabled ? 1 : 1.05 }} whileTap={{ scale: isDisabled ? 1 : 0.95 }}
+                className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-colors shadow-sm ${isDisabled ? 'bg-zinc-900/30 border-red-500/10 opacity-30 cursor-not-allowed' : 'bg-zinc-800/80 border-white/10 cursor-grab active:cursor-grabbing hover:bg-zinc-700/80'}`}
               >
                 <img src={item.icon} alt={item.label} className="w-8 h-8 pointer-events-none mb-1 drop-shadow-md" />
                 <span className="text-[9px] font-black text-zinc-300">{item.label}</span>
-                <span className="text-[8px] text-amber-400 font-bold">+{item.val}% | +{isCriticalState ? 0 : item.exp} XP</span>
+                <span className="text-[8px] text-amber-500 font-black">+{item.val}% | {isCriticalState ? '0 XP' : `+${item.exp} XP`}</span>
               </motion.div>
             );
           })}
         </div>
       </div>
 
-      {/* 🟢 SEZIONE MINIGAME RUNNER */}
+      {/* MINIGAME RUNNER CON NUOVA ICONA */}
       <div className="w-full max-w-md my-5 z-10">
         <Link href="/runner" className="block w-full">
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="relative overflow-hidden bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 p-4 rounded-3xl text-zinc-950 font-black shadow-xl border border-amber-400/50 flex items-center justify-between group cursor-pointer"
-          >
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="relative overflow-hidden bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 p-4 rounded-3xl text-zinc-950 font-black shadow-xl border border-amber-400/50 flex items-center justify-between group cursor-pointer">
             <div className="flex items-center gap-3">
-              <div className="bg-zinc-950/20 p-2.5 rounded-2xl text-2xl">🏃‍♂️</div>
+              <div className="bg-zinc-950/20 p-2 rounded-2xl flex items-center justify-center">
+                <img src="/icons/coniglio-run.png" alt="Run" className="w-8 h-8 object-contain drop-shadow-md" onError={(e) => { (e.target as HTMLImageElement).src = '/icons/carota.png'; }} />
+              </div>
               <div className="text-left">
-                <div className="text-[10px] uppercase tracking-wider text-zinc-900/80 font-extrabold">Minigame Arcade</div>
-                <div className="text-base font-black tracking-tight text-zinc-950 uppercase leading-none mt-0.5">Fuga nel Bosco</div>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-900/80 font-extrabold">Rischi la vita per</div>
+                <div className="text-base font-black tracking-tight text-zinc-950 uppercase leading-none mt-0.5">La Fuga Disperata</div>
               </div>
             </div>
-            <div className="bg-zinc-950 text-amber-400 text-xs px-3.5 py-2 rounded-xl font-black uppercase tracking-wider group-hover:bg-zinc-900 transition-colors shadow-md">
-              GIOCA →
+            <div className="bg-zinc-950 text-amber-400 text-xs px-3.5 py-2 rounded-xl font-black uppercase tracking-widest group-hover:bg-zinc-900 transition-colors shadow-md">
+              VIA →
             </div>
           </motion.div>
         </Link>
       </div>
 
-      {/* 🟢 SEZIONE 5: SUPERSTITI DEL CAMPEGGIO */}
+      {/* SUPERSTITI DEL CAMPEGGIO (RIVALI CON SABOTAGGIO) */}
       <div className="w-full max-w-md border-t border-white/10 pt-6 z-10">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-black uppercase tracking-wider text-amber-400 flex items-center gap-2">
-            <img src="/icons/camp.png" alt="Camp" className="w-4 h-4" />
-            <span>Superstiti del Campeggio</span>
+          <h2 className="text-sm font-black uppercase tracking-widest text-amber-500 flex items-center gap-2">
+            <img src="/icons/camp.png" alt="Camp" className="w-4 h-4 opacity-80" />
+            <span>Feccia del Campeggio</span>
           </h2>
-          <span className="text-[10px] text-zinc-500 font-bold uppercase">{otherMascots.length} Rivali</span>
+          <span className="text-[10px] text-zinc-500 font-bold uppercase">{otherMascots.length} Sfigati</span>
         </div>
 
         {otherMascots.length === 0 ? (
-          <div className="text-center p-6 bg-white/5 rounded-2xl border border-white/5">
-            <p className="text-xs text-zinc-400">Nessun rivale presente al momento.</p>
+          <div className="text-center p-6 bg-zinc-900/50 rounded-2xl border border-white/5">
+            <p className="text-xs text-zinc-500 font-medium">Deserto totale. Sei l'unico pazzo qui.</p>
           </div>
         ) : (
           <div className="space-y-3">
             {otherMascots.map((other, idx) => {
               const otherDef = EVOLUTION_STAGES[other.fase] || EVOLUTION_STAGES[1];
               return (
-                <div key={other.id || idx} className="flex flex-col sm:flex-row sm:items-center justify-between bg-zinc-900/80 border border-white/10 p-4 rounded-2xl shadow-md gap-3">
-                  
+                <div 
+                  key={other.id || idx} 
+                  onClick={() => handleSabotage(other.nome_mascotte || 'Anonimo')}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between bg-zinc-900/80 border border-white/10 p-4 rounded-2xl shadow-md gap-3 cursor-pointer hover:bg-zinc-800 transition-colors group"
+                >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="relative w-14 h-14 bg-black/40 rounded-xl flex items-center justify-center p-1 border border-white/10 shrink-0 shadow-inner">
+                    <div className="relative w-14 h-14 bg-black/60 rounded-xl flex items-center justify-center p-1 border border-white/10 shrink-0 shadow-inner group-hover:scale-105 transition-transform">
                       <img src={otherDef.image} alt={otherDef.name} className="w-full h-full object-contain" />
                     </div>
                     <div className="space-y-1 min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-black text-white break-words leading-tight">
+                        <span className="text-sm font-black text-white break-words leading-tight group-hover:text-amber-400 transition-colors">
                           {other.nome_mascotte || 'Anonimo'}
                         </span>
-                        <span className="text-[9px] px-2 py-0.5 bg-amber-500/20 text-amber-400 font-bold rounded-md shrink-0 border border-amber-500/30">
-                          Fase {other.fase}
+                        <span className="text-[9px] px-2 py-0.5 bg-zinc-800 text-zinc-400 font-bold rounded-md shrink-0 border border-white/10">
+                          Lv. {other.fase}
                         </span>
                       </div>
-                      <p className="text-[10px] text-zinc-400 font-medium">{otherDef.name} • {other.exp || 0} XP</p>
+                      <p className="text-[10px] text-amber-500/80 font-bold">{other.exp || 0} XP <span className="text-zinc-600 font-normal ml-1">• Tap per Pigna</span></p>
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-1.5 w-full sm:w-28 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
                     <div className="space-y-0.5">
-                      <div className="flex items-center justify-between text-[8px] font-bold text-zinc-400">
+                      <div className="flex items-center justify-between text-[8px] font-black text-zinc-500">
                         <span>FAME</span>
-                        <span className={other.fame < 20 ? 'text-red-400' : ''}>{Math.round(other.fame ?? 50)}%</span>
+                        <span className={other.fame < 20 ? 'text-red-500 animate-pulse' : ''}>{Math.round(other.fame ?? 50)}%</span>
                       </div>
-                      <div className="w-full bg-black/60 h-1.5 rounded-full overflow-hidden border border-white/5">
-                        <div className={`h-full ${other.fame < 20 ? 'bg-red-500 animate-pulse' : 'bg-rose-500'}`} style={{ width: `${Math.min(100, Math.max(0, other.fame ?? 50))}%` }} />
+                      <div className="w-full bg-black/80 h-1.5 rounded-full overflow-hidden border border-white/5">
+                        <div className={`h-full ${other.fame < 20 ? 'bg-red-500' : 'bg-rose-600/70'}`} style={{ width: `${Math.min(100, Math.max(0, other.fame ?? 50))}%` }} />
                       </div>
                     </div>
 
                     <div className="space-y-0.5">
-                      <div className="flex items-center justify-between text-[8px] font-bold text-zinc-400">
+                      <div className="flex items-center justify-between text-[8px] font-black text-zinc-500">
                         <span>SETE</span>
-                        <span className={other.sete < 20 ? 'text-red-400' : ''}>{Math.round(other.sete ?? 50)}%</span>
+                        <span className={other.sete < 20 ? 'text-red-500 animate-pulse' : ''}>{Math.round(other.sete ?? 50)}%</span>
                       </div>
-                      <div className="w-full bg-black/60 h-1.5 rounded-full overflow-hidden border border-white/5">
-                        <div className={`h-full ${other.sete < 20 ? 'bg-red-500 animate-pulse' : 'bg-sky-500'}`} style={{ width: `${Math.min(100, Math.max(0, other.sete ?? 50))}%` }} />
-                      </div>
-                    </div>
-
-                    <div className="space-y-0.5">
-                      <div className="flex items-center justify-between text-[8px] font-bold text-zinc-400">
-                        <span>SVAGO</span>
-                        <span className={other.svago < 20 ? 'text-red-400' : ''}>{Math.round(other.svago ?? 50)}%</span>
-                      </div>
-                      <div className="w-full bg-black/60 h-1.5 rounded-full overflow-hidden border border-white/5">
-                        <div className={`h-full ${other.svago < 20 ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, Math.max(0, other.svago ?? 50))}%` }} />
+                      <div className="w-full bg-black/80 h-1.5 rounded-full overflow-hidden border border-white/5">
+                        <div className={`h-full ${other.sete < 20 ? 'bg-red-500' : 'bg-sky-600/70'}`} style={{ width: `${Math.min(100, Math.max(0, other.sete ?? 50))}%` }} />
                       </div>
                     </div>
                   </div>
