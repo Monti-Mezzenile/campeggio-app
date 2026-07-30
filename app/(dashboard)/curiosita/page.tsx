@@ -57,7 +57,7 @@ export default function CuriositaPage() {
   async function deleteCuriosita(item: any, e: React.MouseEvent) {
     e.stopPropagation();
 
-    const conferma = confirm("Vuoi davvero eliminare questo ricordo?");
+    const conferma = confirm("Sei sicuro di voler eliminare questo aneddoto per sempre?");
     if (!conferma) return;
 
     if (item.immagine_url) {
@@ -84,64 +84,6 @@ export default function CuriositaPage() {
     loadCuriosita();
   }
 
-  // PILASTRI UFFICIALI (Ora a 6 elementi per una griglia 2x3 perfetta)
-  const ufficiali = [
-    {
-      titolo: "Storia di Monti",
-      sottotitolo: "Le Origini & La Filosofia",
-      immagine: "/curiosity/storia.png",
-      link: "/curiosita/storia-monti",
-      badge: "Storia",
-      glowColor: "bg-emerald-500/15",
-      fullWidth: false,
-    },
-    {
-      titolo: "La corsa dei cavalli",
-      sottotitolo: "Regolamento & Fanfara",
-      immagine: "/curiosity/corsa.png",
-      link: "/curiosita/corsa-dei-cavalli",
-      badge: "Gara",
-      glowColor: "bg-amber-500/15",
-      fullWidth: false,
-    },
-    {
-      titolo: "Bucock",
-      sottotitolo: "Tradizioni & Aneddoti",
-      immagine: "/curiosity/bockok.png",
-      link: "/curiosita/bookock",
-      badge: "Gioco",
-      glowColor: "bg-purple-500/15",
-      fullWidth: false,
-    },
-    {
-      titolo: "Cavallo",
-      sottotitolo: "La Mascotte di Monti",
-      immagine: "/curiosity/cavallo.png",
-      link: "/curiosita/cavallo",
-      badge: "Mito",
-      glowColor: "bg-blue-500/15",
-      fullWidth: false,
-    },
-    {
-      titolo: "I Pezzi",
-      sottotitolo: "Hit, Urla & Audio Cult",
-      immagine: "/icons/lampadina.png",
-      link: "/suoni",
-      badge: "Soundboard",
-      glowColor: "bg-rose-500/15",
-      fullWidth: false,
-    },
-    {
-      titolo: "La Sviolinata",
-      sottotitolo: "Per chi la tocca piano",
-      immagine: "/curiosity/violino.png",
-      link: "/sviolinata",
-      badge: "Meme",
-      glowColor: "bg-indigo-500/15",
-      fullWidth: false,
-    },
-  ];
-
   if (loading) {
     return (
       <main className="min-h-dvh p-4 md:p-6 pb-36 max-w-3xl mx-auto space-y-6 bg-transparent">
@@ -149,7 +91,7 @@ export default function CuriositaPage() {
           <div className="h-12 w-48 bg-white/50 animate-pulse rounded-full backdrop-blur-md border border-white" />
         </div>
         <div className="grid grid-cols-2 gap-4 pt-4">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
+          {[1, 2, 3, 4].map((n) => (
             <div key={n} className="h-36 bg-white/50 border border-white animate-pulse rounded-3xl backdrop-blur-md" />
           ))}
         </div>
@@ -158,16 +100,16 @@ export default function CuriositaPage() {
   }
 
   return (
-    <main className="min-h-dvh p-4 sm:p-6 pb-36 max-w-3xl mx-auto select-none space-y-7 text-zinc-900 bg-transparent">
+    <main className="min-h-dvh p-4 sm:p-6 pb-36 max-w-3xl mx-auto select-none space-y-8 text-zinc-900 bg-transparent">
       
-      {/* 💡 HERO HEADER COMPATTO CON GLOW GLASS */}
-      <header className="relative overflow-hidden bg-white/80 border border-white/90 rounded-3xl p-6 sm:p-7 shadow-xl backdrop-blur-md text-center">
+      {/* 💡 HERO HEADER COMPATTO */}
+      <header className="relative overflow-hidden bg-white/80 border border-white/90 rounded-3xl p-6 shadow-xl backdrop-blur-md text-center">
         <div className="absolute top-0 right-1/2 translate-x-1/2 -mt-10 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-950 text-[10px] font-black uppercase tracking-widest shadow-xs">
             <SparklesIcon className="w-3.5 h-3.5 text-amber-600" />
-            <span>Storie & Leggende</span>
+            <span>Enciclopedia del Disagio</span>
           </div>
 
           <div className="flex items-center justify-center gap-3 pt-1">
@@ -179,122 +121,199 @@ export default function CuriositaPage() {
               />
             </div>
             <h1 className="text-3xl sm:text-4xl font-black text-zinc-950 tracking-tight">
-              Curiosità
+              Lore di Campo
             </h1>
           </div>
 
           <p className="text-xs sm:text-sm font-medium text-zinc-600 max-w-md mx-auto leading-relaxed">
-            Un riassunto piacevole di traumi, sbornie e regole insensate che abbiamo scambiato per tradizioni.
+            I miti, le regole assurde e i ricordi compromettenti che hanno plasmato le generazioni del campeggio.
           </p>
         </div>
       </header>
 
-      {/* 🏕️ SEZIONE PILASTRI UFFICIALI */}
+      {/* 📜 CATEGORIA 1: I TESTI SACRI */}
       <section className="space-y-3">
-        <div className="px-2">
-          <h2 className="text-xs font-black uppercase tracking-wider text-zinc-950">
-            I Pilastri di MONTI
+        <div className="flex items-center gap-2 px-2">
+          <span className="text-xl">📜</span>
+          <h2 className="text-xs font-black uppercase tracking-widest text-zinc-950">
+            I Testi Sacri
           </h2>
         </div>
 
         <div className="grid grid-cols-2 gap-3.5 sm:gap-4">
-          {ufficiali.map((item) => (
-            <button
-              key={item.titolo}
-              onClick={() => router.push(item.link)}
-              className="group relative h-36 sm:h-40 rounded-3xl bg-white/80 backdrop-blur-md border border-white/90 shadow-md flex flex-col justify-between p-3.5 sm:p-4 text-left transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:bg-white/95 overflow-hidden"
-            >
-              {/* Glow di Sfondo tematico */}
-              <div className={`absolute top-0 right-0 w-28 h-28 ${item.glowColor} rounded-full blur-2xl group-hover:scale-150 transition-transform pointer-events-none`} />
+          
+          {/* Card: Storia di Monti */}
+          <button
+            onClick={() => router.push("/curiosita/storia-monti")}
+            className="group relative h-40 rounded-3xl bg-white/80 backdrop-blur-md border border-emerald-500/30 shadow-md flex flex-col justify-between p-4 text-left transition-all hover:-translate-y-1 overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-28 h-28 bg-emerald-500/15 rounded-full blur-2xl group-hover:scale-150 transition-transform pointer-events-none" />
+            <div className="relative z-10">
+              <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 shadow-xs">
+                Origini
+              </span>
+            </div>
+            <div className="absolute top-2 right-2 w-28 h-28 flex items-center justify-center pointer-events-none opacity-90 group-hover:scale-110 transition-transform">
+              <img src="/curiosity/storia.png" alt="Storia" className="w-full h-full object-contain drop-shadow-md" />
+            </div>
+            <div className="relative z-10 w-full pt-8">
+              <h3 className="font-black text-emerald-950 text-sm leading-tight tracking-tight">Storia di Monti</h3>
+              <p className="text-[10px] font-bold text-emerald-900/60 mt-0.5">La Filosofia del Campeggio</p>
+            </div>
+          </button>
 
-              {/* Badge Top Left */}
-              <div className="flex justify-between items-start w-full relative z-10">
-                <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-zinc-900 text-white shadow-xs">
-                  {item.badge}
-                </span>
-              </div>
-
-              {/* Immagine grande ancorata e con zoom integrato */}
-              <div className="absolute top-1 right-1 sm:top-2 sm:right-2 w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center pointer-events-none">
-                <img
-                  src={item.immagine}
-                  alt={item.titolo}
-                  className="w-full h-full object-contain opacity-85 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 drop-shadow-md"
-                />
-              </div>
-
-              {/* Dettagli Testuali in Basso */}
-              <div className="relative z-10 pt-8 w-full">
-                <h3 className="font-black text-zinc-950 text-xs sm:text-sm leading-tight tracking-tight drop-shadow-xs line-clamp-1">
-                  {item.titolo}
-                </h3>
-                <p className="text-[10px] font-bold text-zinc-500 line-clamp-1 mt-0.5">
-                  {item.sottotitolo}
-                </p>
-              </div>
-            </button>
-          ))}
+          {/* Card: Bucock */}
+          <button
+            onClick={() => router.push("/curiosita/bookock")}
+            className="group relative h-40 rounded-3xl bg-white/80 backdrop-blur-md border border-purple-500/30 shadow-md flex flex-col justify-between p-4 text-left transition-all hover:-translate-y-1 overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-28 h-28 bg-purple-500/15 rounded-full blur-2xl group-hover:scale-150 transition-transform pointer-events-none" />
+            <div className="relative z-10">
+              <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-950 text-purple-300 shadow-xs">
+                Tradizioni
+              </span>
+            </div>
+            <div className="absolute top-2 right-2 w-28 h-28 flex items-center justify-center pointer-events-none opacity-90 group-hover:scale-110 transition-transform">
+              <img src="/curiosity/bockok.png" alt="Bucock" className="w-full h-full object-contain drop-shadow-md" />
+            </div>
+            <div className="relative z-10 w-full pt-8">
+              <h3 className="font-black text-purple-950 text-sm leading-tight tracking-tight">Bucock</h3>
+              <p className="text-[10px] font-bold text-purple-900/60 mt-0.5">L'arte del disagio notturno</p>
+            </div>
+          </button>
         </div>
       </section>
 
-      {/* ✨ SEZIONE COMMUNITY */}
-      <section className="space-y-4 pt-2">
-        
-        {/* Header Community Glassmorphic */}
-        <div className="flex justify-between items-center bg-white/80 backdrop-blur-md p-3.5 sm:p-4 rounded-3xl border border-white/90 shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 shadow-xs">
-              <img 
-                src="/icons/profilo.png" 
-                alt="Community" 
-                className="h-5 w-5 sm:h-6 sm:w-6 object-contain"
-              />
+      {/* ⚖️ CATEGORIA 2: DEMOCRAZIA & DISAGIO (In Evidenza!) */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2 px-2">
+          <span className="text-xl">⚖️</span>
+          <h2 className="text-xs font-black uppercase tracking-widest text-zinc-950">
+            Democrazia & Scommesse
+          </h2>
+        </div>
+
+        <button
+          onClick={() => router.push("/curiosita/ruota-del-pentimento")}
+          className="group w-full relative rounded-3xl bg-gradient-to-r from-red-600 via-rose-600 to-red-600 p-5 text-left border border-red-400/50 shadow-xl overflow-hidden active:scale-[0.98] transition-all"
+        >
+          {/* Overlay Sfocato */}
+          <div className="absolute top-0 right-0 w-48 h-48 bg-black/20 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="flex items-center gap-4 relative z-10">
+            {/* Icona Ruota Disegnata con Emoji */}
+            <div className="w-16 h-16 shrink-0 bg-white/10 rounded-full flex items-center justify-center border-4 border-white/20 shadow-inner group-hover:rotate-[360deg] transition-transform duration-1000">
+              <span className="text-3xl">🎡</span>
             </div>
-            <div>
-              <h2 className="text-xs sm:text-sm font-black text-zinc-950 uppercase tracking-wide leading-none">
-                Ricordi Community
-              </h2>
-              <p className="text-[11px] text-zinc-500 font-medium mt-1">
-                Aneddoti e storie condivise dai ragazzi
+
+            <div className="flex-1">
+              <span className="inline-block px-2.5 py-1 bg-black/40 text-red-100 text-[9px] font-black uppercase tracking-widest rounded-lg mb-1.5 shadow-sm">
+                Rischio Altissimo
+              </span>
+              <h3 className="text-xl font-black text-white tracking-tight uppercase leading-none mb-1">
+                La Ruota dell'Insolenza
+              </h3>
+              <p className="text-[11px] font-medium text-red-100/90 leading-tight">
+                Sei in minoranza? Gira la ruota e sfida il fato. Ma preparati a pagare.
               </p>
             </div>
+          </div>
+        </button>
+      </section>
+
+      {/* 🦄 CATEGORIA 3: ICONOGRAFIA & FOLKLORE */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2 px-2">
+          <span className="text-xl">🦄</span>
+          <h2 className="text-xs font-black uppercase tracking-widest text-zinc-950">
+            Iconografia & Folklore
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+          
+          {/* Card: Cavallo */}
+          <button
+            onClick={() => router.push("/curiosita/cavallo")}
+            className="group relative h-28 sm:h-32 rounded-3xl bg-white/80 backdrop-blur-md border border-blue-500/30 shadow-md flex items-center justify-between px-5 transition-all hover:-translate-y-1 overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10 w-2/3 text-left">
+              <h3 className="font-black text-blue-950 text-sm leading-tight tracking-tight">Il Cavallo</h3>
+              <p className="text-[10px] font-bold text-blue-900/60 mt-0.5">Mito e Leggenda</p>
+            </div>
+            <div className="w-16 h-16 relative z-10 group-hover:scale-110 transition-transform drop-shadow-md">
+              <img src="/curiosity/cavallo.png" alt="Cavallo" className="w-full h-full object-contain" />
+            </div>
+          </button>
+
+          {/* Card: Corsa dei Cavalli */}
+          <button
+            onClick={() => router.push("/curiosita/corsa-dei-cavalli")}
+            className="group relative h-28 sm:h-32 rounded-3xl bg-white/80 backdrop-blur-md border border-amber-500/30 shadow-md flex items-center justify-between px-5 transition-all hover:-translate-y-1 overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10 w-2/3 text-left">
+              <h3 className="font-black text-amber-950 text-sm leading-tight tracking-tight line-clamp-2">La Corsa dei Cavalli</h3>
+              <p className="text-[10px] font-bold text-amber-900/60 mt-0.5">Regolamento</p>
+            </div>
+            <div className="w-16 h-16 relative z-10 group-hover:scale-110 transition-transform drop-shadow-md">
+              <img src="/curiosity/corsa.png" alt="Corsa" className="w-full h-full object-contain" />
+            </div>
+          </button>
+
+          {/* Card: Sviolinata */}
+          <button
+            onClick={() => router.push("/sviolinata")}
+            className="group relative h-28 sm:h-32 rounded-3xl bg-white/80 backdrop-blur-md border border-indigo-500/30 shadow-md flex items-center justify-between px-5 transition-all hover:-translate-y-1 overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10 w-2/3 text-left">
+              <h3 className="font-black text-indigo-950 text-sm leading-tight tracking-tight">La Sviolinata</h3>
+              <p className="text-[10px] font-bold text-indigo-900/60 mt-0.5">Sarcasmo a 4 corde</p>
+            </div>
+            <div className="w-16 h-16 relative z-10 group-hover:scale-110 transition-transform drop-shadow-md">
+              <img src="/curiosity/violino.png" alt="Sviolinata" className="w-full h-full object-contain" />
+            </div>
+          </button>
+
+        </div>
+      </section>
+
+      {/* 📚 CATEGORIA 4: LE CRONACHE DELLA COMMUNITY */}
+      <section className="space-y-4 pt-4 border-t border-zinc-300">
+        
+        <div className="flex justify-between items-center px-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📸</span>
+            <h2 className="text-xs font-black uppercase tracking-widest text-zinc-950">
+              Le Cronache
+            </h2>
           </div>
 
           <button
             onClick={() => router.push("/curiosita/nuova")}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 border border-amber-500/40 font-black text-xs transition-all shadow-sm active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-950 text-white font-black text-[10px] uppercase tracking-wider transition-all shadow-sm active:scale-95"
           >
-            <PlusIcon className="w-4 h-4 text-amber-900" />
-            <span>Aggiungi</span>
+            <PlusIcon className="w-3.5 h-3.5 text-amber-400" />
+            Aggiungi
           </button>
         </div>
 
-        {/* Empty State / Grid */}
         {curiosita.length === 0 ? (
-          <div className="text-center py-10 px-4 rounded-3xl bg-white/60 border border-white/80 backdrop-blur-md shadow-sm space-y-3">
-            <div className="w-16 h-16 mx-auto bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20">
-              <img 
-                src="/icons/tenda-grossa.png" 
-                alt="Nessuna Curiosità" 
-                className="h-10 w-auto opacity-80 drop-shadow-xs"
-              />
-            </div>
-            <div>
-              <p className="text-zinc-950 font-black text-sm">
-                Ancora nessun ricordo registrato
-              </p>
-              <p className="text-zinc-500 text-xs font-medium mt-0.5">
-                Sii il primo a tramandare un aneddoto di Monti!
-              </p>
-            </div>
+          <div className="text-center py-8 px-4 rounded-3xl border-2 border-dashed border-zinc-300 bg-white/30 space-y-2">
+            <span className="text-3xl opacity-50">🏕️</span>
+            <p className="text-zinc-500 font-bold text-xs uppercase tracking-wide">
+              Nessun ricordo registrato
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 sm:gap-4">
+          <div className="grid grid-cols-2 gap-3.5 sm:gap-4">
             {curiosita.map((item) => (
               <div key={item.id} className="relative group">
                 <button
                   onClick={() => router.push(`/curiosita/${item.id}`)}
-                  className="w-full aspect-square rounded-3xl bg-white/80 backdrop-blur-md border border-white/90 overflow-hidden flex flex-col justify-end relative active:scale-95 transition-all duration-300 shadow-md hover:shadow-xl group-hover:-translate-y-1"
+                  className="w-full h-44 rounded-3xl bg-white border border-white/80 overflow-hidden flex flex-col justify-end relative active:scale-95 transition-all duration-300 shadow-md hover:shadow-lg"
                 >
                   {item.immagine_url ? (
                     <>
@@ -306,22 +325,22 @@ export default function CuriositaPage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-950/20 to-transparent" />
                     </>
                   ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-amber-500/10 p-4 text-center">
-                      <span className="text-3xl opacity-70 mb-1">📖</span>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-100 p-4 text-center">
+                      <span className="text-4xl opacity-20 mb-1">📖</span>
                     </div>
                   )}
 
-                  <div className="relative w-full p-3 backdrop-blur-md bg-white/80 border-t border-white/80">
+                  <div className="relative w-full p-3 bg-white/95 backdrop-blur-md">
                     <span className="font-bold text-xs line-clamp-2 leading-tight text-left block text-zinc-950">
                       {item.titolo}
                     </span>
                   </div>
                 </button>
 
-                {/* Tasto elimina stile glass rotondo */}
+                {/* Tasto elimina */}
                 <button
                   onClick={(e) => deleteCuriosita(item, e)}
-                  className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-rose-600/90 text-white backdrop-blur-md shadow-md flex items-center justify-center hover:bg-rose-700 hover:scale-110 active:scale-90 transition-all z-10 border border-rose-400/40"
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-rose-500 text-white shadow-md flex items-center justify-center hover:bg-rose-600 active:scale-90 transition-all z-10 border border-white"
                   title="Elimina"
                 >
                   <TrashIcon />
@@ -331,6 +350,7 @@ export default function CuriositaPage() {
           </div>
         )}
       </section>
+
     </main>
   );
 }
