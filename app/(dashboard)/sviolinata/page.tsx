@@ -15,7 +15,7 @@ export default function SviolinataPage() {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.currentTime = 0; // Riparte dall'inizio ad ogni tap
+      audioRef.current.currentTime = 0; 
       audioRef.current.play().catch((e) => console.error("Errore audio:", e));
       setIsPlaying(true);
     }
@@ -26,7 +26,7 @@ export default function SviolinataPage() {
       className="fixed inset-0 cursor-pointer overflow-hidden flex flex-col justify-between select-none"
       onClick={toggleViolin}
     >
-      {/* 🖼️ Sfondo Fisso & Glow Isolate per evitare tagli di layout durante le animazioni */}
+      {/* 🖼️ Sfondo Fisso & Glow Isolate */}
       <div className="fixed inset-0 -z-20 overflow-hidden pointer-events-none">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-50 scale-105"
@@ -34,7 +34,6 @@ export default function SviolinataPage() {
         />
         <div className="absolute inset-0 bg-zinc-950/20 backdrop-blur-md" />
 
-        {/* Glow di sfondo dinamico racchiuso nello schermo */}
         <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120vw] max-w-2xl aspect-square rounded-full blur-3xl transition-all duration-700 ${
           isPlaying ? "bg-amber-500/35 scale-110" : "bg-transparent scale-90"
         }`} />
@@ -48,8 +47,8 @@ export default function SviolinataPage() {
         onEnded={() => setIsPlaying(false)}
       />
 
-      {/* ⬅️ Tasto Indietro */}
-      <div className="p-4 sm:p-6 z-50">
+      {/* ⬅️ Tasto Indietro (Spostato sotto il notch/safe-area) */}
+      <div className="pt-12 sm:pt-16 px-4 sm:px-6 z-50">
         <button 
           onClick={(e) => {
             e.stopPropagation();
@@ -65,7 +64,6 @@ export default function SviolinataPage() {
       <main className="flex-1 flex flex-col items-center justify-center p-4 text-center z-10 relative">
         <div className="relative flex flex-col items-center justify-center w-full max-w-lg">
           
-          {/* L'immagine del violino (Ingrandita a w-80 / sm:w-[420px]) */}
           <div className={`relative w-80 h-80 sm:w-[420px] sm:h-[420px] transition-all duration-300 ${
             isPlaying ? "scale-105 animate-[wiggle_0.3s_ease-in-out_infinite]" : "scale-100 hover:scale-105"
           }`}>
@@ -75,7 +73,6 @@ export default function SviolinataPage() {
               className="w-full h-full object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.35)]"
             />
 
-            {/* Note musicali animate */}
             {isPlaying && (
               <>
                 <span className="absolute -top-2 right-4 text-5xl animate-[bounce_1s_infinite_100ms] drop-shadow-lg">🎵</span>
