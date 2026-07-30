@@ -84,7 +84,7 @@ export default function CuriositaPage() {
     loadCuriosita();
   }
 
-  // PILASTRI UFFICIALI (Incluso I Pezzi che porta a /suoni)
+  // PILASTRI UFFICIALI (Ora a 6 elementi per una griglia 2x3 perfetta)
   const ufficiali = [
     {
       titolo: "Storia di Monti",
@@ -129,7 +129,16 @@ export default function CuriositaPage() {
       link: "/suoni",
       badge: "Soundboard",
       glowColor: "bg-rose-500/15",
-      fullWidth: true,
+      fullWidth: false,
+    },
+    {
+      titolo: "La Sviolinata",
+      sottotitolo: "Per chi la tocca piano",
+      immagine: "/curiosity/violino.png",
+      link: "/sviolinata",
+      badge: "Meme",
+      glowColor: "bg-indigo-500/15",
+      fullWidth: false,
     },
   ];
 
@@ -140,7 +149,7 @@ export default function CuriositaPage() {
           <div className="h-12 w-48 bg-white/50 animate-pulse rounded-full backdrop-blur-md border border-white" />
         </div>
         <div className="grid grid-cols-2 gap-4 pt-4">
-          {[1, 2, 3, 4].map((n) => (
+          {[1, 2, 3, 4, 5, 6].map((n) => (
             <div key={n} className="h-36 bg-white/50 border border-white animate-pulse rounded-3xl backdrop-blur-md" />
           ))}
         </div>
@@ -193,9 +202,7 @@ export default function CuriositaPage() {
             <button
               key={item.titolo}
               onClick={() => router.push(item.link)}
-              className={`group relative h-36 sm:h-40 rounded-3xl bg-white/80 backdrop-blur-md border border-white/90 shadow-md flex flex-col justify-between p-3.5 sm:p-4 text-left transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:bg-white/95 overflow-hidden ${
-                item.fullWidth ? "col-span-2" : ""
-              }`}
+              className="group relative h-36 sm:h-40 rounded-3xl bg-white/80 backdrop-blur-md border border-white/90 shadow-md flex flex-col justify-between p-3.5 sm:p-4 text-left transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:bg-white/95 overflow-hidden"
             >
               {/* Glow di Sfondo tematico */}
               <div className={`absolute top-0 right-0 w-28 h-28 ${item.glowColor} rounded-full blur-2xl group-hover:scale-150 transition-transform pointer-events-none`} />
