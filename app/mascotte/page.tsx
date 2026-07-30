@@ -35,15 +35,16 @@ const ITEMS = [
 
 export default function MascottePage() {
   const [mascot, setMascot] = useState({ id: null as string | null, fame: 50, sete: 50, svago: 50, exp: 0, fase: 1, nome: 'Cucciolo' });
+  const [otherMascots, setOtherMascots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [warningMsg, setWarningMsg] = useState('');
   
   const mascotRef = useRef<HTMLDivElement>(null);
   const mascotControls = useAnimation();
 
-  // 1️⃣ CARICAMENTO INIZIALE E CALCOLO DECADIMENTO
+  // 1️⃣ CARICAMENTO INIZIALE, DECADIMENTO E MASCOTTE ALTRUI
   useEffect(() => {
-    const loadAndDecay = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
 
@@ -53,6 +54,7 @@ export default function MascottePage() {
           return;
         }
 
+        // Recupera la MIA mascotte
         let { data: myMascot, error } = await supabase
           .from('mascots')
           .select('*')
@@ -60,7 +62,7 @@ export default function MascottePage() {
           .maybeSingle();
 
         if (error) {
-          console.error("Errore durante il recupero della mascotte:", error);
+          console.error("Errore recupero mascotte personale:", error);
         }
 
         if (!myMascot) {
@@ -80,15 +82,14 @@ export default function MascottePage() {
             .single();
 
           if (createError) {
-            console.error("Errore durante la creazione della mascotte:", createError);
-            setWarningMsg("Impossibile creare la mascotte. Verifica le permissioni della tabella.");
+            console.error("Errore creazione mascotte:", createError);
+            setWarningMsg("Impossibile creare la mascotte. Verifica le permissioni del DB.");
             return;
           }
-
           myMascot = newMascot;
         }
 
-        // 🧮 CALCOLO DECADIMENTO OFFLINE
+        // 🧮 CALCOLO DECADIMENTO OFFLINE (Mia Mascotte)
         const now = new Date();
         const lastUpdate = myMascot.last_updated_at ? new Date(myMascot.last_updated_at) : new Date();
         const hoursPassed = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60);
@@ -124,14 +125,25 @@ export default function MascottePage() {
           nome: myMascot.nome_mascotte || 'Cucciolo' 
         });
 
+        // 👥 RECUPERA LE MASCOTTE DEGLI ALTRI CAMPEGGIATORI
+        const { data: others, error: othersError } = await supabase
+          .from('mascots')
+          .select('*')
+          .neq('user_id', user.id)
+          .order('exp', { ascending: false });
+
+        if (!othersError && others) {
+          setOtherMascots(others);
+        }
+
       } catch (err) {
-        console.error("Errore generico mascotte:", err);
+        console.error("Errore generico:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    loadAndDecay();
+    loadData();
   }, []);
 
   // 2️⃣ GESTIONE DROP OGGETTI E LOGICA DI GIOCO
@@ -147,13 +159,13 @@ export default function MascottePage() {
     if (isOver) {
       const statKey = item.type as 'fame' | 'sete' | 'svago';
 
-      // 🛑 1. LIMITAZIONE ANTI-SPAM: Soglia Abbassata all'80%
+      // 🛑 LIMITAZIONE ANTI-SPAM (80%)
       if (mascot[statKey] > 80) {
-        alert(`🛑 Troppo pieno! La barra ${statKey.toUpperCase()} è sopra l'80%. Lascialo digerire e torna più tardi per prendere altra esperienza.`);
+        alert(`🛑 Troppo pieno! La barra ${statKey.toUpperCase()} è sopra l'80%. Torna più tardi!`);
         return;
       }
 
-      // ⚠️ 2. MALUS: Se ha troppa fame (<15%)
+      // ⚠️ MALUS: Se ha troppa fame (<15%)
       const isHangry = mascot.fame < 15;
 
       if (isHangry && item.type !== 'fame') {
@@ -162,12 +174,9 @@ export default function MascottePage() {
       }
 
       const expGained = isHangry ? Math.floor(item.exp / 2) : item.exp;
-
-      // Calcola nuove statistiche
       const newStatValue = Math.min(100, mascot[statKey] + item.val);
       const newExp = mascot.exp + expGained;
 
-      // 🌟 CHECK EVOLUZIONE
       let newFase = mascot.fase;
       if (mascot.fase < 9 && newExp >= EXP_THRESHOLDS[mascot.fase + 1]) {
         newFase = mascot.fase + 1;
@@ -206,14 +215,13 @@ export default function MascottePage() {
   const progressPercent = mascot.fase < 9 ? Math.min(100, (mascot.exp / nextExpThreshold) * 100) : 100;
 
   return (
-    <div className="flex flex-col items-center justify-between min-h-dvh bg-zinc-950 text-white p-4 overflow-hidden select-none">
+    <div className="flex flex-col items-center min-h-dvh bg-zinc-950 text-white p-4 overflow-y-auto pb-28 select-none">
       
-      {/* INTESTAZIONE & BARRA ESPERIENZA */}
-      <div className="text-center mt-6 w-full max-w-md">
+      {/* 🟢 SEZIONE 1: INTESTAZIONE & BARRA EXP */}
+      <div className="text-center mt-4 w-full max-w-md">
         <span className="text-xs uppercase tracking-widest text-amber-500 font-black">Fase {mascot.fase} di 9</span>
         <h1 className="text-2xl font-black text-white tracking-tight">{currentDef.name}</h1>
         
-        {/* Barra EXP */}
         <div className="mt-2 w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
           <div className="bg-amber-400 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
         </div>
@@ -222,8 +230,8 @@ export default function MascottePage() {
         </p>
       </div>
 
-      {/* BARRE STATISTICHE (Fame, Sete, Svago) */}
-      <div className="w-full max-w-md bg-white/10 backdrop-blur-md p-4 rounded-3xl border border-white/20 space-y-3 shadow-xl z-10">
+      {/* 🟢 SEZIONE 2: BARRE STATISTICHE PERSONALI */}
+      <div className="w-full max-w-md bg-white/10 backdrop-blur-md p-4 rounded-3xl border border-white/20 space-y-3 shadow-xl z-10 mt-4">
         {(['fame', 'sete', 'svago'] as const).map((key) => (
           <div key={key} className="space-y-1.5">
             <div className="flex justify-between text-[10px] font-black uppercase tracking-wider text-zinc-300">
@@ -243,16 +251,17 @@ export default function MascottePage() {
         ))}
       </div>
 
-      {/* MASCOTTE DINAMICA */}
-      <div className="relative my-auto flex items-center justify-center py-10 z-0">
-        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-3xl pointer-events-none ${mascot.fame < 15 ? 'bg-red-500/20' : 'bg-amber-500/20'}`} />
-        <motion.div ref={mascotRef} animate={mascotControls} className="relative w-64 h-64 flex items-center justify-center cursor-pointer">
+      {/* 🟢 SEZIONE 3: MASCOTTE DINAMICA */}
+      <div className="relative my-6 flex items-center justify-center py-6 z-0">
+        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full blur-3xl pointer-events-none ${mascot.fame < 15 ? 'bg-red-500/20' : 'bg-amber-500/20'}`} />
+        <motion.div ref={mascotRef} animate={mascotControls} className="relative w-56 h-56 flex items-center justify-center cursor-pointer">
           <img src={currentDef.image} alt={currentDef.name} className={`w-full h-full object-contain pointer-events-none drop-shadow-[0_15px_25px_rgba(0,0,0,0.6)] ${mascot.fame < 15 ? 'grayscale opacity-80' : ''}`} />
         </motion.div>
       </div>
 
-      {/* INVENTARIO */}
-      <div className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-3xl z-10 mb-16">
+      {/* 🟢 SEZIONE 4: INVENTARIO */}
+      <div className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-3xl z-10 mb-8">
+        <h2 className="text-xs font-black uppercase tracking-wider text-zinc-400 mb-3 text-center">Zaino Interattivo</h2>
         <div className="grid grid-cols-3 gap-3">
           {ITEMS.map((item) => (
             <motion.div
@@ -269,6 +278,76 @@ export default function MascottePage() {
             </motion.div>
           ))}
         </div>
+      </div>
+
+      {/* 🟢 SEZIONE 5: ALTRE MASCOTTE DEL CAMPEGGIO */}
+      <div className="w-full max-w-md border-t border-white/10 pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-black uppercase tracking-wider text-amber-400 flex items-center gap-2">
+            <span>⛺</span> Mascotte del Campeggio
+          </h2>
+          <span className="text-[10px] text-zinc-500 font-bold uppercase">{otherMascots.length} Altri Camper</span>
+        </div>
+
+        {otherMascots.length === 0 ? (
+          <div className="text-center p-6 bg-white/5 rounded-2xl border border-white/5">
+            <p className="text-xs text-zinc-400">Nessun altro camper ha ancora creato una mascotte.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {otherMascots.map((other, idx) => {
+              const otherDef = EVOLUTION_STAGES[other.fase] || EVOLUTION_STAGES[1];
+              return (
+                <div key={other.id || idx} className="flex items-center justify-between bg-zinc-900/70 border border-white/10 p-3.5 rounded-2xl shadow-md">
+                  
+                  {/* Avatar + Info Base */}
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center p-1 border border-white/10 overflow-hidden">
+                      <img src={otherDef.image} alt={otherDef.name} className="w-full h-full object-contain" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-black text-white">{other.nome_mascotte || 'Mascotte Anonima'}</span>
+                        <span className="text-[9px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 font-bold rounded-md">
+                          Fase {other.fase}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-zinc-400 font-medium mt-0.5">{otherDef.name} • {other.exp || 0} XP</p>
+                    </div>
+                  </div>
+
+                  {/* Mini Stats (Fame, Sete, Svago) */}
+                  <div className="flex flex-col gap-1 w-20">
+                    <div className="flex items-center justify-between text-[8px] font-bold text-zinc-400">
+                      <span>FAME</span>
+                      <span className={other.fame < 15 ? 'text-red-400' : ''}>{other.fame ?? 50}%</span>
+                    </div>
+                    <div className="w-full bg-black/50 h-1 rounded-full overflow-hidden">
+                      <div className={`h-full ${other.fame < 15 ? 'bg-red-500' : 'bg-rose-500'}`} style={{ width: `${other.fame ?? 50}%` }} />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[8px] font-bold text-zinc-400">
+                      <span>SETE</span>
+                      <span className={other.sete < 15 ? 'text-red-400' : ''}>{other.sete ?? 50}%</span>
+                    </div>
+                    <div className="w-full bg-black/50 h-1 rounded-full overflow-hidden">
+                      <div className={`h-full ${other.sete < 15 ? 'bg-red-500' : 'bg-sky-500'}`} style={{ width: `${other.sete ?? 50}%` }} />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[8px] font-bold text-zinc-400">
+                      <span>SVAGO</span>
+                      <span className={other.svago < 15 ? 'text-red-400' : ''}>{other.svago ?? 50}%</span>
+                    </div>
+                    <div className="w-full bg-black/50 h-1 rounded-full overflow-hidden">
+                      <div className={`h-full ${other.svago < 15 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${other.svago ?? 50}%` }} />
+                    </div>
+                  </div>
+
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
     </div>
