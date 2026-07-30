@@ -84,7 +84,7 @@ export default function CuriositaPage() {
     loadCuriosita();
   }
 
-  // PILASTRI UFFICIALI (Con Bucock aggiornato)
+  // PILASTRI UFFICIALI (Incluso I Pezzi che porta a /suoni)
   const ufficiali = [
     {
       titolo: "Storia di Monti",
@@ -93,6 +93,7 @@ export default function CuriositaPage() {
       link: "/curiosita/storia-monti",
       badge: "Storia",
       glowColor: "bg-emerald-500/15",
+      fullWidth: false,
     },
     {
       titolo: "La corsa dei cavalli",
@@ -101,14 +102,16 @@ export default function CuriositaPage() {
       link: "/curiosita/corsa-dei-cavalli",
       badge: "Gara",
       glowColor: "bg-amber-500/15",
+      fullWidth: false,
     },
     {
       titolo: "Bucock",
       sottotitolo: "Tradizioni & Aneddoti",
       immagine: "/curiosity/bockok.png",
       link: "/curiosita/bookock",
-      badge: "gioco",
+      badge: "Gioco",
       glowColor: "bg-purple-500/15",
+      fullWidth: false,
     },
     {
       titolo: "Cavallo",
@@ -117,6 +120,16 @@ export default function CuriositaPage() {
       link: "/curiosita/cavallo",
       badge: "Mito",
       glowColor: "bg-blue-500/15",
+      fullWidth: false,
+    },
+    {
+      titolo: "I Pezzi",
+      sottotitolo: "Hit, Urla & Audio Cult",
+      immagine: "/icons/lampadina.png",
+      link: "/suoni",
+      badge: "Soundboard",
+      glowColor: "bg-rose-500/15",
+      fullWidth: true,
     },
   ];
 
@@ -180,7 +193,9 @@ export default function CuriositaPage() {
             <button
               key={item.titolo}
               onClick={() => router.push(item.link)}
-              className="group relative h-36 sm:h-40 rounded-3xl bg-white/80 backdrop-blur-md border border-white/90 shadow-md flex flex-col justify-between p-3.5 sm:p-4 text-left transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:bg-white/95 overflow-hidden"
+              className={`group relative h-36 sm:h-40 rounded-3xl bg-white/80 backdrop-blur-md border border-white/90 shadow-md flex flex-col justify-between p-3.5 sm:p-4 text-left transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:bg-white/95 overflow-hidden ${
+                item.fullWidth ? "col-span-2" : ""
+              }`}
             >
               {/* Glow di Sfondo tematico */}
               <div className={`absolute top-0 right-0 w-28 h-28 ${item.glowColor} rounded-full blur-2xl group-hover:scale-150 transition-transform pointer-events-none`} />
