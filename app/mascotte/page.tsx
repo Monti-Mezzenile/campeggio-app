@@ -171,7 +171,6 @@ export default function MascottePage() {
         }
         setUser(currentUser);
 
-        // Ricavo nome proprietario
         const ownerName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || 'Ignoto';
 
         if ('serviceWorker' in navigator && 'PushManager' in window) {
@@ -217,7 +216,6 @@ export default function MascottePage() {
 
         const calculatedFase = getStageFromExp(currentExp);
 
-        // Aggiorno i dati e assicuro che l'owner_name sia presente
         await supabase.from('mascots').update({ 
           fame: currentFame, 
           sete: currentSete, 
@@ -261,32 +259,26 @@ export default function MascottePage() {
       alert("Il tuo browser non supporta le notifiche push web.");
       return;
     }
-
     try {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         alert("Devi concedere i permessi per le notifiche!");
         return;
       }
-
       const registration = await navigator.serviceWorker.register('/sw.js');
       const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-
       if (!publicKey) {
         alert("Chiave VAPID pubblica non configurata in .env.local!");
         return;
       }
-
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey)
       });
-
       await supabase.from('push_subscriptions').upsert({
         user_id: user.id,
         subscription: subscription.toJSON()
       });
-
       setPushEnabled(true);
       setToastMsg("🔔 Notifiche Push attivate! Ora saprai chi ti attacca.");
       setTimeout(() => setToastMsg(null), 3500);
@@ -308,11 +300,22 @@ export default function MascottePage() {
     if (!mascot.id) return;
     const statKey = item.type as 'fame' | 'sete' | 'svago';
 
+    // 💡 MECCANICA 1: L'INDIGESTIONE / SBRONZA
+    // Se la barra è quasi piena, forzare il cibo/bere causa danni.
     if (mascot[statKey] >= 80) {
       playAudioEffect('hurt');
-      setToastMsg(`🛑 Ingordo! La stat ${statKey.toUpperCase()} è già quasi piena. Datti una calmata.`);
-      spawnParticle(`🛑 Pieno!`, 'text-red-400');
-      setTimeout(() => setToastMsg(null), 3000);
+      const penalty = 15;
+      const newSvago = Math.max(0, mascot.svago - penalty);
+      
+      setToastMsg(item.type === 'sete' ? `🥴 Troppa roba! Si è sbronzato e gli gira la testa. (-15% Svago)` : `🤮 BLEAH! Indigestione fatale. (-15% Svago)`);
+      spawnParticle(`🤮 INDIGESTIONE!`, 'text-lime-400');
+      setTimeout(() => setToastMsg(null), 3500);
+      
+      setMascot(prev => ({ ...prev, svago: newSvago }));
+      await supabase.from('mascots').update({ svago: newSvago, last_updated_at: new Date().toISOString() }).eq('id', mascot.id);
+      
+      // Animazione di "vomito/malessere"
+      mascotControls.start({ x: [-15, 15, -10, 10, -5, 5, 0], scale: [1, 0.9, 1.05, 1], transition: { duration: 0.6 } });
       return;
     }
 
@@ -321,7 +324,6 @@ export default function MascottePage() {
 
     const newStatValue = Math.min(100, mascot[statKey] + item.val);
     const newExp = mascot.exp + expGained;
-    
     const newFase = getStageFromExp(newExp);
 
     if (newFase > mascot.fase) {
@@ -368,15 +370,74 @@ export default function MascottePage() {
     spawnParticle('❤️ +1 Affetto', 'text-rose-400');
   };
 
+  // 💡 MECCANICA 2: LA SCORRIBANDA (Consuma statistiche pesantemente, dà molti XP)
+  const handleScorribanda = async () => {
+    if (!mascot.id) return;
+    if (mascot.fame < 25 || mascot.sete < 25 || mascot.svago < 25) {
+      playAudioEffect('hurt');
+      setToastMsg("⚠️ La bestia è troppo debole per razziare. Porta tutte le barre almeno a 25%!");
+      setTimeout(() => setToastMsg(null), 3000);
+      return;
+    }
+
+    playAudioEffect('level');
+    const newFame = mascot.fame - 25;
+    const newSete = mascot.sete - 25;
+    const newSvago = mascot.svago - 25;
+    const newExp = mascot.exp + 15;
+    const newFase = getStageFromExp(newExp);
+
+    setMascot(prev => ({ ...prev, fame: newFame, sete: newSete, svago: newSvago, exp: newExp, fase: newFase }));
+    setToastMsg("🥷 Scorribanda riuscita! Ha terrorizzato i vicini (+15 XP) ma ora è sfinita!");
+    spawnParticle("💰 +15 XP", "text-amber-400");
+    setTimeout(() => setToastMsg(null), 4000);
+
+    // Animazione di fuga laterale e ritorno
+    mascotControls.start({ x: [0, 200, -200, 0], opacity: [1, 0, 0, 1], scale: [1, 0.5, 0.5, 1], transition: { duration: 0.8 } });
+
+    await supabase.from('mascots').update({ fame: newFame, sete: newSete, svago: newSvago, exp: newExp, fase: newFase, last_updated_at: new Date().toISOString() }).eq('id', mascot.id);
+  };
+
+  // 💡 MECCANICA 3: ALLENAMENTO INTENSIVO (Salti mortali animati in CSS, consuma fame/sete)
+  const handleAllenamento = async () => {
+    if (!mascot.id) return;
+    if (mascot.fame < 15 || mascot.sete < 15) {
+      playAudioEffect('hurt');
+      setToastMsg("⚠️ Non ha energie per allenarsi! Nutrila e dalle da bere.");
+      setTimeout(() => setToastMsg(null), 3000);
+      return;
+    }
+
+    playAudioEffect('munch');
+    const newFame = mascot.fame - 15;
+    const newSete = mascot.sete - 15;
+    const newExp = mascot.exp + 8;
+    const newFase = getStageFromExp(newExp);
+
+    setMascot(prev => ({ ...prev, fame: newFame, sete: newSete, exp: newExp, fase: newFase }));
+    setToastMsg("🏋️ Sudore e muscoli! +8 XP guadagnati.");
+    spawnParticle("💦 ALLENAMENTO!", "text-sky-400");
+    setTimeout(() => setToastMsg(null), 3500);
+
+    // Animazione complessa: Salto in alto con capriola
+    mascotControls.start({ 
+      y: [0, -60, -100, -60, 0], 
+      rotate: [0, 180, 360, 360, 360], 
+      scale: [1, 1.1, 1.2, 1.1, 1], 
+      transition: { duration: 0.8, ease: "easeInOut" } 
+    });
+
+    await supabase.from('mascots').update({ fame: newFame, sete: newSete, exp: newExp, fase: newFase, last_updated_at: new Date().toISOString() }).eq('id', mascot.id);
+  };
+
+
   const handleRivalAction = async (rival: any, actionType: 'pigna' | 'birra' | 'cibo' | 'troll') => {
     if (!rival?.id || !user) return;
-
     let updatedFame = rival.fame ?? 50;
     let updatedSete = rival.sete ?? 50;
     let updatedSvago = rival.svago ?? 50;
     let actionTitle = "";
     let logMessage = "";
-
     const senderName = mascot.nome || 'Un campeggiatore anonimo';
 
     if (actionType === 'pigna') {
@@ -570,16 +631,47 @@ export default function MascottePage() {
         </motion.div>
       </div>
 
+      {/* AZIONI SPECIALI (NUOVO MENU) */}
+      <div className="w-full max-w-md mb-4 z-10 space-y-2">
+        <h2 className="text-xs font-black uppercase tracking-widest text-zinc-500 text-center mb-1">Azioni Rapide</h2>
+        
+        <div className="grid grid-cols-2 gap-3">
+          {/* Scorribanda */}
+          <button 
+            onClick={handleScorribanda}
+            className="bg-gradient-to-br from-purple-900/80 to-indigo-900/80 hover:from-purple-800 hover:to-indigo-800 border border-purple-500/40 p-3 rounded-2xl shadow-lg active:scale-[0.98] transition-all flex flex-col items-center justify-center gap-1 group"
+          >
+            <span className="text-2xl group-hover:scale-110 transition-transform">🥷</span>
+            <span className="text-[10px] font-black text-white uppercase mt-1">Scorribanda</span>
+            <span className="bg-purple-500/20 text-purple-300 text-[8px] font-black px-2 py-0.5 rounded-full border border-purple-500/50">
+              -25% Stats | +15 XP
+            </span>
+          </button>
+
+          {/* Allenamento */}
+          <button 
+            onClick={handleAllenamento}
+            className="bg-gradient-to-br from-sky-900/80 to-blue-900/80 hover:from-sky-800 hover:to-blue-800 border border-sky-500/40 p-3 rounded-2xl shadow-lg active:scale-[0.98] transition-all flex flex-col items-center justify-center gap-1 group"
+          >
+            <span className="text-2xl group-hover:scale-110 transition-transform">🏋️</span>
+            <span className="text-[10px] font-black text-white uppercase mt-1">Allenamento</span>
+            <span className="bg-sky-500/20 text-sky-300 text-[8px] font-black px-2 py-0.5 rounded-full border border-sky-500/50">
+              -15% Stats | +8 XP
+            </span>
+          </button>
+        </div>
+      </div>
+
       {/* INVENTARIO */}
-      <div className="w-full max-w-md bg-zinc-900/80 backdrop-blur-md border border-white/10 p-4 rounded-3xl z-10">
+      <div className="w-full max-w-md bg-zinc-900/80 backdrop-blur-md border border-white/10 p-4 rounded-3xl z-10 mb-4">
         <h2 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3 text-center">Spazzatura Utile</h2>
         <div className="grid grid-cols-3 gap-3">
           {ITEMS.map((item) => {
-            const isDisabled = mascot[item.type as 'fame' | 'sete' | 'svago'] >= 80;
+            // Nota: ho rimosso il disabilitato. Adesso se lo trascini a barra piena fa INDIGESTIONE.
             return (
               <motion.div
-                key={item.id} drag={!isDisabled} dragSnapToOrigin={true} onDragEnd={(e: any, info: any) => handleDragEnd(e, info, item)} onClick={() => !isDisabled && applyItemToMascot(item)}
-                className={`flex flex-col items-center justify-center p-3 rounded-2xl border ${isDisabled ? 'bg-zinc-900/30 opacity-30 border-red-500/10 cursor-not-allowed' : 'bg-zinc-800/80 border-white/10 cursor-pointer'}`}
+                key={item.id} drag dragSnapToOrigin={true} onDragEnd={(e: any, info: any) => handleDragEnd(e, info, item)} onClick={() => applyItemToMascot(item)}
+                className={`flex flex-col items-center justify-center p-3 rounded-2xl border bg-zinc-800/80 border-white/10 cursor-pointer active:bg-zinc-700/80`}
               >
                 <img src={item.icon} alt={item.label} className="w-8 h-8 pointer-events-none mb-1" />
                 <span className="text-[9px] font-black text-zinc-300">{item.label}</span>
@@ -588,22 +680,6 @@ export default function MascottePage() {
             );
           })}
         </div>
-      </div>
-
-      {/* RUNNER */}
-      <div className="w-full max-w-md my-5 z-10">
-        <Link href="/runner" className="block w-full">
-          <div className="bg-gradient-to-r from-amber-600 to-amber-500 p-4 rounded-3xl text-zinc-950 font-black flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/icons/coniglio-run.png" alt="Run" className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).src = '/icons/carota.png'; }} />
-              <div>
-                <div className="text-[10px] uppercase text-zinc-900/80 font-extrabold">Rischi la vita per</div>
-                <div className="text-base font-black uppercase leading-none">La Fuga Disperata</div>
-              </div>
-            </div>
-            <div className="bg-zinc-950 text-amber-400 text-xs px-3.5 py-2 rounded-xl font-black">VIA →</div>
-          </div>
-        </Link>
       </div>
 
       {/* FECCIA DEL CAMPEGGIO (CON SCHEDE CHIARE E STATISTICHE) */}
@@ -642,7 +718,6 @@ export default function MascottePage() {
                    </div>
 
                    <div className="flex gap-4 items-center mt-2">
-                     {/* Immagine Mascotte */}
                      <div className="w-20 h-20 bg-black/60 rounded-2xl p-2 border border-white/10 relative shrink-0">
                         <img src={otherDef.image} alt={other.nome_mascotte} className="w-full h-full object-contain drop-shadow-md" />
                         <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-zinc-800 text-zinc-300 border border-white/10 text-[9px] font-black px-2.5 py-0.5 rounded-full whitespace-nowrap shadow-md">
@@ -650,27 +725,23 @@ export default function MascottePage() {
                         </span>
                      </div>
 
-                     {/* Info & Micro-Barre Statistiche */}
                      <div className="flex-1 min-w-0 pt-1">
                         <h3 className="text-sm font-black text-white truncate leading-tight">{other.nome_mascotte || 'Anonimo'}</h3>
                         <p className="text-[9px] text-amber-500/80 font-bold mb-2.5">{other.exp || 0} XP Totali</p>
                         
                         <div className="space-y-1.5 w-full pr-1">
-                           {/* Fame */}
                            <div className="flex items-center gap-2">
                              <span className="text-[8px] font-black text-zinc-500 w-8 text-right">FAME</span>
                              <div className="flex-1 bg-black/90 h-1.5 rounded-full overflow-hidden border border-white/5">
                                <div className={`h-full ${oFame < 20 ? 'bg-red-500' : 'bg-rose-500/80'}`} style={{ width: `${oFame}%` }} />
                              </div>
                            </div>
-                           {/* Sete */}
                            <div className="flex items-center gap-2">
                              <span className="text-[8px] font-black text-zinc-500 w-8 text-right">SETE</span>
                              <div className="flex-1 bg-black/90 h-1.5 rounded-full overflow-hidden border border-white/5">
                                <div className={`h-full ${oSete < 20 ? 'bg-red-500' : 'bg-sky-500/80'}`} style={{ width: `${oSete}%` }} />
                              </div>
                            </div>
-                           {/* Svago */}
                            <div className="flex items-center gap-2">
                              <span className="text-[8px] font-black text-zinc-500 w-8 text-right">SVAGO</span>
                              <div className="flex-1 bg-black/90 h-1.5 rounded-full overflow-hidden border border-white/5">
