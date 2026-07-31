@@ -12,10 +12,9 @@ const EXP_THRESHOLDS: Record<number, number> = {
   6: 7500, 7: 12500, 8: 19000, 9: 30000
 };
 
-// Durata Cooldown in secondi
 const COOLDOWNS = {
-  SCORRIBANDA: 15 * 60, // 15 minuti
-  ALLENAMENTO: 5 * 60,   // 5 minuti
+  SCORRIBANDA: 15 * 60, // 15 min
+  ALLENAMENTO: 5 * 60,   // 5 min
 };
 
 const getStageFromExp = (exp: number): number => {
@@ -39,7 +38,6 @@ const EVOLUTION_STAGES: Record<number, { name: string; image: string }> = {
   9: { name: 'Cavallo Supremo', image: '/tamagotchi/fase9_cavallo_supremo.png' },
 };
 
-// 💡 RIBILANCIATO: Il cibo serve a curare le barre, dà pochissima o zero EXP per evitare spam
 const ITEMS = [
   { id: 'carota', label: 'Carota', type: 'fame', val: 15, exp: 0, icon: '/icons/carota.png' },
   { id: 'cosciotto', label: 'Cosciotto', type: 'fame', val: 35, exp: 1, icon: '/icons/cosciotto.png' },
@@ -132,6 +130,17 @@ function formatTime(seconds: number) {
   return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 export default function MascottePage() {
   const [user, setUser] = useState<any>(null);
   const [mascot, setMascot] = useState({ id: null as string | null, fame: 50, sete: 50, svago: 50, exp: 0, fase: 1, nome: 'Vittima del Campeggio' });
@@ -143,6 +152,9 @@ export default function MascottePage() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [pushEnabled, setPushEnabled] = useState(false);
   
+  // TAB NAVIGATION: 'mascotte' | 'rivali' | 'infamie'
+  const [activeTab, setActiveTab] = useState<'mascotte' | 'rivali' | 'infamie'>('mascotte');
+
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState('');
 
@@ -150,18 +162,17 @@ export default function MascottePage() {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [selectedRival, setSelectedRival] = useState<any | null>(null);
 
-  // ⏳ GESTIONE COOLDOWN
+  // ⏳ COOLDOWNS
   const [scorribandaCd, setScorribandaCd] = useState(0);
   const [allenamentoCd, setAllenamentoCd] = useState(0);
 
   const mascotRef = useRef<HTMLDivElement>(null);
   const mascotControls = useAnimation();
 
-  // TIMER COOLDOWN ATTIVO
+  // TIMER COOLDOWN
   useEffect(() => {
     const timer = setInterval(() => {
       const now = Math.floor(Date.now() / 1000);
-      
       const scEnd = parseInt(localStorage.getItem('cd_scorribanda') || '0', 10);
       const alEnd = parseInt(localStorage.getItem('cd_allenamento') || '0', 10);
 
@@ -193,6 +204,12 @@ export default function MascottePage() {
         setUser(currentUser);
 
         const ownerName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || 'Ignoto';
+
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          const reg = await navigator.serviceWorker.getRegistration();
+          const sub = await reg?.pushManager.getSubscription();
+          if (sub) setPushEnabled(true);
+        }
 
         let { data: myMascot } = await supabase.from('mascots').select('*').eq('user_id', currentUser.id).maybeSingle();
 
@@ -269,6 +286,40 @@ export default function MascottePage() {
     loadData();
   }, []);
 
+  const enablePushNotifications = async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !user) {
+      alert("Il tuo browser non supporta le notifiche push web.");
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        alert("Devi concedere i permessi per le notifiche!");
+        return;
+      }
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!publicKey) {
+        alert("Chiave VAPID pubblica non configurata in .env.local!");
+        return;
+      }
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+      await supabase.from('push_subscriptions').upsert({
+        user_id: user.id,
+        subscription: subscription.toJSON()
+      });
+      setPushEnabled(true);
+      setToastMsg("🔔 Notifiche Push attivate! Ora saprai chi ti attacca.");
+      setTimeout(() => setToastMsg(null), 3500);
+    } catch (err) {
+      console.error("Errore iscrizione push:", err);
+      alert("Errore nell'attivazione delle notifiche.");
+    }
+  };
+
   const handleSaveName = async () => {
     if (!tempName.trim() || !mascot.id) return;
     const cleanName = tempName.trim();
@@ -281,7 +332,6 @@ export default function MascottePage() {
     if (!mascot.id) return;
     const statKey = item.type as 'fame' | 'sete' | 'svago';
 
-    // INDIGESTIONE
     if (mascot[statKey] >= 80) {
       playAudioEffect('hurt');
       const penalty = 15;
@@ -344,7 +394,6 @@ export default function MascottePage() {
     spawnParticle('❤️ +1 Affetto', 'text-rose-400');
   };
 
-  // 🥷 SCORRIBANDA (15 MIN COOLDOWN)
   const handleScorribanda = async () => {
     if (scorribandaCd > 0) return;
     if (!mascot.id) return;
@@ -362,13 +411,12 @@ export default function MascottePage() {
     const newExp = mascot.exp + 20;
     const newFase = getStageFromExp(newExp);
 
-    // Imposta Cooldown (15 min)
     const until = Math.floor(Date.now() / 1000) + COOLDOWNS.SCORRIBANDA;
     localStorage.setItem('cd_scorribanda', until.toString());
     setScorribandaCd(COOLDOWNS.SCORRIBANDA);
 
     setMascot(prev => ({ ...prev, fame: newFame, sete: newSete, svago: newSvago, exp: newExp, fase: newFase }));
-    setToastMsg("🥷 Scorribanda riuscita! +20 XP guadagnati! (Cooldown 15m)");
+    setToastMsg("🥷 Scorribanda riuscita! +20 XP (Cooldown 15m)");
     spawnParticle("💰 +20 XP", "text-amber-400");
     setTimeout(() => setToastMsg(null), 4000);
 
@@ -377,7 +425,6 @@ export default function MascottePage() {
     await supabase.from('mascots').update({ fame: newFame, sete: newSete, svago: newSvago, exp: newExp, fase: newFase, last_updated_at: new Date().toISOString() }).eq('id', mascot.id);
   };
 
-  // 🏋️ ALLENAMENTO (5 MIN COOLDOWN)
   const handleAllenamento = async () => {
     if (allenamentoCd > 0) return;
     if (!mascot.id) return;
@@ -394,7 +441,6 @@ export default function MascottePage() {
     const newExp = mascot.exp + 10;
     const newFase = getStageFromExp(newExp);
 
-    // Imposta Cooldown (5 min)
     const until = Math.floor(Date.now() / 1000) + COOLDOWNS.ALLENAMENTO;
     localStorage.setItem('cd_allenamento', until.toString());
     setAllenamentoCd(COOLDOWNS.ALLENAMENTO);
@@ -414,12 +460,82 @@ export default function MascottePage() {
     await supabase.from('mascots').update({ fame: newFame, sete: newSete, exp: newExp, fase: newFase, last_updated_at: new Date().toISOString() }).eq('id', mascot.id);
   };
 
+  const handleRivalAction = async (rival: any, actionType: 'pigna' | 'birra' | 'cibo' | 'troll') => {
+    if (!rival?.id || !user) return;
+    let updatedFame = rival.fame ?? 50;
+    let updatedSete = rival.sete ?? 50;
+    let updatedSvago = rival.svago ?? 50;
+    let actionTitle = "";
+    let logMessage = "";
+    const senderName = mascot.nome || 'Un campeggiatore anonimo';
+
+    if (actionType === 'pigna') {
+      updatedSvago = Math.max(0, updatedSvago - 12);
+      actionTitle = "🎯 Pigna in faccia!";
+      logMessage = `${senderName} ti ha tirato una pigna in faccia! (-12% Svago)`;
+      playAudioEffect('hurt');
+    } else if (actionType === 'birra') {
+      updatedSete = Math.min(100, updatedSete + 25);
+      actionTitle = "🍺 Birra offerta!";
+      logMessage = `${senderName} ti ha offerto una birra fresca! (+25% Sete)`;
+      playAudioEffect('pop');
+    } else if (actionType === 'cibo') {
+      updatedFame = Math.min(100, updatedFame + 25);
+      actionTitle = "🥩 Cibo lanciato!";
+      logMessage = `${senderName} ti ha lanciato un cosciotto! (+25% Fame)`;
+      playAudioEffect('munch');
+    } else if (actionType === 'troll') {
+      updatedSvago = Math.max(0, updatedSvago - 8);
+      updatedFame = Math.max(0, updatedFame - 8);
+      actionTitle = "👻 Spavento notturno!";
+      logMessage = `${senderName} ti ha spaventato a morte! (-8% Fame e Svago)`;
+      playAudioEffect('hurt');
+    }
+
+    setOtherMascots((prev) =>
+      prev.map((m) => (m.id === rival.id ? { ...m, fame: updatedFame, sete: updatedSete, svago: updatedSvago } : m))
+    );
+
+    setToastMsg(`Azione eseguita su ${rival.nome_mascotte || 'Anonimo'}!`);
+    setTimeout(() => setToastMsg(null), 3500);
+    setSelectedRival(null);
+
+    await supabase.from('mascots').update({
+      fame: updatedFame, sete: updatedSete, svago: updatedSvago, last_updated_at: new Date().toISOString()
+    }).eq('id', rival.id);
+
+    await supabase.from('mascot_logs').insert([{
+      sender_name: senderName,
+      receiver_user_id: rival.user_id,
+      action_type: actionType,
+      message: logMessage
+    }]);
+
+    try {
+      await fetch('/api/push-notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          receiverUserId: rival.user_id,
+          title: actionTitle,
+          message: logMessage
+        })
+      });
+    } catch (e) {
+      console.error("Errore invio push:", e);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-dvh bg-zinc-950 flex flex-col items-center justify-center p-4">
         <img src="/tamagotchi/fase1_coniglio_piccolo.png" alt="Loading..." className="w-24 h-24 object-contain animate-bounce" onError={(e) => { (e.target as HTMLImageElement).src = '/icons/coniglio.png'; }} />
       </div>
     );
+  }
+
+  if (warningMsg) {
+    return <div className="min-h-dvh bg-zinc-950 text-red-400 flex items-center justify-center p-6 text-center font-bold">{warningMsg}</div>;
   }
 
   const currentDef = EVOLUTION_STAGES[mascot.fase] || EVOLUTION_STAGES[1];
@@ -431,162 +547,310 @@ export default function MascottePage() {
   const isCriticalState = mascot.fame < 20 || mascot.sete < 20 || mascot.svago < 20;
 
   return (
-    <div className="flex flex-col items-center min-h-dvh bg-zinc-950 text-white p-4 pt-20 sm:pt-24 overflow-y-auto pb-28 select-none">
+    <div className="flex flex-col items-center min-h-dvh bg-zinc-950 text-white select-none pb-24">
       
-      {/* HEADER */}
-      <div className="w-full max-w-md flex justify-between items-center mb-4 z-20">
-        <Link href="/" className="bg-zinc-900/90 border border-white/20 text-xs font-black px-4 py-2 rounded-2xl hover:bg-zinc-800 transition-colors uppercase text-zinc-300">
-          ← INDIETRO
-        </Link>
-        <Link href="/runner" className="bg-amber-500 hover:bg-amber-400 text-black font-black text-xs px-4 py-2 rounded-2xl shadow-lg flex items-center gap-1.5 uppercase tracking-wider">
-          <span>🏃 Corsa Clandestina</span>
-        </Link>
-      </div>
+      {/* 📌 STICKY HUD SUPERIORE (LE BARRE NON SCOMPAIONO MAI QUANDO SCROLLI) */}
+      <div className="sticky top-0 left-0 right-0 w-full max-w-md bg-zinc-950/95 backdrop-blur-md p-3 border-b border-white/10 z-40 shadow-2xl space-y-2">
+        <div className="flex justify-between items-center">
+          <Link href="/" className="bg-zinc-900 border border-white/20 text-[10px] font-black px-3 py-1.5 rounded-xl text-zinc-300">
+            ← HOME
+          </Link>
 
-      {/* HEADER MASCOTTE */}
-      <div className="text-center w-full max-w-md z-10">
-        <span className="text-[10px] uppercase tracking-widest text-amber-500 font-black">
-          Fase {mascot.fase} / 9 • {currentDef.name}
-        </span>
-        
-        <div className="flex items-center justify-center gap-2 mt-1">
-          {isEditingName ? (
-            <div className="flex items-center gap-2">
-              <input type="text" value={tempName} onChange={(e) => setTempName(e.target.value)} maxLength={24} className="bg-zinc-900 border border-amber-500/50 text-white text-lg font-black text-center rounded-xl px-3 py-1 outline-none w-52" autoFocus />
-              <button onClick={handleSaveName} className="bg-amber-500 text-black font-black text-xs px-3 py-2 rounded-xl">OK</button>
-            </div>
-          ) : (
-            <button onClick={() => setIsEditingName(true)} className="group flex items-center gap-2 text-2xl font-black text-white tracking-tight hover:text-amber-400 transition-colors">
-              <span>{mascot.nome}</span>
-              <img src="/icons/edit.png" alt="Edit" className="w-4 h-4 opacity-40 group-hover:opacity-100" />
+          <div className="text-center">
+            <span className="text-[9px] uppercase tracking-widest text-amber-500 font-black">
+              Fase {mascot.fase} • {currentDef.name}
+            </span>
+            {isEditingName ? (
+              <div className="flex items-center gap-1 justify-center">
+                <input type="text" value={tempName} onChange={(e) => setTempName(e.target.value)} maxLength={20} className="bg-zinc-900 border border-amber-500/50 text-white text-xs font-black text-center rounded-lg px-2 py-0.5 outline-none w-36" autoFocus />
+                <button onClick={handleSaveName} className="bg-amber-500 text-black font-black text-[10px] px-2 py-0.5 rounded-lg">OK</button>
+              </div>
+            ) : (
+              <button onClick={() => setIsEditingName(true)} className="flex items-center gap-1 text-sm font-black text-white hover:text-amber-400 justify-center mx-auto">
+                <span>{mascot.nome}</span>
+                <img src="/icons/edit.png" alt="Edit" className="w-3 h-3 opacity-40" />
+              </button>
+            )}
+          </div>
+
+          {!pushEnabled ? (
+            <button onClick={enablePushNotifications} className="bg-amber-500 text-black font-black text-[9px] px-2.5 py-1.5 rounded-xl uppercase tracking-wider animate-pulse">
+              🔔 Push
             </button>
+          ) : (
+            <span className="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-1 rounded-xl font-black">
+              🔔 Ok
+            </span>
           )}
         </div>
 
-        <div className="mt-3 w-full bg-white/10 rounded-full h-2.5 overflow-hidden border border-white/5 shadow-inner">
+        {/* BARRA ESPERIENZA COMPATTA */}
+        <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden border border-white/5">
           <div className="bg-amber-400 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
         </div>
-        <p className="text-[9px] text-zinc-400 mt-1 uppercase font-bold tracking-wider">
-          {mascot.fase === 9 ? 'IL MOSTRO FINALE' : `EXP FASE: ${Math.max(0, expInCurrentStage)} / ${expNeededForNextStage} (Totale: ${mascot.exp} XP)`}
-        </p>
+
+        {/* BARRE FAME / SETE / SVAGO COMPATTE SULLO STICKY HUD */}
+        <div className="grid grid-cols-3 gap-2 pt-0.5">
+          {(['fame', 'sete', 'svago'] as const).map((key) => (
+            <div key={key} className="space-y-0.5">
+              <div className="flex justify-between items-center text-[8px] font-black uppercase text-zinc-400">
+                <span>{key}</span>
+                <span className={mascot[key] < 20 ? 'text-red-500 font-black' : 'text-zinc-200'}>{Math.round(mascot[key])}%</span>
+              </div>
+              <div className="w-full h-2 bg-black/60 rounded-full overflow-hidden border border-white/5">
+                <div className={`h-full transition-all duration-300 ${mascot[key] < 20 ? 'bg-red-600 animate-pulse' : key === 'fame' ? 'bg-rose-500' : key === 'sete' ? 'bg-sky-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, Math.max(0, mascot[key]))}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* TOAST NOTIFICHE */}
+      {/* TOAST MESSAGGI */}
       {toastMsg && (
-        <div className="w-full max-w-md mt-3 bg-zinc-900 border border-amber-500/50 text-amber-300 text-xs font-black tracking-wide text-center py-3 px-4 rounded-2xl shadow-xl z-20">
-          {toastMsg}
+        <div className="w-full max-w-md mt-2 px-4 z-30">
+          <div className="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-xs font-black text-center py-2 px-3 rounded-xl shadow-lg">
+            {toastMsg}
+          </div>
         </div>
       )}
 
-      {/* BARRE STATISTICHE PERSONALI */}
-      <div className="w-full max-w-md bg-zinc-900/80 backdrop-blur-md p-4 rounded-3xl border border-white/10 space-y-3 shadow-xl z-10 mt-4">
-        {(['fame', 'sete', 'svago'] as const).map((key) => (
-          <div key={key} className="space-y-1.5">
-            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-zinc-300">
-              <span>{key}</span>
-              <span className={mascot[key] < 20 ? 'text-red-500 font-black text-xs' : ''}>{Math.round(mascot[key])}%</span>
-            </div>
-            <div className="w-full h-3.5 bg-black/50 rounded-full overflow-hidden border border-white/5">
-              <div className={`h-full transition-all duration-500 ${mascot[key] < 20 ? 'bg-red-600 animate-pulse' : key === 'fame' ? 'bg-rose-500' : key === 'sete' ? 'bg-sky-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, Math.max(0, mascot[key]))}%` }} />
+      {/* 🧭 SELETTORE TAB (Mascotte | Feccia | Infamie) */}
+      <div className="w-full max-w-md px-4 mt-3 z-10">
+        <div className="grid grid-cols-3 gap-1 bg-zinc-900/90 p-1 rounded-2xl border border-white/10 text-center">
+          <button 
+            onClick={() => setActiveTab('mascotte')}
+            className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${activeTab === 'mascotte' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-400 hover:text-white'}`}
+          >
+            🐾 Mascotte
+          </button>
+          <button 
+            onClick={() => setActiveTab('rivali')}
+            className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${activeTab === 'rivali' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-400 hover:text-white'}`}
+          >
+            ⚔️ Feccia ({otherMascots.length})
+          </button>
+          <button 
+            onClick={() => setActiveTab('infamie')}
+            className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${activeTab === 'infamie' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-400 hover:text-white'}`}
+          >
+            📜 Infamie
+          </button>
+        </div>
+      </div>
+
+      {/* TAB 1: MIA MASCOTTE & AZIONI */}
+      {activeTab === 'mascotte' && (
+        <div className="w-full max-w-md px-4 mt-3 space-y-4 z-10">
+          
+          {/* SCENA VISIVA MASCOTTE */}
+          <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 flex items-center justify-center min-h-[260px] shadow-2xl">
+            <img src="/Backgr.png" alt="Camping" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+            
+            <AnimatePresence>
+              {speechBubble && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute top-3 z-30 bg-white text-zinc-950 px-3 py-1.5 rounded-xl font-black text-[11px] text-center border-2 border-amber-400">
+                  {speechBubble}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {particles.map((p) => (
+                <motion.div key={p.id} initial={{ opacity: 1, y: 20 }} animate={{ opacity: 0, y: -60 }} transition={{ duration: 1 }} className={`absolute z-30 font-black text-xs ${p.color}`}>
+                  {p.text}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            <motion.div ref={mascotRef} animate={mascotControls} onClick={handleMascotTap} className="relative w-48 h-48 flex items-center justify-center cursor-pointer z-10">
+              <motion.img 
+                animate={{ y: isCriticalState ? [0, -2, 2, 0] : [0, -6, 0] }}
+                transition={{ repeat: Infinity, duration: isCriticalState ? 0.25 : 3 }}
+                src={currentDef.image} alt={currentDef.name} className={`w-full h-full object-contain pointer-events-none ${isCriticalState ? 'grayscale opacity-70' : ''}`} 
+              />
+            </motion.div>
+          </div>
+
+          {/* AZIONI RAPIDE */}
+          <div className="grid grid-cols-2 gap-3">
+            <button 
+              onClick={handleScorribanda}
+              disabled={scorribandaCd > 0}
+              className={`p-3 rounded-2xl border shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 ${
+                scorribandaCd > 0 
+                  ? 'bg-zinc-900/60 border-zinc-800 opacity-60 cursor-not-allowed' 
+                  : 'bg-gradient-to-br from-purple-900/80 to-indigo-900/80 hover:from-purple-800 hover:to-indigo-800 border-purple-500/40 active:scale-[0.98]'
+              }`}
+            >
+              <span className="text-xl">🥷</span>
+              <span className="text-[10px] font-black text-white uppercase mt-0.5">Scorribanda</span>
+              <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border ${
+                scorribandaCd > 0 ? 'bg-zinc-800 text-amber-400 border-amber-500/30' : 'bg-purple-500/20 text-purple-300 border-purple-500/50'
+              }`}>
+                {scorribandaCd > 0 ? `⏳ ${formatTime(scorribandaCd)}` : '-25% Stats | +20 XP'}
+              </span>
+            </button>
+
+            <button 
+              onClick={handleAllenamento}
+              disabled={allenamentoCd > 0}
+              className={`p-3 rounded-2xl border shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 ${
+                allenamentoCd > 0 
+                  ? 'bg-zinc-900/60 border-zinc-800 opacity-60 cursor-not-allowed' 
+                  : 'bg-gradient-to-br from-sky-900/80 to-blue-900/80 hover:from-sky-800 hover:to-blue-800 border-sky-500/40 active:scale-[0.98]'
+              }`}
+            >
+              <span className="text-xl">🏋️</span>
+              <span className="text-[10px] font-black text-white uppercase mt-0.5">Allenamento</span>
+              <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border ${
+                allenamentoCd > 0 ? 'bg-zinc-800 text-amber-400 border-amber-500/30' : 'bg-sky-500/20 text-sky-300 border-sky-500/50'
+              }`}>
+                {allenamentoCd > 0 ? `⏳ ${formatTime(allenamentoCd)}` : '-15% Stats | +10 XP'}
+              </span>
+            </button>
+          </div>
+
+          {/* LINK ALLA CORSA CLANDESTINA */}
+          <Link href="/runner" className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black font-black text-xs p-3.5 rounded-2xl shadow-lg flex items-center justify-between uppercase tracking-wider block">
+            <span className="flex items-center gap-2"><span>🏃</span><span>Corsa Clandestina (Runner)</span></span>
+            <span className="bg-black/20 text-black px-2 py-1 rounded-lg text-[9px]">GIOCA ORA →</span>
+          </Link>
+
+          {/* INVENTARIO */}
+          <div className="bg-zinc-900/80 backdrop-blur-md border border-white/10 p-3.5 rounded-3xl">
+            <h2 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2.5 text-center">Spazzatura Utile (Trascina o Clicca)</h2>
+            <div className="grid grid-cols-3 gap-2.5">
+              {ITEMS.map((item) => (
+                <motion.div
+                  key={item.id} drag dragSnapToOrigin={true} onDragEnd={(e: any, info: any) => handleDragEnd(e, info, item)} onClick={() => applyItemToMascot(item)}
+                  className="flex flex-col items-center justify-center p-2.5 rounded-2xl border bg-zinc-800/80 border-white/10 cursor-pointer active:bg-zinc-700/80"
+                >
+                  <img src={item.icon} alt={item.label} className="w-7 h-7 pointer-events-none mb-1" />
+                  <span className="text-[9px] font-black text-zinc-300">{item.label}</span>
+                  <span className="text-[8px] text-amber-500 font-black">+{item.val}%</span>
+                </motion.div>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* MASCOTTE SCENICA */}
-      <div className="relative w-full max-w-md my-4 rounded-3xl overflow-hidden border border-white/10 flex items-center justify-center min-h-[320px] shadow-2xl">
-        <img src="/Backgr.png" alt="Camping Pixel Landscape" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
-        
-        <AnimatePresence>
-          {speechBubble && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute top-4 z-30 bg-white text-zinc-950 px-4 py-2 rounded-2xl font-black text-xs text-center border-2 border-amber-400">
-              {speechBubble}
-            </motion.div>
+        </div>
+      )}
+
+      {/* TAB 2: FECCIA DEL CAMPEGGIO (RIVALI) */}
+      {activeTab === 'rivali' && (
+        <div className="w-full max-w-md px-4 mt-3 space-y-3 z-10">
+          {otherMascots.length === 0 ? (
+            <div className="text-center p-6 bg-zinc-900/50 rounded-2xl border border-white/5">
+              <p className="text-xs text-zinc-500 font-medium">Nessun rivale trovato al momento.</p>
+            </div>
+          ) : (
+            otherMascots.map((other, idx) => {
+              const otherDef = EVOLUTION_STAGES[other.fase] || EVOLUTION_STAGES[1];
+              const oFame = Math.min(100, Math.max(0, other.fame ?? 50));
+              const oSete = Math.min(100, Math.max(0, other.sete ?? 50));
+              const oSvago = Math.min(100, Math.max(0, other.svago ?? 50));
+
+              return (
+                <div key={other.id || idx} className="bg-zinc-900/90 border border-white/10 rounded-3xl p-3.5 shadow-lg relative overflow-hidden flex flex-col">
+                  
+                  <div className="absolute top-0 right-0 bg-zinc-950 text-amber-500 border-b border-l border-white/10 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-bl-xl">
+                    👤 {other.owner_name || 'Ignoto'}
+                  </div>
+
+                  <div className="flex gap-3 items-center mt-1">
+                    <div className="w-16 h-16 bg-black/60 rounded-2xl p-1.5 border border-white/10 relative shrink-0">
+                      <img src={otherDef.image} alt={other.nome_mascotte} className="w-full h-full object-contain" />
+                      <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-zinc-800 text-zinc-300 border border-white/10 text-[8px] font-black px-2 py-0.2 rounded-full whitespace-nowrap">
+                        Fase {other.fase || 1}
+                      </span>
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xs font-black text-white truncate">{other.nome_mascotte || 'Anonimo'}</h3>
+                      <p className="text-[8px] text-amber-500 font-bold mb-1.5">{other.exp || 0} XP Totali</p>
+                      
+                      <div className="space-y-1 w-full">
+                        <div className="flex items-center gap-1.5 text-[7px] font-black text-zinc-400">
+                          <span className="w-7">FAME</span>
+                          <div className="flex-1 bg-black/80 h-1.5 rounded-full overflow-hidden">
+                            <div className={`h-full ${oFame < 20 ? 'bg-red-500' : 'bg-rose-500'}`} style={{ width: `${oFame}%` }} />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[7px] font-black text-zinc-400">
+                          <span className="w-7">SETE</span>
+                          <div className="flex-1 bg-black/80 h-1.5 rounded-full overflow-hidden">
+                            <div className={`h-full ${oSete < 20 ? 'bg-red-500' : 'bg-sky-500'}`} style={{ width: `${oSete}%` }} />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[7px] font-black text-zinc-400">
+                          <span className="w-7">SVAGO</span>
+                          <div className="flex-1 bg-black/80 h-1.5 rounded-full overflow-hidden">
+                            <div className={`h-full ${oSvago < 20 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${oSvago}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => setSelectedRival(other)}
+                    className="w-full mt-3 bg-zinc-950 hover:bg-amber-500 hover:text-black border border-amber-500/30 text-amber-400 text-[9px] font-black uppercase tracking-widest py-2 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
+                  >
+                    <span>⚔️</span><span>PIGNE E CAREZZE</span>
+                  </button>
+                </div>
+              );
+            })
           )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {particles.map((p) => (
-            <motion.div key={p.id} initial={{ opacity: 1, y: 20 }} animate={{ opacity: 0, y: -60 }} transition={{ duration: 1 }} className={`absolute z-30 font-black text-sm ${p.color}`}>
-              {p.text}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-
-        <motion.div ref={mascotRef} animate={mascotControls} onClick={handleMascotTap} className="relative w-56 h-56 flex items-center justify-center cursor-pointer z-10">
-          <motion.img 
-            animate={{ y: isCriticalState ? [0, -2, 2, 0] : [0, -8, 0] }}
-            transition={{ repeat: Infinity, duration: isCriticalState ? 0.25 : 3 }}
-            src={currentDef.image} alt={currentDef.name} className={`w-full h-full object-contain pointer-events-none ${isCriticalState ? 'grayscale opacity-70' : ''}`} 
-          />
-        </motion.div>
-      </div>
-
-      {/* ⚡ AZIONI SPECIALI (CON COUNTDOWN TIMER) */}
-      <div className="w-full max-w-md mb-4 z-10 space-y-2">
-        <h2 className="text-xs font-black uppercase tracking-widest text-zinc-500 text-center mb-1">Azioni Rapide</h2>
-        
-        <div className="grid grid-cols-2 gap-3">
-          {/* Scorribanda */}
-          <button 
-            onClick={handleScorribanda}
-            disabled={scorribandaCd > 0}
-            className={`p-3 rounded-2xl border shadow-lg transition-all flex flex-col items-center justify-center gap-1 group ${
-              scorribandaCd > 0 
-                ? 'bg-zinc-900/60 border-zinc-800 opacity-60 cursor-not-allowed' 
-                : 'bg-gradient-to-br from-purple-900/80 to-indigo-900/80 hover:from-purple-800 hover:to-indigo-800 border-purple-500/40 active:scale-[0.98]'
-            }`}
-          >
-            <span className="text-2xl group-hover:scale-110 transition-transform">🥷</span>
-            <span className="text-[10px] font-black text-white uppercase mt-1">Scorribanda</span>
-            <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border ${
-              scorribandaCd > 0 
-                ? 'bg-zinc-800 text-amber-400 border-amber-500/30' 
-                : 'bg-purple-500/20 text-purple-300 border-purple-500/50'
-            }`}>
-              {scorribandaCd > 0 ? `⏳ ${formatTime(scorribandaCd)}` : '-25% Stats | +20 XP'}
-            </span>
-          </button>
-
-          {/* Allenamento */}
-          <button 
-            onClick={handleAllenamento}
-            disabled={allenamentoCd > 0}
-            className={`p-3 rounded-2xl border shadow-lg transition-all flex flex-col items-center justify-center gap-1 group ${
-              allenamentoCd > 0 
-                ? 'bg-zinc-900/60 border-zinc-800 opacity-60 cursor-not-allowed' 
-                : 'bg-gradient-to-br from-sky-900/80 to-blue-900/80 hover:from-sky-800 hover:to-blue-800 border-sky-500/40 active:scale-[0.98]'
-            }`}
-          >
-            <span className="text-2xl group-hover:scale-110 transition-transform">🏋️</span>
-            <span className="text-[10px] font-black text-white uppercase mt-1">Allenamento</span>
-            <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border ${
-              allenamentoCd > 0 
-                ? 'bg-zinc-800 text-amber-400 border-amber-500/30' 
-                : 'bg-sky-500/20 text-sky-300 border-sky-500/50'
-            }`}>
-              {allenamentoCd > 0 ? `⏳ ${formatTime(allenamentoCd)}` : '-15% Stats | +10 XP'}
-            </span>
-          </button>
         </div>
-      </div>
+      )}
 
-      {/* INVENTARIO */}
-      <div className="w-full max-w-md bg-zinc-900/80 backdrop-blur-md border border-white/10 p-4 rounded-3xl z-10 mb-4">
-        <h2 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3 text-center">Spazzatura Utile</h2>
-        <div className="grid grid-cols-3 gap-3">
-          {ITEMS.map((item) => (
-            <motion.div
-              key={item.id} drag dragSnapToOrigin={true} onDragEnd={(e: any, info: any) => handleDragEnd(e, info, item)} onClick={() => applyItemToMascot(item)}
-              className="flex flex-col items-center justify-center p-3 rounded-2xl border bg-zinc-800/80 border-white/10 cursor-pointer active:bg-zinc-700/80"
-            >
-              <img src={item.icon} alt={item.label} className="w-8 h-8 pointer-events-none mb-1" />
-              <span className="text-[9px] font-black text-zinc-300">{item.label}</span>
-              <span className="text-[8px] text-amber-500 font-black">+{item.val}%</span>
-            </motion.div>
-          ))}
+      {/* TAB 3: REGISTRO DELLE INFAMIE */}
+      {activeTab === 'infamie' && (
+        <div className="w-full max-w-md px-4 mt-3 space-y-2 z-10">
+          <h2 className="text-xs font-black uppercase tracking-widest text-red-400 mb-2 flex items-center gap-1.5">
+            <span>📜 Registro delle Infamie Subite</span>
+          </h2>
+          {infamieLogs.length === 0 ? (
+            <p className="text-[10px] text-zinc-500 italic text-center p-4 bg-zinc-900/40 rounded-2xl border border-white/5"> Nessun attacco registrato di recente. Tutti ti temono.</p>
+          ) : (
+            infamieLogs.map((log) => (
+              <div key={log.id} className="bg-zinc-900/90 border border-white/5 p-3 rounded-2xl flex items-center justify-between">
+                <p className="text-xs text-zinc-300 font-bold">{log.message}</p>
+                <span className="text-[8px] text-zinc-500 font-mono ml-2 shrink-0">{new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+            ))
+          )}
         </div>
-      </div>
+      )}
+
+      {/* MODAL INTERAZIONE RIVALE */}
+      <AnimatePresence>
+        {selectedRival && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} className="bg-zinc-900 border-2 border-amber-500/50 rounded-3xl p-6 w-full max-w-sm text-center relative shadow-2xl space-y-4">
+              <button onClick={() => setSelectedRival(null)} className="absolute top-4 right-4 text-white font-bold text-sm">✕</button>
+
+              <h3 className="text-lg font-black text-white">{selectedRival.nome_mascotte || 'Bestia Ignota'}</h3>
+              
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <button onClick={() => handleRivalAction(selectedRival, 'pigna')} className="p-3 bg-red-600/20 border border-red-500/40 rounded-2xl text-red-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95">
+                  <span className="text-lg">🎯</span><span>Tira Pigna</span><span className="text-[8px] text-red-400/80">-12% Svago</span>
+                </button>
+                <button onClick={() => handleRivalAction(selectedRival, 'troll')} className="p-3 bg-purple-600/20 border border-purple-500/40 rounded-2xl text-purple-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95">
+                  <span className="text-lg">👻</span><span>Spaventa</span><span className="text-[8px] text-purple-400/80">-8% Fame/Svago</span>
+                </button>
+                <button onClick={() => handleRivalAction(selectedRival, 'birra')} className="p-3 bg-sky-600/20 border border-sky-500/40 rounded-2xl text-sky-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95">
+                  <span className="text-lg">🍺</span><span>Offri Birra</span><span className="text-[8px] text-sky-400/80">+25% Sete</span>
+                </button>
+                <button onClick={() => handleRivalAction(selectedRival, 'cibo')} className="p-3 bg-emerald-600/20 border border-emerald-500/40 rounded-2xl text-emerald-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95">
+                  <span className="text-lg">🥩</span><span>Lancia Cibo</span><span className="text-[8px] text-emerald-400/80">+25% Fame</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );
