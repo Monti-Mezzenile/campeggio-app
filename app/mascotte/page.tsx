@@ -152,7 +152,6 @@ export default function MascottePage() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [pushEnabled, setPushEnabled] = useState(false);
   
-  // TAB NAVIGATION: 'mascotte' | 'rivali' | 'infamie'
   const [activeTab, setActiveTab] = useState<'mascotte' | 'rivali' | 'infamie'>('mascotte');
 
   const [isEditingName, setIsEditingName] = useState(false);
@@ -162,14 +161,12 @@ export default function MascottePage() {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [selectedRival, setSelectedRival] = useState<any | null>(null);
 
-  // ⏳ COOLDOWNS
   const [scorribandaCd, setScorribandaCd] = useState(0);
   const [allenamentoCd, setAllenamentoCd] = useState(0);
 
   const mascotRef = useRef<HTMLDivElement>(null);
   const mascotControls = useAnimation();
 
-  // TIMER COOLDOWN
   useEffect(() => {
     const timer = setInterval(() => {
       const now = Math.floor(Date.now() / 1000);
@@ -549,8 +546,8 @@ export default function MascottePage() {
   return (
     <div className="flex flex-col items-center min-h-dvh bg-zinc-950 text-white select-none pb-24">
       
-      {/* 📌 STICKY HUD SUPERIORE (LE BARRE NON SCOMPAIONO MAI QUANDO SCROLLI) */}
-      <div className="sticky top-0 left-0 right-0 w-full max-w-md bg-zinc-950/95 backdrop-blur-md p-3 border-b border-white/10 z-40 shadow-2xl space-y-2">
+      {/* 📌 STICKY HUD SUPERIORE CON PADDING ANTI-NOTCH (pt-12) */}
+      <div className="sticky top-0 left-0 right-0 w-full max-w-md bg-zinc-950/95 backdrop-blur-md pt-12 pb-3 px-3 border-b border-white/10 z-40 shadow-2xl space-y-2">
         <div className="flex justify-between items-center">
           <Link href="/" className="bg-zinc-900 border border-white/20 text-[10px] font-black px-3 py-1.5 rounded-xl text-zinc-300">
             ← HOME
@@ -614,7 +611,7 @@ export default function MascottePage() {
         </div>
       )}
 
-      {/* 🧭 SELETTORE TAB (Mascotte | Feccia | Infamie) */}
+      {/* 🧭 SELETTORE TAB */}
       <div className="w-full max-w-md px-4 mt-3 z-10">
         <div className="grid grid-cols-3 gap-1 bg-zinc-900/90 p-1 rounded-2xl border border-white/10 text-center">
           <button 
@@ -671,50 +668,58 @@ export default function MascottePage() {
             </motion.div>
           </div>
 
-          {/* AZIONI RAPIDE */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* ⚡ AZIONI RAPIDE (SCORRIBANDA, ALLENAMENTO E CORSA IN UN'UNICA RIGA) */}
+          <div className="grid grid-cols-3 gap-2">
+            {/* Scorribanda */}
             <button 
               onClick={handleScorribanda}
               disabled={scorribandaCd > 0}
-              className={`p-3 rounded-2xl border shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 ${
+              className={`p-2.5 rounded-2xl border shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 text-center ${
                 scorribandaCd > 0 
                   ? 'bg-zinc-900/60 border-zinc-800 opacity-60 cursor-not-allowed' 
                   : 'bg-gradient-to-br from-purple-900/80 to-indigo-900/80 hover:from-purple-800 hover:to-indigo-800 border-purple-500/40 active:scale-[0.98]'
               }`}
             >
               <span className="text-xl">🥷</span>
-              <span className="text-[10px] font-black text-white uppercase mt-0.5">Scorribanda</span>
-              <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border ${
+              <span className="text-[9px] font-black text-white uppercase mt-0.5 truncate w-full">Scorribanda</span>
+              <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-full border whitespace-nowrap ${
                 scorribandaCd > 0 ? 'bg-zinc-800 text-amber-400 border-amber-500/30' : 'bg-purple-500/20 text-purple-300 border-purple-500/50'
               }`}>
-                {scorribandaCd > 0 ? `⏳ ${formatTime(scorribandaCd)}` : '-25% Stats | +20 XP'}
+                {scorribandaCd > 0 ? `⏳ ${formatTime(scorribandaCd)}` : '-25% | +20XP'}
               </span>
             </button>
 
+            {/* Allenamento */}
             <button 
               onClick={handleAllenamento}
               disabled={allenamentoCd > 0}
-              className={`p-3 rounded-2xl border shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 ${
+              className={`p-2.5 rounded-2xl border shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 text-center ${
                 allenamentoCd > 0 
                   ? 'bg-zinc-900/60 border-zinc-800 opacity-60 cursor-not-allowed' 
                   : 'bg-gradient-to-br from-sky-900/80 to-blue-900/80 hover:from-sky-800 hover:to-blue-800 border-sky-500/40 active:scale-[0.98]'
               }`}
             >
               <span className="text-xl">🏋️</span>
-              <span className="text-[10px] font-black text-white uppercase mt-0.5">Allenamento</span>
-              <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border ${
+              <span className="text-[9px] font-black text-white uppercase mt-0.5 truncate w-full">Allenamento</span>
+              <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-full border whitespace-nowrap ${
                 allenamentoCd > 0 ? 'bg-zinc-800 text-amber-400 border-amber-500/30' : 'bg-sky-500/20 text-sky-300 border-sky-500/50'
               }`}>
-                {allenamentoCd > 0 ? `⏳ ${formatTime(allenamentoCd)}` : '-15% Stats | +10 XP'}
+                {allenamentoCd > 0 ? `⏳ ${formatTime(allenamentoCd)}` : '-15% | +10XP'}
               </span>
             </button>
-          </div>
 
-          {/* LINK ALLA CORSA CLANDESTINA */}
-          <Link href="/runner" className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black font-black text-xs p-3.5 rounded-2xl shadow-lg flex items-center justify-between uppercase tracking-wider block">
-            <span className="flex items-center gap-2"><span>🏃</span><span>Corsa Clandestina (Runner)</span></span>
-            <span className="bg-black/20 text-black px-2 py-1 rounded-lg text-[9px]">GIOCA ORA →</span>
-          </Link>
+            {/* Corsa Clandestina */}
+            <Link 
+              href="/runner"
+              className="p-2.5 rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-600/90 to-amber-500/90 hover:from-amber-500 hover:to-amber-400 shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 text-center active:scale-[0.98]"
+            >
+              <span className="text-xl">🏃</span>
+              <span className="text-[9px] font-black text-black uppercase mt-0.5 truncate w-full">Corsa</span>
+              <span className="text-[7px] font-black px-1.5 py-0.5 rounded-full bg-black/20 text-black border border-black/10 whitespace-nowrap">
+                MINIGIOCO 🎮
+              </span>
+            </Link>
+          </div>
 
           {/* INVENTARIO */}
           <div className="bg-zinc-900/80 backdrop-blur-md border border-white/10 p-3.5 rounded-3xl">
