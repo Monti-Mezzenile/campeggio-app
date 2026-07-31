@@ -9,14 +9,14 @@ const GRAVITY = 0.65;
 const JUMP_FORCE = 13.5;
 const OBSTACLE_SPEED = 5.5;
 
-// 🛑 OSTACOLI PERICOLOSI (Ti fanno perdere)
+// 🛑 OSTACOLI PERICOLOSI
 const HAZARDS = [
   { id: 'fuoco', icon: '/icons/fuoco.png', width: 55, height: 65, isCollectible: false },
   { id: 'ceppo', icon: '/icons/ceppo.png', width: 65, height: 50, isCollectible: false },
   { id: 'sasso', icon: '/icons/sasso.png', width: 58, height: 45, isCollectible: false },
 ];
 
-// 🎁 OGGETTI BONUS (Nerfati per evitare livellamenti troppo facili)
+// 🎁 OGGETTI BONUS
 const COLLECTIBLES = [
   { id: 'carota', icon: '/icons/carota.png', width: 45, height: 45, points: 15, isCollectible: true },
   { id: 'birra', icon: '/icons/birra.png', width: 42, height: 48, points: 25, isCollectible: true },
@@ -34,6 +34,13 @@ interface Entity {
   points?: number;
 }
 
+interface DustParticle {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+}
+
 export default function RunnerPage() {
   const [gameState, setGameState] = useState<'START' | 'PLAYING' | 'GAMEOVER'>('START');
   const [score, setScore] = useState(0); 
@@ -46,12 +53,14 @@ export default function RunnerPage() {
   // Fisica Mascotte
   const [mascotY, setMascotY] = useState(0);
   const [entities, setEntities] = useState<Entity[]>([]);
+  const [dustList, setDustList] = useState<DustParticle[]>([]);
 
   // Refs per 60fps
   const mascotYRef = useRef(0);
   const velocityRef = useRef(0);
   const isJumpingRef = useRef(false);
   const entitiesRef = useRef<Entity[]>([]);
+  const dustRef = useRef<DustParticle[]>([]);
   const requestRef = useRef<number>(0);
   const lastSpawnTime = useRef<number>(0);
   const scoreRef = useRef(0);
@@ -105,8 +114,10 @@ export default function RunnerPage() {
     velocityRef.current = 0;
     isJumpingRef.current = false;
     entitiesRef.current = [];
+    dustRef.current = [];
     setMascotY(0);
     setEntities([]);
+    setDustList([]);
     setGameState('PLAYING');
     lastSpawnTime.current = Date.now();
   };
@@ -124,6 +135,22 @@ export default function RunnerPage() {
         isJumpingRef.current = false;
       }
       setMascotY(mascotYRef.current);
+
+      // POLVERE DURANTE LA CORSA
+      if (mascotYRef.current === 0 && Math.random() < 0.35) {
+        dustRef.current.push({
+          id: Date.now() + Math.random(),
+          x: 60 + Math.random() * 15,
+          y: 12 + Math.random() * 4,
+          size: Math.random() * 6 + 4,
+        });
+      }
+
+      // Aggiornamento particelle di polvere
+      dustRef.current = dustRef.current
+        .map((d) => ({ ...d, x: d.x - OBSTACLE_SPEED * 0.8, y: d.y + 0.5, size: d.size * 0.92 }))
+        .filter((d) => d.size > 0.8);
+      setDustList([...dustRef.current]);
 
       const now = Date.now();
       if (now - lastSpawnTime.current > Math.random() * 700 + 1200) {
@@ -234,13 +261,22 @@ export default function RunnerPage() {
     );
   }
 
+  // Calcolo dinamico rotazione personaggio in base al salto
+  const mascotRotation = velocityRef.current > 0 
+    ? -15 
+    : mascotY > 0 
+      ? 10 
+      : Math.sin(Date.now() / 60) * 4; // Corsa oscillante quando a terra
+
   return (
     <div onClick={handleJump} className="relative flex flex-col items-center justify-center min-h-dvh bg-zinc-950 text-white overflow-hidden select-none cursor-pointer p-4">
       
+      {/* SFONDO GENERALE */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <img src="/runner-bg.png" alt="Sfondo" className="w-full h-full object-cover blur-sm scale-105 opacity-65 brightness-75" onError={(e) => { (e.target as HTMLImageElement).src = '/Backgr.png'; }} />
       </div>
 
+      {/* BARRA SUPERIORE */}
       <div className="w-full max-w-xl flex justify-between items-center mb-4 z-20">
         <Link href="/mascotte" onClick={(e) => e.stopPropagation()} className="bg-zinc-900/90 border border-white/20 text-xs font-bold px-4 py-2.5 rounded-2xl hover:bg-zinc-800 transition-colors shadow-lg backdrop-blur-md uppercase tracking-wider text-zinc-300">
           ← FUGGI AL CAMPO
@@ -251,6 +287,7 @@ export default function RunnerPage() {
         </div>
       </div>
 
+      {/* ARENA DI GIOCO */}
       <div className="relative w-full max-w-xl h-[400px] rounded-3xl overflow-hidden border-2 border-amber-500/50 shadow-2xl bg-black z-10">
         <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover opacity-75 pointer-events-none">
           <source src="/runner-bg.mp4" type="video/mp4" />
@@ -258,17 +295,58 @@ export default function RunnerPage() {
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
 
-        <div className="absolute left-8 w-24 h-24 sm:w-28 sm:h-28 transition-transform duration-75 z-10" style={{ bottom: `${mascotY + 12}px` }}>
-          <img src={mascotImg} alt="Mascotte" className={`w-full h-full object-contain drop-shadow-[0_12px_12px_rgba(0,0,0,0.9)] ${isJumpingRef.current ? 'rotate-[-10deg]' : 'animate-bounce'}`} />
+        {/* 🪵 LINEA DEL SUOLO (TERRENO ANCORANTE) */}
+        <div className="absolute bottom-0 left-0 w-full h-4 bg-gradient-to-t from-amber-950/90 to-amber-900/20 border-t border-amber-500/40 pointer-events-none z-10" />
+
+        {/* 👥 OMBRA DINAMICA A TERRA */}
+        <div 
+          className="absolute left-10 w-20 h-3.5 bg-black/70 rounded-full blur-[2px] pointer-events-none transition-all z-10"
+          style={{
+            bottom: '8px',
+            transform: `scale(${Math.max(0.2, 1 - mascotY / 140)})`,
+            opacity: Math.max(0.15, 1 - mascotY / 110),
+          }}
+        />
+
+        {/* 💨 PARTICELLE DI POLVERE */}
+        {dustList.map((d) => (
+          <div
+            key={d.id}
+            className="absolute bg-amber-200/40 rounded-full blur-[1px] pointer-events-none z-10"
+            style={{
+              left: `${d.x}px`,
+              bottom: `${d.y}px`,
+              width: `${d.size}px`,
+              height: `${d.size}px`,
+            }}
+          />
+        ))}
+
+        {/* 🐰 MASCOTTE GIOCABILE */}
+        <div 
+          className="absolute left-8 w-24 h-24 sm:w-28 sm:h-28 z-20 pointer-events-none" 
+          style={{ 
+            bottom: `${mascotY + 12}px`,
+            transform: `rotate(${mascotRotation}deg)`,
+            transition: mascotY === 0 ? 'none' : 'transform 0.08s ease-out'
+          }}
+        >
+          <img 
+            src={mascotImg} 
+            alt="Mascotte" 
+            className="w-full h-full object-contain filter drop-shadow-[0_8px_10px_rgba(0,0,0,0.85)]" 
+          />
         </div>
 
+        {/* 💣 ENTITÀ (OSTACOLI E BONUS) */}
         {entities.map((ent) => (
-          <div key={ent.id} className="absolute flex items-end justify-center pointer-events-none z-10 transition-none" style={{ left: `${ent.x}px`, bottom: `${ent.yOffset}px`, width: `${ent.width}px`, height: `${ent.height}px` }}>
+          <div key={ent.id} className="absolute flex items-end justify-center pointer-events-none z-20 transition-none" style={{ left: `${ent.x}px`, bottom: `${ent.yOffset}px`, width: `${ent.width}px`, height: `${ent.height}px` }}>
             <img src={ent.icon} alt="Item" className={`w-full h-full object-contain ${ent.isCollectible ? 'drop-shadow-[0_0_15px_rgba(245,158,11,1)] animate-pulse' : 'drop-shadow-[0_6px_6px_rgba(0,0,0,0.8)]'}`} onError={(e) => { (e.target as HTMLImageElement).src = '/icons/warning.png'; }} />
           </div>
         ))}
       </div>
 
+      {/* START MODAL */}
       {gameState === 'START' && (
         <div className="absolute z-30 flex flex-col items-center gap-4 bg-zinc-900/95 backdrop-blur-xl p-6 rounded-3xl border border-white/20 text-center max-w-xs shadow-2xl">
           <h1 className="text-2xl font-black uppercase text-amber-400 tracking-tight">Corsa Clandestina</h1>
@@ -281,6 +359,7 @@ export default function RunnerPage() {
         </div>
       )}
 
+      {/* GAMEOVER MODAL */}
       {gameState === 'GAMEOVER' && (
         <div className="absolute z-30 flex flex-col items-center gap-3 bg-zinc-900/95 backdrop-blur-xl p-6 rounded-3xl border border-red-500/40 text-center max-w-xs animate-in zoom-in-95 shadow-2xl">
           <h2 className="text-2xl font-black uppercase text-red-500">SCHIANTO.</h2>
