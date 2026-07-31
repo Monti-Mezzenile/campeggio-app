@@ -51,7 +51,21 @@ const MASCOT_QUOTES = [
   "bucockkkkk.",
   "Portami subito alla grigliata!",
   "Smettila o ti tiro un calcio in faccia.",
-  "Aggiungi della birra alla mia ciotola!"
+  "Aggiungi della birra alla mia ciotola!",
+  "tu sei un babbo e io bevo",
+  "Godo",
+  "oh ma hai visto rive?",
+  "oh ma hai visto Lore?",
+  "Ciao faccetta di cazzo",
+  "ma te ne torni a lavorare?",
+  "Svarion ha cucinato?",
+  "Dai che sto aspettando che arrivi Conte",
+  "Dammi quella normale che l'analcolica è per Pizzo",
+  "oh ma lo vedi anche tu quel Golem?",
+  "Monti 3, Gran bel film!",
+  "Cazzo ti tocchi?",
+  "Cavallo!",
+  "Dov'è il tuo cappello?"
 ];
 
 const playAudioEffect = (type: 'pop' | 'munch' | 'hurt' | 'level') => {
@@ -305,7 +319,7 @@ export default function MascottePage() {
     const newStatValue = Math.min(100, mascot[statKey] + item.val);
     const newExp = mascot.exp + expGained;
     
-    // VERIFICA SE SCATTA L'EVOLUZIONE CONgetStageFromExp
+    // VERIFICA SE SCATTA L'EVOLUZIONE CON getStageFromExp
     const newFase = getStageFromExp(newExp);
 
     if (newFase > mascot.fase) {

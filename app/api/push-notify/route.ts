@@ -7,14 +7,25 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-webpush.setVapidDetails(
-  process.env.VAPID_MAILTO || 'mailto:admin@campeggio.com',
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+// ✅ CONTROLLO DI SICUREZZA PER IL BUILD
+// Imposta le VAPID details solo se le chiavi sono effettivamente presenti.
+if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    process.env.VAPID_MAILTO || 'mailto:admin@campeggio.com',
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+} else {
+  console.warn("⚠️ Chiavi VAPID non trovate. Le notifiche Push non funzioneranno.");
+}
 
 export async function POST(req: Request) {
   try {
+    // 🛑 Se le chiavi non ci sono (es. in locale senza .env), fermati subito
+    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+      return NextResponse.json({ success: false, reason: 'Chiavi VAPID non configurate sul server' }, { status: 500 });
+    }
+
     const { receiverUserId, title, message } = await req.json();
 
     // 1. Recupera la subscription del destinatario
