@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import CustomIcon from "@/components/ui/CustomIcon";
+import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import CustomIcon from '@/components/ui/CustomIcon';
 
 export default function BottomNav() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export default function BottomNav() {
 
   // 🎯 RILEVAMENTO TASTIERA DEFINITIVO CON VISUAL VIEWPORT API (Nativo iOS/Android)
   useEffect(() => {
-    if (typeof window === "undefined" || !window.visualViewport) return;
+    if (typeof window === 'undefined' || !window.visualViewport) return;
 
     const vv = window.visualViewport;
 
@@ -25,12 +25,12 @@ export default function BottomNav() {
       setIsKeyboardOpen(isKeyboard);
     };
 
-    vv.addEventListener("resize", handleViewportChange);
-    vv.addEventListener("scroll", handleViewportChange);
+    vv.addEventListener('resize', handleViewportChange);
+    vv.addEventListener('scroll', handleViewportChange);
 
     return () => {
-      vv.removeEventListener("resize", handleViewportChange);
-      vv.removeEventListener("scroll", handleViewportChange);
+      vv.removeEventListener('resize', handleViewportChange);
+      vv.removeEventListener('scroll', handleViewportChange);
     };
   }, []);
 
@@ -38,21 +38,21 @@ export default function BottomNav() {
   useEffect(() => {
     async function fetchActiveEvent() {
       try {
-        const today = new Date().toISOString().split("T")[0];
+        const today = new Date().toISOString().split('T')[0];
 
         let { data: event } = await supabase
-          .from("events")
-          .select("id")
-          .lte("data_inizio", today)
-          .gte("data_fine", today)
+          .from('events')
+          .select('id')
+          .lte('data_inizio', today)
+          .gte('data_fine', today)
           .maybeSingle();
 
         if (!event) {
           const { data: upcoming } = await supabase
-            .from("events")
-            .select("id")
-            .gte("data_inizio", today)
-            .order("data_inizio", { ascending: true })
+            .from('events')
+            .select('id')
+            .gte('data_inizio', today)
+            .order('data_inizio', { ascending: true })
             .limit(1)
             .maybeSingle();
 
@@ -61,9 +61,9 @@ export default function BottomNav() {
 
         if (!event) {
           const { data: lastEvent } = await supabase
-            .from("events")
-            .select("id")
-            .order("data_inizio", { ascending: false })
+            .from('events')
+            .select('id')
+            .order('data_inizio', { ascending: false })
             .limit(1)
             .maybeSingle();
 
@@ -74,7 +74,7 @@ export default function BottomNav() {
           setActiveEventId(event.id);
         }
       } catch (err) {
-        console.error("Errore fetch evento per BottomNav:", err);
+        console.error('Errore fetch evento per BottomNav:', err);
       } finally {
         setLoadingEvent(false);
       }
@@ -87,15 +87,15 @@ export default function BottomNav() {
     if (activeEventId) {
       router.push(`/events/${activeEventId}`);
     } else {
-      router.push("/");
+      router.push('/');
     }
   };
 
-  const isEventActive = pathname.startsWith("/events");
-  const isMascotteActive = pathname.startsWith("/mascotte");
-  
+  const isEventActive = pathname.startsWith('/events');
+  const isMascotteActive = pathname.startsWith('/mascotte');
+
   // Ottimizzato a 42px per far stare 6 icone comodamente anche su schermi stretti
-  const ICON_SIZE = 42; 
+  const ICON_SIZE = 42;
 
   // 🛑 SE LA TASTIERA È APERTA, SMONTIAMO LA BOTTOMNAV DAL DOM
   if (isKeyboardOpen) return null;
@@ -104,16 +104,19 @@ export default function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 w-full pointer-events-auto">
       <div className="w-full bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-1.5">
         <div className="flex items-center justify-around w-full px-1">
-          
           {/* 1. HOME */}
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push('/')}
             className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-xl active:scale-90 shrink-0 ${
-              pathname === "/" ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
+              pathname === '/'
+                ? 'bg-[#1b2b25] text-[#ebdec8]'
+                : 'text-[#1b2b25]/80 hover:text-[#1b2b25]'
             }`}
           >
             <CustomIcon name="tenda-grossa" size={ICON_SIZE} />
-            <span className="text-[9px] font-black uppercase tracking-tight">Home</span>
+            <span className="text-[9px] font-black uppercase tracking-tight">
+              Home
+            </span>
           </button>
 
           {/* 2. CAMPO (EVENTO CORRENTE) */}
@@ -121,7 +124,9 @@ export default function BottomNav() {
             onClick={handleEventClick}
             disabled={loadingEvent}
             className={`relative flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-xl active:scale-90 shrink-0 ${
-              isEventActive ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
+              isEventActive
+                ? 'bg-[#1b2b25] text-[#ebdec8]'
+                : 'text-[#1b2b25]/80 hover:text-[#1b2b25]'
             }`}
           >
             <div className="w-[42px] h-[42px] flex items-center justify-center relative">
@@ -131,63 +136,80 @@ export default function BottomNav() {
                 className="w-full h-full object-contain drop-shadow-xs"
               />
             </div>
-            <span className="text-[9px] font-black uppercase tracking-tight">Campo</span>
+            <span className="text-[9px] font-black uppercase tracking-tight">
+              Campo
+            </span>
 
             {activeEventId && (
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse border border-white" />
             )}
           </button>
 
-          {/* 3. MASCOTTE (TAMAGOTCHI) */}
+          {/* 3. MASCOTTE (LA CAVIA) */}
           <button
-            onClick={() => router.push("/mascotte")}
+            onClick={() => router.push('/mascotte')}
             className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-xl active:scale-90 shrink-0 ${
-              isMascotteActive ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
+              isMascotteActive
+                ? 'bg-[#1b2b25] text-[#ebdec8]'
+                : 'text-[#1b2b25]/80 hover:text-[#1b2b25]'
             }`}
           >
             <div className="w-[42px] h-[42px] flex items-center justify-center">
               <img
-                src="/tamagotchi/fase1_coniglio_piccolo.png"
-                alt="Mascotte"
+                src="/icons/lacavia.png"
+                alt="La cavia"
                 className="w-full h-full object-contain drop-shadow-xs"
               />
             </div>
-            <span className="text-[9px] font-black uppercase tracking-tight">La cavia</span>
+            <span className="text-[9px] font-black uppercase tracking-tight">
+              La cavia
+            </span>
           </button>
 
           {/* 4. STORICO */}
           <button
-            onClick={() => router.push("/history")}
+            onClick={() => router.push('/history')}
             className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-xl active:scale-90 shrink-0 ${
-              pathname === "/history" ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
+              pathname === '/history'
+                ? 'bg-[#1b2b25] text-[#ebdec8]'
+                : 'text-[#1b2b25]/80 hover:text-[#1b2b25]'
             }`}
           >
             <CustomIcon name="libro" size={ICON_SIZE} />
-            <span className="text-[9px] font-black uppercase tracking-tight">Storico</span>
+            <span className="text-[9px] font-black uppercase tracking-tight">
+              Storico
+            </span>
           </button>
 
           {/* 5. CURIOSITÀ */}
           <button
-            onClick={() => router.push("/curiosita")}
+            onClick={() => router.push('/curiosita')}
             className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-xl active:scale-90 shrink-0 ${
-              pathname === "/curiosita" ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
+              pathname === '/curiosita'
+                ? 'bg-[#1b2b25] text-[#ebdec8]'
+                : 'text-[#1b2b25]/80 hover:text-[#1b2b25]'
             }`}
           >
             <CustomIcon name="lampadina" size={ICON_SIZE} />
-            <span className="text-[9px] font-black uppercase tracking-tight">Curiosità</span>
+            <span className="text-[9px] font-black uppercase tracking-tight">
+              Curiosità
+            </span>
           </button>
 
           {/* 6. PROFILO (IO) */}
           <button
-            onClick={() => router.push("/profile")}
+            onClick={() => router.push('/profile')}
             className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-xl active:scale-90 shrink-0 ${
-              pathname === "/profile" ? "bg-[#1b2b25] text-[#ebdec8]" : "text-[#1b2b25]/80 hover:text-[#1b2b25]"
+              pathname === '/profile'
+                ? 'bg-[#1b2b25] text-[#ebdec8]'
+                : 'text-[#1b2b25]/80 hover:text-[#1b2b25]'
             }`}
           >
             <CustomIcon name="profilo" size={ICON_SIZE} />
-            <span className="text-[9px] font-black uppercase tracking-tight">Io</span>
+            <span className="text-[9px] font-black uppercase tracking-tight">
+              Io
+            </span>
           </button>
-
         </div>
       </div>
     </nav>

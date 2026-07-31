@@ -9,6 +9,9 @@ const GRAVITY = 0.65;
 const JUMP_FORCE = 13.5;
 const OBSTACLE_SPEED = 5.5;
 
+// 🛤️ ALTEZZA DELLA STRADA STERRATA NEL VIDEO (in pixel)
+const GROUND_Y = 56;
+
 // 🛑 OSTACOLI PERICOLOSI
 const HAZARDS = [
   { id: 'fuoco', icon: '/icons/fuoco.png', width: 55, height: 65, isCollectible: false },
@@ -26,7 +29,7 @@ const COLLECTIBLES = [
 interface Entity {
   id: number;
   x: number;
-  yOffset: number;
+  yOffset: number; // 0 = strada sterrata, >0 = in aria
   width: number;
   height: number;
   icon: string;
@@ -136,19 +139,18 @@ export default function RunnerPage() {
       }
       setMascotY(mascotYRef.current);
 
-      // POLVERE DURANTE LA CORSA
+      // POLVERE SULLA STRADA STERRATA
       if (mascotYRef.current === 0 && Math.random() < 0.35) {
         dustRef.current.push({
           id: Date.now() + Math.random(),
           x: 60 + Math.random() * 15,
-          y: 12 + Math.random() * 4,
+          y: Math.random() * 4,
           size: Math.random() * 6 + 4,
         });
       }
 
-      // Aggiornamento particelle di polvere
       dustRef.current = dustRef.current
-        .map((d) => ({ ...d, x: d.x - OBSTACLE_SPEED * 0.8, y: d.y + 0.5, size: d.size * 0.92 }))
+        .map((d) => ({ ...d, x: d.x - OBSTACLE_SPEED * 0.8, y: d.y + 0.3, size: d.size * 0.92 }))
         .filter((d) => d.size > 0.8);
       setDustList([...dustRef.current]);
 
@@ -162,7 +164,7 @@ export default function RunnerPage() {
           entitiesRef.current.push({
             id: now,
             x: 520,
-            yOffset: inAir ? 75 : 12,
+            yOffset: inAir ? 65 : 0,
             width: item.width,
             height: item.height,
             icon: item.icon,
@@ -174,7 +176,7 @@ export default function RunnerPage() {
           entitiesRef.current.push({
             id: now,
             x: 520,
-            yOffset: 12,
+            yOffset: 0,
             width: hazard.width,
             height: hazard.height,
             icon: hazard.icon,
@@ -261,12 +263,11 @@ export default function RunnerPage() {
     );
   }
 
-  // Calcolo dinamico rotazione personaggio in base al salto
   const mascotRotation = velocityRef.current > 0 
     ? -15 
     : mascotY > 0 
       ? 10 
-      : Math.sin(Date.now() / 60) * 4; // Corsa oscillante quando a terra
+      : Math.sin(Date.now() / 60) * 4;
 
   return (
     <div onClick={handleJump} className="relative flex flex-col items-center justify-center min-h-dvh bg-zinc-950 text-white overflow-hidden select-none cursor-pointer p-4">
@@ -289,44 +290,44 @@ export default function RunnerPage() {
 
       {/* ARENA DI GIOCO */}
       <div className="relative w-full max-w-xl h-[400px] rounded-3xl overflow-hidden border-2 border-amber-500/50 shadow-2xl bg-black z-10">
-        <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover opacity-75 pointer-events-none">
+        
+        {/* VIDEO NIDO E LUMINOSO (Senza oscuramenti pesanti) */}
+        <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover opacity-95 brightness-105 pointer-events-none">
           <source src="/runner-bg.mp4" type="video/mp4" />
         </video>
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+        {/* SFUMATURA LEGGERA SOLO IN ALTO PER LEGGIBILITÀ */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent pointer-events-none" />
 
-        {/* 🪵 LINEA DEL SUOLO (TERRENO ANCORANTE) */}
-        <div className="absolute bottom-0 left-0 w-full h-4 bg-gradient-to-t from-amber-950/90 to-amber-900/20 border-t border-amber-500/40 pointer-events-none z-10" />
-
-        {/* 👥 OMBRA DINAMICA A TERRA */}
+        {/* 👥 OMBRA DINAMICA POSIZIONATA SULLA STRADA STERRATA */}
         <div 
-          className="absolute left-10 w-20 h-3.5 bg-black/70 rounded-full blur-[2px] pointer-events-none transition-all z-10"
+          className="absolute left-10 w-20 h-3 bg-black/80 rounded-full blur-[1.5px] pointer-events-none transition-all z-10"
           style={{
-            bottom: '8px',
+            bottom: `${GROUND_Y - 4}px`,
             transform: `scale(${Math.max(0.2, 1 - mascotY / 140)})`,
             opacity: Math.max(0.15, 1 - mascotY / 110),
           }}
         />
 
-        {/* 💨 PARTICELLE DI POLVERE */}
+        {/* 💨 PARTICELLE DI POLVERE SULLA STRADA */}
         {dustList.map((d) => (
           <div
             key={d.id}
-            className="absolute bg-amber-200/40 rounded-full blur-[1px] pointer-events-none z-10"
+            className="absolute bg-amber-200/50 rounded-full blur-[1px] pointer-events-none z-10"
             style={{
               left: `${d.x}px`,
-              bottom: `${d.y}px`,
+              bottom: `${d.y + GROUND_Y}px`,
               width: `${d.size}px`,
               height: `${d.size}px`,
             }}
           />
         ))}
 
-        {/* 🐰 MASCOTTE GIOCABILE */}
+        {/* 🐰 MASCOTTE ESATTAMENTE SULLA STRADA STERRATA */}
         <div 
           className="absolute left-8 w-24 h-24 sm:w-28 sm:h-28 z-20 pointer-events-none" 
           style={{ 
-            bottom: `${mascotY + 12}px`,
+            bottom: `${mascotY + GROUND_Y}px`,
             transform: `rotate(${mascotRotation}deg)`,
             transition: mascotY === 0 ? 'none' : 'transform 0.08s ease-out'
           }}
@@ -334,14 +335,28 @@ export default function RunnerPage() {
           <img 
             src={mascotImg} 
             alt="Mascotte" 
-            className="w-full h-full object-contain filter drop-shadow-[0_8px_10px_rgba(0,0,0,0.85)]" 
+            className="w-full h-full object-contain filter drop-shadow-[0_6px_8px_rgba(0,0,0,0.8)]" 
           />
         </div>
 
-        {/* 💣 ENTITÀ (OSTACOLI E BONUS) */}
+        {/* 💣 ENTITÀ SULLA STRADA */}
         {entities.map((ent) => (
-          <div key={ent.id} className="absolute flex items-end justify-center pointer-events-none z-20 transition-none" style={{ left: `${ent.x}px`, bottom: `${ent.yOffset}px`, width: `${ent.width}px`, height: `${ent.height}px` }}>
-            <img src={ent.icon} alt="Item" className={`w-full h-full object-contain ${ent.isCollectible ? 'drop-shadow-[0_0_15px_rgba(245,158,11,1)] animate-pulse' : 'drop-shadow-[0_6px_6px_rgba(0,0,0,0.8)]'}`} onError={(e) => { (e.target as HTMLImageElement).src = '/icons/warning.png'; }} />
+          <div 
+            key={ent.id} 
+            className="absolute flex items-end justify-center pointer-events-none z-20 transition-none" 
+            style={{ 
+              left: `${ent.x}px`, 
+              bottom: `${ent.yOffset + GROUND_Y}px`, 
+              width: `${ent.width}px`, 
+              height: `${ent.height}px` 
+            }}
+          >
+            <img 
+              src={ent.icon} 
+              alt="Item" 
+              className={`w-full h-full object-contain ${ent.isCollectible ? 'drop-shadow-[0_0_15px_rgba(245,158,11,1)] animate-pulse' : 'drop-shadow-[0_6px_6px_rgba(0,0,0,0.8)]'}`} 
+              onError={(e) => { (e.target as HTMLImageElement).src = '/icons/warning.png'; }} 
+            />
           </div>
         ))}
       </div>
@@ -367,7 +382,7 @@ export default function RunnerPage() {
           
           <div className="my-2 p-3.5 bg-black/60 rounded-2xl border border-white/10 w-full">
             <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Score Totale: {score}</div>
-            <div className="text-lg font-black text-amber-400 mt-1">+{expEarned} XP MUDI GUADAGNATI</div>
+            <div className="text-lg font-black text-amber-400 mt-1">+{expEarned} XP GUADAGNATI</div>
           </div>
 
           <button onClick={startGame} className="w-full bg-red-600 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest active:scale-95 transition-transform shadow-lg">
