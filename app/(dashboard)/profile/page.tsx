@@ -20,9 +20,17 @@ const EVOLUTION_STAGES: Record<number, { name: string; image: string }> = {
   9: { name: 'Cavallo Supremo', image: '/tamagotchi/fase9_cavallo_supremo.png' },
 };
 
+// 📈 SOGLIE EXP RI-BILANCIATE (Aggiornate a 800 XP per la Fase 2)
 const EXP_THRESHOLDS: Record<number, number> = {
-  1: 0, 2: 300, 3: 900, 4: 2000, 5: 4000,
-  6: 7500, 7: 12500, 8: 19000, 9: 30000
+  1: 0,
+  2: 800,
+  3: 2500,
+  4: 6000,
+  5: 12000,
+  6: 22000,
+  7: 38000,
+  8: 60000,
+  9: 100000,
 };
 
 export default function ProfilePage() {
@@ -333,7 +341,7 @@ export default function ProfilePage() {
         )}
       </section>
 
-      {/* ⛺ 2. HUB RISORSE (Bento Grid) - ORA SOPRA LA MASCOTTE */}
+      {/* ⛺ 2. HUB RISORSE (Bento Grid) */}
       <section className="rounded-[2.5rem] bg-white/40 backdrop-blur-xl p-5 shadow-sm border border-white space-y-5">
         <div>
           <div className="flex justify-between items-center mb-3 px-1">
@@ -433,11 +441,11 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* 🐾 3. SCHEDA MASCOTTE / BESTIA PERSONALE (Spostata Sotto, Layout Orizzontale) */}
+      {/* 🐾 3. SCHEDA MASCOTTE / BESTIA PERSONALE */}
       <section className="rounded-[2.5rem] bg-zinc-900/90 text-white p-5 shadow-xl border border-white/10 backdrop-blur-xl relative overflow-hidden">
         <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🐺</span>
+            <span className="text-lg"></span>
             <div>
               <h3 className="text-xs font-black uppercase tracking-widest text-amber-400">
                 Stato della Bestia
@@ -457,10 +465,7 @@ export default function ProfilePage() {
 
         {mascot ? (
           <div className="flex flex-col gap-3">
-            {/* RIGA Orizzontale: AVATAR + TESTI */}
             <div className="flex items-center gap-4">
-              
-              {/* AVATAR (Più compatto) */}
               <div className="relative w-20 h-20 bg-black/60 rounded-2xl border border-white/10 flex items-center justify-center p-1.5 shrink-0 shadow-inner">
                 <img
                   src={mascotDef.image}
@@ -476,7 +481,6 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* COLONNA INFORMAZIONI (Espansa) */}
               <div className="flex-1 min-w-0 flex flex-col justify-center">
                 <h4 className="text-sm font-black text-white leading-tight break-words mb-1 pr-1">
                   {mascot.nome_mascotte || "Senza Nome"}
@@ -484,7 +488,6 @@ export default function ProfilePage() {
                 <p className="text-[10px] font-bold text-amber-400 mb-1.5">
                   {mascot.exp || 0} / {mascotNextExp} XP
                 </p>
-                {/* Barra EXP */}
                 <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden border border-white/5">
                   <div
                     className="bg-amber-400 h-full transition-all duration-300"
@@ -494,9 +497,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* BARRE STATISTICHE INFERIORI */}
             <div className="grid grid-cols-3 gap-2 mt-1">
-              {/* FAME */}
               <div className="bg-black/40 p-2 rounded-xl border border-white/5 text-center">
                 <div className="text-[8px] font-black text-zinc-400 uppercase flex items-center justify-between mb-1">
                   <span>Fame</span>
@@ -512,7 +513,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* SETE */}
               <div className="bg-black/40 p-2 rounded-xl border border-white/5 text-center">
                 <div className="text-[8px] font-black text-zinc-400 uppercase flex items-center justify-between mb-1">
                   <span>Sete</span>
@@ -528,7 +528,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* SVAGO */}
               <div className="bg-black/40 p-2 rounded-xl border border-white/5 text-center">
                 <div className="text-[8px] font-black text-zinc-400 uppercase flex items-center justify-between mb-1">
                   <span>Svago</span>
