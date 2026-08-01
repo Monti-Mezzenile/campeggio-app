@@ -36,11 +36,11 @@ export default function EquipmentPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Item in fase di modifica (null = nuovo inserimento)
-  const [editingItem, setEditingItem] = useState<EquipmentItem | null>(null);
+  // Stati per la gestione Form
+  const [isAdding, setIsAdding] = useState(false); // Form in cima per i NUOVI elementi
+  const [editingItem, setEditingItem] = useState<EquipmentItem | null>(null); // Elemento in modifica
 
-  // Form State (Default stagione = null / Nessun Tag)
-  const [showForm, setShowForm] = useState(false);
+  // Campi del Form
   const [nome, setNome] = useState("");
   const [categoria, setCategoria] = useState("Attrezzatura Campeggio");
   const [quantita, setQuantita] = useState(1);
@@ -85,20 +85,20 @@ export default function EquipmentPage() {
     setNome("");
     setCategoria("Attrezzatura Campeggio");
     setQuantita(1);
-    setStagione(null); // Reset a nessun tag
+    setStagione(null); 
     setNote("");
     setEditingItem(null);
-    setShowForm(false);
+    setIsAdding(false);
   }
 
   function startEdit(item: EquipmentItem) {
+    setIsAdding(false); // Chiude il form superiore se aperto
     setEditingItem(item);
     setNome(item.nome);
     setCategoria(item.categoria);
     setQuantita(item.quantita || 1);
     setStagione(item.stagione || null);
     setNote(item.note || "");
-    setShowForm(true);
   }
 
   async function saveEquipment() {
@@ -128,7 +128,7 @@ export default function EquipmentPage() {
             nome: nome.trim(),
             categoria,
             quantita: Number(quantita) || 1,
-            stagione, // può essere null
+            stagione,
             note: note.trim(),
           })
           .eq("id", editingItem.id)
@@ -153,7 +153,7 @@ export default function EquipmentPage() {
           nome: nome.trim(),
           categoria,
           quantita: Number(quantita) || 1,
-          stagione, // null se non selezionato
+          stagione,
           note: note.trim(),
         };
 
@@ -249,9 +249,166 @@ export default function EquipmentPage() {
       case "entrambi":
         return { label: "Tutto l'anno", icon: "🔄", color: "bg-zinc-100 text-zinc-700" };
       default:
-        return null; // Nessun tag visualizzato
+        return null;
     }
   };
+
+  // --- COMPONENTE FORM RIUTILIZZABILE (Nuovo / Modifica) ---
+  const renderForm = (isEdit: boolean) => (
+    <div
+      className={
+        isEdit
+          ? "space-y-3 pt-4 mt-2 border-t border-amber-500/30 animate-in fade-in slide-in-from-top-2"
+          : "mb-5 bg-white border border-amber-500/30 rounded-2xl p-4 shadow-lg backdrop-blur-md space-y-3 transition-all animate-in fade-in"
+      }
+    >
+      <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
+        <h2 className="text-xs font-black uppercase text-zinc-900 flex items-center gap-1.5">
+          <span>{isEdit ? "✏️" : "➕"}</span>
+          <span>{isEdit ? "Modifica Oggetto" : "Aggiungi Oggetto"}</span>
+        </h2>
+        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-950">
+          {isEdit ? "Editing" : "Nuovo"}
+        </span>
+      </div>
+
+      {/* Nome Oggetto */}
+      <div>
+        <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
+          Nome Oggetto *
+        </label>
+        <input
+          placeholder="es. Torcia frontale, Sacco a pelo..."
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          className="w-full bg-zinc-50 border border-zinc-200 focus:border-amber-500 focus:bg-white rounded-xl p-2.5 text-sm font-semibold text-zinc-900 outline-none transition-all placeholder:text-zinc-400"
+        />
+      </div>
+
+      {/* Selezione Tag Stagione */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-[10px] font-black text-zinc-700 uppercase tracking-wide">
+            Stagione <span className="text-zinc-400 font-normal">(Opzionale)</span>
+          </label>
+          {stagione && (
+            <button
+              type="button"
+              onClick={() => setStagione(null)}
+              className="text-[10px] font-bold text-amber-800 hover:underline"
+            >
+              Rimuovi tag
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-1.5 p-1 bg-zinc-100 rounded-xl border border-zinc-200">
+          {SEASONS.map((s) => {
+            const isSelected = stagione === s.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() =>
+                  setStagione(isSelected ? null : (s.id as "estivo" | "invernale" | "entrambi"))
+                }
+                className={`py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+                  isSelected
+                    ? "bg-white text-zinc-900 shadow-2xs border border-zinc-200 font-extrabold"
+                    : "text-zinc-500 hover:text-zinc-800"
+                }`}
+              >
+                <span>{s.icon}</span>
+                <span>{s.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Categoria e Quantità */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
+            Categoria
+          </label>
+          <select
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+            className="w-full bg-zinc-50 border border-zinc-200 focus:border-amber-500 focus:bg-white rounded-xl p-2.5 text-xs font-bold text-zinc-900 outline-none cursor-pointer"
+          >
+            {CATEGORIES.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.icon} {cat.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
+            Quantità
+          </label>
+          <div className="flex items-center bg-zinc-100 rounded-xl border border-zinc-200 p-1 h-[40px]">
+            <button
+              type="button"
+              onClick={() => setQuantita(Math.max(1, quantita - 1))}
+              className="w-8 h-full rounded-lg bg-white shadow-2xs text-zinc-800 font-bold text-sm active:scale-95 transition-all flex items-center justify-center"
+            >
+              -
+            </button>
+            <span className="flex-1 text-center font-black text-zinc-900 text-xs">
+              {quantita} {quantita === 1 ? "pezzo" : "pezzi"}
+            </span>
+            <button
+              type="button"
+              onClick={() => setQuantita(quantita + 1)}
+              className="w-8 h-full rounded-lg bg-white shadow-2xs text-zinc-800 font-bold text-sm active:scale-95 transition-all flex items-center justify-center"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Note */}
+      <div>
+        <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
+          Note
+        </label>
+        <input
+          placeholder="es. Riposto nello zaino blu..."
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          className="w-full bg-zinc-50 border border-zinc-200 focus:border-amber-500 focus:bg-white rounded-xl p-2.5 text-xs font-medium text-zinc-900 outline-none transition-all placeholder:text-zinc-400"
+        />
+      </div>
+
+      {/* Pulsanti Azione Form */}
+      <div className="flex gap-2 pt-1">
+        <button
+          onClick={saveEquipment}
+          disabled={saving}
+          className="flex-1 py-2.5 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 border border-amber-500/30 font-black text-xs tracking-wide shadow-xs active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+        >
+          {saving ? (
+            <span>Salvataggio...</span>
+          ) : (
+            <>
+              <span>📦</span>
+              <span>{isEdit ? "Salva Modifiche" : "Aggiungi all'Inventario"}</span>
+            </>
+          )}
+        </button>
+
+        <button
+          onClick={resetForm}
+          className="py-2.5 px-3 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold text-xs transition-all"
+        >
+          Annulla
+        </button>
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -289,175 +446,29 @@ export default function EquipmentPage() {
           )}
         </div>
 
-        {/* Pulsante Apri Form */}
+        {/* Pulsante Apri Form (Nuovo inserimento) */}
         <button
           onClick={() => {
-            if (showForm) resetForm();
-            else setShowForm(true);
+            if (isAdding) {
+              setIsAdding(false);
+            } else {
+              resetForm();
+              setIsAdding(true);
+            }
           }}
           className={`h-10 px-3.5 rounded-xl font-extrabold text-xs shadow-xs active:scale-95 transition-all flex items-center gap-1.5 shrink-0 border ${
-            showForm
+            isAdding
               ? "bg-zinc-900 text-white border-zinc-800"
               : "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 border-amber-500/30"
           }`}
         >
-          <span>{showForm ? "✕" : "➕"}</span>
-          <span className="hidden sm:inline">{showForm ? "Chiudi" : "Aggiungi"}</span>
+          <span>{isAdding ? "✕" : "➕"}</span>
+          <span className="hidden sm:inline">{isAdding ? "Annulla" : "Aggiungi"}</span>
         </button>
       </div>
 
-      {/* FORM AGGIUNTA / MODIFICA OGGETTO */}
-      {showForm && (
-        <div className="mb-5 bg-white border border-amber-500/30 rounded-2xl p-4 shadow-lg backdrop-blur-md space-y-3 transition-all">
-          <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
-            <h2 className="text-xs font-black uppercase text-zinc-900 flex items-center gap-1.5">
-              <span>{editingItem ? "✏️" : "➕"}</span>
-              <span>{editingItem ? "Modifica Oggetto" : "Aggiungi Oggetto"}</span>
-            </h2>
-            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-950">
-              {editingItem ? "Editing" : "Nuovo"}
-            </span>
-          </div>
-
-          {/* Nome Oggetto */}
-          <div>
-            <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
-              Nome Oggetto *
-            </label>
-            <input
-              placeholder="es. Torcia frontale, Sacco a pelo..."
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              className="w-full bg-zinc-50 border border-zinc-200 focus:border-amber-500 focus:bg-white rounded-xl p-2.5 text-sm font-semibold text-zinc-900 outline-none transition-all placeholder:text-zinc-400"
-            />
-          </div>
-
-          {/* Selezione Tag Stagione (Opzionale, clicca per deselezionare) */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-[10px] font-black text-zinc-700 uppercase tracking-wide">
-                Stagione <span className="text-zinc-400 font-normal">(Opzionale)</span>
-              </label>
-              {stagione && (
-                <button
-                  type="button"
-                  onClick={() => setStagione(null)}
-                  className="text-[10px] font-bold text-amber-800 hover:underline"
-                >
-                  Rimuovi tag
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-3 gap-1.5 p-1 bg-zinc-100 rounded-xl border border-zinc-200">
-              {SEASONS.map((s) => {
-                const isSelected = stagione === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() =>
-                      setStagione(isSelected ? null : (s.id as "estivo" | "invernale" | "entrambi"))
-                    }
-                    className={`py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
-                      isSelected
-                        ? "bg-white text-zinc-900 shadow-2xs border border-zinc-200 font-extrabold"
-                        : "text-zinc-500 hover:text-zinc-800"
-                    }`}
-                  >
-                    <span>{s.icon}</span>
-                    <span>{s.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Categoria e Quantità */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
-                Categoria
-              </label>
-              <select
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
-                className="w-full bg-zinc-50 border border-zinc-200 focus:border-amber-500 focus:bg-white rounded-xl p-2.5 text-xs font-bold text-zinc-900 outline-none cursor-pointer"
-              >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
-                Quantità
-              </label>
-              <div className="flex items-center bg-zinc-100 rounded-xl border border-zinc-200 p-1 h-[40px]">
-                <button
-                  type="button"
-                  onClick={() => setQuantita(Math.max(1, quantita - 1))}
-                  className="w-8 h-full rounded-lg bg-white shadow-2xs text-zinc-800 font-bold text-sm active:scale-95 transition-all flex items-center justify-center"
-                >
-                  -
-                </button>
-                <span className="flex-1 text-center font-black text-zinc-900 text-xs">
-                  {quantita} {quantita === 1 ? "pezzo" : "pezzi"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setQuantita(quantita + 1)}
-                  className="w-8 h-full rounded-lg bg-white shadow-2xs text-zinc-800 font-bold text-sm active:scale-95 transition-all flex items-center justify-center"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Note */}
-          <div>
-            <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
-              Note
-            </label>
-            <input
-              placeholder="es. Riposto nello zaino blu..."
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="w-full bg-zinc-50 border border-zinc-200 focus:border-amber-500 focus:bg-white rounded-xl p-2.5 text-xs font-medium text-zinc-900 outline-none transition-all placeholder:text-zinc-400"
-            />
-          </div>
-
-          {/* Pulsanti Azione Form */}
-          <div className="flex gap-2 pt-1">
-            <button
-              onClick={saveEquipment}
-              disabled={saving}
-              className="flex-1 py-2.5 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 border border-amber-500/30 font-black text-xs tracking-wide shadow-xs active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
-            >
-              {saving ? (
-                <span>Salvataggio...</span>
-              ) : (
-                <>
-                  <span>📦</span>
-                  <span>{editingItem ? "Salva Modifiche" : "Aggiungi all'Inventario"}</span>
-                </>
-              )}
-            </button>
-
-            {editingItem && (
-              <button
-                onClick={resetForm}
-                className="py-2.5 px-3 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold text-xs transition-all"
-              >
-                Annulla
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      {/* FORM AGGIUNTA NUOVO OGGETTO (in cima) */}
+      {isAdding && renderForm(false)}
 
       {/* SELEZIONE FILTRO STAGIONALE */}
       {equipment.length > 0 && (
@@ -540,7 +551,7 @@ export default function EquipmentPage() {
       )}
 
       {/* STATO VUOTO */}
-      {filteredEquipment.length === 0 && !showForm && (
+      {filteredEquipment.length === 0 && !isAdding && (
         <div className="bg-white/80 border border-white rounded-2xl p-6 text-center text-zinc-900 shadow-sm backdrop-blur-md">
           <div className="w-14 h-14 mx-auto mb-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-2xl">
             🎒
@@ -574,66 +585,76 @@ export default function EquipmentPage() {
           return (
             <div
               key={item.id}
-              className={`bg-white/90 border rounded-xl p-2.5 sm:p-3 backdrop-blur-md shadow-2xs flex items-center justify-between gap-2.5 transition-all ${
+              className={`bg-white/90 border rounded-xl p-2.5 sm:p-3 backdrop-blur-md shadow-2xs flex flex-col transition-all ${
                 isBeingEdited
                   ? "border-amber-500 ring-2 ring-amber-500/20"
                   : "border-slate-200/80 hover:border-slate-300"
               }`}
             >
-              {/* SX: Icona, Titolo, Stagione (se presente) e Note */}
-              <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                <span
-                  className="text-lg shrink-0 p-1.5 rounded-lg bg-zinc-100/80 border border-zinc-200/60"
-                  title={meta.label}
-                >
-                  {meta.icon}
-                </span>
+              {/* CONTENUTO RIGA OGGETTO */}
+              <div className="flex items-center justify-between gap-2.5">
+                {/* SX: Icona, Titolo, Stagione (se presente) e Note */}
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <span
+                    className="text-lg shrink-0 p-1.5 rounded-lg bg-zinc-100/80 border border-zinc-200/60"
+                    title={meta.label}
+                  >
+                    {meta.icon}
+                  </span>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs sm:text-sm font-black text-zinc-900 truncate">
-                      {item.nome}
-                    </span>
-                    <span className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-zinc-900 text-white shrink-0">
-                      x{item.quantita}
-                    </span>
-                    {seasonBadge && (
-                      <span
-                        className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-md shrink-0 flex items-center gap-0.5 ${seasonBadge.color}`}
-                      >
-                        <span>{seasonBadge.icon}</span>
-                        <span>{seasonBadge.label}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs sm:text-sm font-black text-zinc-900 truncate">
+                        {item.nome}
                       </span>
+                      <span className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-zinc-900 text-white shrink-0">
+                        x{item.quantita}
+                      </span>
+                      {seasonBadge && (
+                        <span
+                          className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-md shrink-0 flex items-center gap-0.5 ${seasonBadge.color}`}
+                        >
+                          <span>{seasonBadge.icon}</span>
+                          <span>{seasonBadge.label}</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {item.note && (
+                      <p className="text-[11px] font-medium text-zinc-500 truncate leading-tight mt-0.5">
+                        {item.note}
+                      </p>
                     )}
                   </div>
+                </div>
 
-                  {item.note && (
-                    <p className="text-[11px] font-medium text-zinc-500 truncate leading-tight mt-0.5">
-                      {item.note}
-                    </p>
-                  )}
+                {/* DX: Pulsanti Azione (Modifica & Elimina) */}
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => startEdit(item)}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all active:scale-90 ${
+                      isBeingEdited 
+                        ? "bg-amber-100 text-amber-700" 
+                        : "bg-zinc-100 hover:bg-zinc-200 text-zinc-700"
+                    }`}
+                    title="Modifica"
+                  >
+                    ✏️
+                  </button>
+
+                  <button
+                    onClick={() => deleteEquipment(item.id)}
+                    disabled={isDeleting || isBeingEdited}
+                    className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/60 flex items-center justify-center text-xs font-bold transition-all active:scale-90 disabled:opacity-30 disabled:pointer-events-none"
+                    title="Elimina"
+                  >
+                    {isDeleting ? "..." : "✕"}
+                  </button>
                 </div>
               </div>
 
-              {/* DX: Pulsanti Azione (Modifica & Elimina) */}
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  onClick={() => startEdit(item)}
-                  className="w-8 h-8 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 flex items-center justify-center text-xs font-bold transition-all active:scale-90"
-                  title="Modifica"
-                >
-                  ✏️
-                </button>
-
-                <button
-                  onClick={() => deleteEquipment(item.id)}
-                  disabled={isDeleting}
-                  className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/60 flex items-center justify-center text-xs font-bold transition-all active:scale-90 disabled:opacity-50"
-                  title="Elimina"
-                >
-                  {isDeleting ? "..." : "✕"}
-                </button>
-              </div>
+              {/* FORM DI MODIFICA INTEGRATO INLINE */}
+              {isBeingEdited && renderForm(true)}
             </div>
           );
         })}
