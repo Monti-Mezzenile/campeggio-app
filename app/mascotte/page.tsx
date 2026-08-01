@@ -7,14 +7,17 @@ import { supabase } from '@/lib/supabase';
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
 
+// 📈 SOGLIE EXP RI-BILANCIATE (Molto più impegnativo salire di livello)
 const EXP_THRESHOLDS: Record<number, number> = {
-  1: 0, 2: 300, 3: 900, 4: 2000, 5: 4000,
-  6: 7500, 7: 12500, 8: 19000, 9: 30000
-};
-
-const COOLDOWNS = {
-  SCORRIBANDA: 15 * 60, // 15 min
-  ALLENAMENTO: 5 * 60,   // 5 min
+  1: 0,
+  2: 800,
+  3: 2500,
+  4: 6000,
+  5: 12000,
+  6: 22000,
+  7: 38000,
+  8: 60000,
+  9: 100000,
 };
 
 const getStageFromExp = (exp: number): number => {
@@ -124,12 +127,6 @@ interface Particle {
   color: string;
 }
 
-function formatTime(seconds: number) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s < 10 ? '0' : ''}${s}`;
-}
-
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -161,31 +158,48 @@ export default function MascottePage() {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [selectedRival, setSelectedRival] = useState<any | null>(null);
 
-  const [scorribandaCd, setScorribandaCd] = useState(0);
-  const [allenamentoCd, setAllenamentoCd] = useState(0);
-
   const mascotRef = useRef<HTMLDivElement>(null);
   const mascotControls = useAnimation();
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = Math.floor(Date.now() / 1000);
-      const scEnd = parseInt(localStorage.getItem('cd_scorribanda') || '0', 10);
-      const alEnd = parseInt(localStorage.getItem('cd_allenamento') || '0', 10);
-
-      setScorribandaCd(Math.max(0, scEnd - now));
-      setAllenamentoCd(Math.max(0, alEnd - now));
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   const spawnParticle = (text: string, color = 'text-emerald-400') => {
     const id = Date.now() + Math.random();
     setParticles((prev) => [...prev, { id, text, color }]);
     setTimeout(() => {
       setParticles((prev) => prev.filter((p) => p.id !== id));
-    }, 1200);
+    }, 1500); 
+  };
+
+  // 🔔 Controllo e Notifica per i Bisogni
+  const checkAndNotifyNeeds = async (fame: number, sete: number, svago: number) => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    
+    if (Notification.permission === 'granted') {
+      const needs = [];
+      if (fame <= 25) needs.push("ha troppa Fame 🥕");
+      if (sete <= 25) needs.push("sta morendo di Sete 💧");
+      if (svago <= 25) needs.push("si sta Annoiando 🎮");
+
+      if (needs.length > 0) {
+        const lastNotif = localStorage.getItem('last_need_notification');
+        const now = Date.now();
+        
+        if (!lastNotif || now - parseInt(lastNotif) > 2 * 60 * 60 * 1000) {
+          try {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg) {
+              reg.showNotification('⚠️ Mascotte in Pericolo!', {
+                body: `La tua mascotte ${needs.join(' e ')}. Entra subito e curala!`,
+                icon: '/tamagotchi/fase1_coniglio_piccolo.png',
+                vibrate: [200, 100, 200]
+              } as any);
+              localStorage.setItem('last_need_notification', now.toString());
+            }
+          } catch (e) {
+            console.error("Errore notifica locale:", e);
+          }
+        }
+      }
+    }
   };
 
   useEffect(() => {
@@ -200,7 +214,10 @@ export default function MascottePage() {
         }
         setUser(currentUser);
 
-        const ownerName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || 'Ignoto';
+        const ownerName = currentUser.user_metadata?.full_name || 
+                          currentUser.user_metadata?.name || 
+                          (currentUser.email ? currentUser.email.split('@')[0] : null) || 
+                          'Campeggiatore';
 
         if ('serviceWorker' in navigator && 'PushManager' in window) {
           const reg = await navigator.serviceWorker.getRegistration();
@@ -261,7 +278,15 @@ export default function MascottePage() {
         });
         setTempName(myMascot.nome_mascotte || 'Bestia Anonima');
 
-        const { data: others } = await supabase.from('mascots').select('*').neq('user_id', currentUser.id).order('exp', { ascending: false });
+        checkAndNotifyNeeds(currentFame, currentSete, currentSvago);
+
+        // Recupero mascotte rivali
+        const { data: others } = await supabase
+          .from('mascots')
+          .select('*')
+          .neq('user_id', currentUser.id)
+          .order('exp', { ascending: false });
+
         if (others) {
           const formattedOthers = others.map(o => ({
             ...o,
@@ -310,7 +335,7 @@ export default function MascottePage() {
       });
       setPushEnabled(true);
       setToastMsg("🔔 Notifiche Push attivate! Ora saprai chi ti attacca.");
-      setTimeout(() => setToastMsg(null), 3500);
+      setTimeout(() => setToastMsg(null), 5000);
     } catch (err) {
       console.error("Errore iscrizione push:", err);
       alert("Errore nell'attivazione delle notifiche.");
@@ -336,7 +361,7 @@ export default function MascottePage() {
       
       setToastMsg(item.type === 'sete' ? `🥴 Sbronza colossale! (-15% Svago)` : `🤮 Indigestione! (-15% Svago)`);
       spawnParticle(`🤮 INDIGESTIONE!`, 'text-lime-400');
-      setTimeout(() => setToastMsg(null), 3500);
+      setTimeout(() => setToastMsg(null), 5000);
       
       setMascot(prev => ({ ...prev, svago: newSvago }));
       await supabase.from('mascots').update({ svago: newSvago, last_updated_at: new Date().toISOString() }).eq('id', mascot.id);
@@ -360,7 +385,7 @@ export default function MascottePage() {
       setToastMsg(`+${item.val}% ${statKey.toUpperCase()}${expGained > 0 ? ` e +${expGained} XP` : ''}!`);
       spawnParticle(`+${item.val}% ${statKey.toUpperCase()}`, 'text-emerald-400');
     }
-    setTimeout(() => setToastMsg(null), 3500);
+    setTimeout(() => setToastMsg(null), 5000);
 
     const updatedMascot = { ...mascot, [statKey]: newStatValue, exp: newExp, fase: newFase };
     setMascot(updatedMascot);
@@ -385,79 +410,13 @@ export default function MascottePage() {
 
     const quote = MASCOT_QUOTES[Math.floor(Math.random() * MASCOT_QUOTES.length)];
     setSpeechBubble(quote);
-    setTimeout(() => setSpeechBubble(null), 2800);
+    setTimeout(() => setSpeechBubble(null), 5000);
 
     mascotControls.start({ scale: [1, 1.18, 0.92, 1], rotate: [0, -12, 12, 0], transition: { duration: 0.3 } });
     spawnParticle('❤️ +1 Affetto', 'text-rose-400');
   };
 
-  const handleScorribanda = async () => {
-    if (scorribandaCd > 0) return;
-    if (!mascot.id) return;
-    if (mascot.fame < 25 || mascot.sete < 25 || mascot.svago < 25) {
-      playAudioEffect('hurt');
-      setToastMsg("⚠️ Troppo debole! Porta tutte le barre ad almeno 25%.");
-      setTimeout(() => setToastMsg(null), 3000);
-      return;
-    }
-
-    playAudioEffect('level');
-    const newFame = mascot.fame - 25;
-    const newSete = mascot.sete - 25;
-    const newSvago = mascot.svago - 25;
-    const newExp = mascot.exp + 20;
-    const newFase = getStageFromExp(newExp);
-
-    const until = Math.floor(Date.now() / 1000) + COOLDOWNS.SCORRIBANDA;
-    localStorage.setItem('cd_scorribanda', until.toString());
-    setScorribandaCd(COOLDOWNS.SCORRIBANDA);
-
-    setMascot(prev => ({ ...prev, fame: newFame, sete: newSete, svago: newSvago, exp: newExp, fase: newFase }));
-    setToastMsg("🥷 Scorribanda riuscita! +20 XP (Cooldown 15m)");
-    spawnParticle("💰 +20 XP", "text-amber-400");
-    setTimeout(() => setToastMsg(null), 4000);
-
-    mascotControls.start({ x: [0, 200, -200, 0], opacity: [1, 0, 0, 1], scale: [1, 0.5, 0.5, 1], transition: { duration: 0.8 } });
-
-    await supabase.from('mascots').update({ fame: newFame, sete: newSete, svago: newSvago, exp: newExp, fase: newFase, last_updated_at: new Date().toISOString() }).eq('id', mascot.id);
-  };
-
-  const handleAllenamento = async () => {
-    if (allenamentoCd > 0) return;
-    if (!mascot.id) return;
-    if (mascot.fame < 15 || mascot.sete < 15) {
-      playAudioEffect('hurt');
-      setToastMsg("⚠️ Non ha energie! Nutrila prima.");
-      setTimeout(() => setToastMsg(null), 3000);
-      return;
-    }
-
-    playAudioEffect('munch');
-    const newFame = mascot.fame - 15;
-    const newSete = mascot.sete - 15;
-    const newExp = mascot.exp + 10;
-    const newFase = getStageFromExp(newExp);
-
-    const until = Math.floor(Date.now() / 1000) + COOLDOWNS.ALLENAMENTO;
-    localStorage.setItem('cd_allenamento', until.toString());
-    setAllenamentoCd(COOLDOWNS.ALLENAMENTO);
-
-    setMascot(prev => ({ ...prev, fame: newFame, sete: newSete, exp: newExp, fase: newFase }));
-    setToastMsg("🏋️ Allenamento completato! +10 XP (Cooldown 5m)");
-    spawnParticle("💦 +10 XP", "text-sky-400");
-    setTimeout(() => setToastMsg(null), 3500);
-
-    mascotControls.start({ 
-      y: [0, -60, -100, -60, 0], 
-      rotate: [0, 180, 360, 360, 360], 
-      scale: [1, 1.1, 1.2, 1.1, 1], 
-      transition: { duration: 0.8, ease: "easeInOut" } 
-    });
-
-    await supabase.from('mascots').update({ fame: newFame, sete: newSete, exp: newExp, fase: newFase, last_updated_at: new Date().toISOString() }).eq('id', mascot.id);
-  };
-
-  const handleRivalAction = async (rival: any, actionType: 'pigna' | 'birra' | 'cibo' | 'troll') => {
+  const handleRivalAction = async (rival: any, actionType: 'pigna' | 'birra' | 'cibo' | 'troll' | 'gioca') => {
     if (!rival?.id || !user) return;
     let updatedFame = rival.fame ?? 50;
     let updatedSete = rival.sete ?? 50;
@@ -487,6 +446,11 @@ export default function MascottePage() {
       actionTitle = "👻 Spavento notturno!";
       logMessage = `${senderName} ti ha spaventato a morte! (-8% Fame e Svago)`;
       playAudioEffect('hurt');
+    } else if (actionType === 'gioca') {
+      updatedSvago = Math.min(100, updatedSvago + 25);
+      actionTitle = "🎾 Ora del gioco!";
+      logMessage = `${senderName} ha giocato un po' con te! (+25% Svago)`;
+      playAudioEffect('level');
     }
 
     setOtherMascots((prev) =>
@@ -494,7 +458,7 @@ export default function MascottePage() {
     );
 
     setToastMsg(`Azione eseguita su ${rival.nome_mascotte || 'Anonimo'}!`);
-    setTimeout(() => setToastMsg(null), 3500);
+    setTimeout(() => setToastMsg(null), 5000);
     setSelectedRival(null);
 
     await supabase.from('mascots').update({
@@ -563,9 +527,9 @@ export default function MascottePage() {
                 <button onClick={handleSaveName} className="bg-amber-500 text-black font-black text-[10px] px-2 py-0.5 rounded-lg">OK</button>
               </div>
             ) : (
-              <button onClick={() => setIsEditingName(true)} className="flex items-center gap-1 text-sm font-black text-white hover:text-amber-400 justify-center mx-auto">
+              <button onClick={() => setIsEditingName(true)} className="flex items-center gap-2 text-sm font-black text-white hover:text-amber-400 justify-center mx-auto">
                 <span>{mascot.nome}</span>
-                <img src="/icons/edit.png" alt="Edit" className="w-3 h-3 opacity-40" />
+                <img src="/icons/modifica.png" alt="Modifica" className="w-5 h-5 opacity-90 drop-shadow-md" />
               </button>
             )}
           </div>
@@ -581,9 +545,14 @@ export default function MascottePage() {
           )}
         </div>
 
-        {/* BARRA ESPERIENZA COMPATTA */}
-        <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden border border-white/5">
-          <div className="bg-amber-400 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
+        {/* BARRA ESPERIENZA COMPATTA CON VALORE XP A DESTRA */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 bg-white/10 rounded-full h-2 overflow-hidden border border-white/5">
+            <div className="bg-amber-400 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
+          </div>
+          <span className="text-[10px] font-black text-amber-400 shrink-0 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-lg">
+            ⚡ {mascot.exp} XP
+          </span>
         </div>
 
         {/* BARRE FAME / SETE / SVAGO COMPATTE SULLO STICKY HUD */}
@@ -668,47 +637,33 @@ export default function MascottePage() {
             </motion.div>
           </div>
 
-          {/* ⚡ AZIONI RAPIDE (SCORRIBANDA, ALLENAMENTO E CORSA IN UN'UNICA RIGA) */}
+          {/* ⚡ AZIONI RAPIDE (MINI-GIOCHI INTEGRATI) */}
           <div className="grid grid-cols-3 gap-2">
-            {/* Scorribanda */}
-            <button 
-              onClick={handleScorribanda}
-              disabled={scorribandaCd > 0}
-              className={`p-2.5 rounded-2xl border shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 text-center ${
-                scorribandaCd > 0 
-                  ? 'bg-zinc-900/60 border-zinc-800 opacity-60 cursor-not-allowed' 
-                  : 'bg-gradient-to-br from-purple-900/80 to-indigo-900/80 hover:from-purple-800 hover:to-indigo-800 border-purple-500/40 active:scale-[0.98]'
-              }`}
+            {/* Mini-Gioco Scorribanda */}
+            <Link 
+              href="/scorribanda"
+              className="p-2.5 rounded-2xl border border-purple-500/40 bg-gradient-to-br from-purple-900/80 to-indigo-900/80 hover:from-purple-800 hover:to-indigo-800 shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 text-center active:scale-[0.98]"
             >
               <span className="text-xl">🥷</span>
               <span className="text-[9px] font-black text-white uppercase mt-0.5 truncate w-full">Scorribanda</span>
-              <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-full border whitespace-nowrap ${
-                scorribandaCd > 0 ? 'bg-zinc-800 text-amber-400 border-amber-500/30' : 'bg-purple-500/20 text-purple-300 border-purple-500/50'
-              }`}>
-                {scorribandaCd > 0 ? `⏳ ${formatTime(scorribandaCd)}` : '-25% | +20XP'}
+              <span className="text-[7px] font-black px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/50 whitespace-nowrap">
+                MINIGIOCO 🎮
               </span>
-            </button>
+            </Link>
 
-            {/* Allenamento */}
-            <button 
-              onClick={handleAllenamento}
-              disabled={allenamentoCd > 0}
-              className={`p-2.5 rounded-2xl border shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 text-center ${
-                allenamentoCd > 0 
-                  ? 'bg-zinc-900/60 border-zinc-800 opacity-60 cursor-not-allowed' 
-                  : 'bg-gradient-to-br from-sky-900/80 to-blue-900/80 hover:from-sky-800 hover:to-blue-800 border-sky-500/40 active:scale-[0.98]'
-              }`}
+            {/* Mini-Gioco Allenamento */}
+            <Link 
+              href="/allenamento"
+              className="p-2.5 rounded-2xl border border-sky-500/40 bg-gradient-to-br from-sky-900/80 to-blue-900/80 hover:from-sky-800 hover:to-blue-800 shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 text-center active:scale-[0.98]"
             >
               <span className="text-xl">🏋️</span>
               <span className="text-[9px] font-black text-white uppercase mt-0.5 truncate w-full">Allenamento</span>
-              <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-full border whitespace-nowrap ${
-                allenamentoCd > 0 ? 'bg-zinc-800 text-amber-400 border-amber-500/30' : 'bg-sky-500/20 text-sky-300 border-sky-500/50'
-              }`}>
-                {allenamentoCd > 0 ? `⏳ ${formatTime(allenamentoCd)}` : '-15% | +10XP'}
+              <span className="text-[7px] font-black px-1.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/50 whitespace-nowrap">
+                MINIGIOCO 🎮
               </span>
-            </button>
+            </Link>
 
-            {/* Corsa Clandestina */}
+            {/* Mini-Gioco Corsa Clandestina */}
             <Link 
               href="/runner"
               className="p-2.5 rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-600/90 to-amber-500/90 hover:from-amber-500 hover:to-amber-400 shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 text-center active:scale-[0.98]"
@@ -754,12 +709,16 @@ export default function MascottePage() {
               const oFame = Math.min(100, Math.max(0, other.fame ?? 50));
               const oSete = Math.min(100, Math.max(0, other.sete ?? 50));
               const oSvago = Math.min(100, Math.max(0, other.svago ?? 50));
+              
+              const displayOwner = (!other.owner_name || other.owner_name === 'Ignoto')
+                ? 'Allenatore Anonimo'
+                : other.owner_name;
 
               return (
                 <div key={other.id || idx} className="bg-zinc-900/90 border border-white/10 rounded-3xl p-3.5 shadow-lg relative overflow-hidden flex flex-col">
                   
                   <div className="absolute top-0 right-0 bg-zinc-950 text-amber-500 border-b border-l border-white/10 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-bl-xl">
-                    👤 {other.owner_name || 'Ignoto'}
+                    👤 {displayOwner}
                   </div>
 
                   <div className="flex gap-3 items-center mt-1">
@@ -833,7 +792,7 @@ export default function MascottePage() {
       <AnimatePresence>
         {selectedRival && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} className="bg-zinc-900 border-2 border-amber-500/50 rounded-3xl p-6 w-full max-w-sm text-center relative shadow-2xl space-y-4">
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} className="bg-zinc-900 border-2 border-amber-500/50 rounded-3xl p-5 w-full max-w-sm text-center relative shadow-2xl space-y-4">
               <button onClick={() => setSelectedRival(null)} className="absolute top-4 right-4 text-white font-bold text-sm">✕</button>
 
               <h3 className="text-lg font-black text-white">{selectedRival.nome_mascotte || 'Bestia Ignota'}</h3>
@@ -850,6 +809,9 @@ export default function MascottePage() {
                 </button>
                 <button onClick={() => handleRivalAction(selectedRival, 'cibo')} className="p-3 bg-emerald-600/20 border border-emerald-500/40 rounded-2xl text-emerald-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95">
                   <span className="text-lg">🥩</span><span>Lancia Cibo</span><span className="text-[8px] text-emerald-400/80">+25% Fame</span>
+                </button>
+                <button onClick={() => handleRivalAction(selectedRival, 'gioca')} className="col-span-2 p-3 bg-amber-600/20 border border-amber-500/40 rounded-2xl text-amber-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95">
+                  <span className="text-lg">🎾</span><span>Gioca Insieme</span><span className="text-[8px] text-amber-400/80">+25% Svago</span>
                 </button>
               </div>
             </motion.div>
