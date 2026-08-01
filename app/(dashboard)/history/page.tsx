@@ -25,6 +25,28 @@ interface VideoItem {
   anno?: number | string;
 }
 
+// 🎯 Helper per formattare la data in "LUGLIO 2026"
+function formatMonthYear(dateStr?: string) {
+  if (!dateStr) return "DATA TBD";
+  const cleanStr = dateStr.split("T")[0];
+  const parts = cleanStr.split("-").map(Number);
+  if (parts.length < 3 || parts.some(isNaN)) return dateStr;
+
+  const date = new Date(parts[0], parts[1] - 1, parts[2]);
+  return date
+    .toLocaleDateString("it-IT", { month: "long", year: "numeric" })
+    .toUpperCase();
+}
+
+// 🎯 Helper per estrarre l'anno
+function getEventYear(dateStr?: string): string {
+  if (!dateStr) return "TBD";
+  const cleanStr = dateStr.split("T")[0];
+  const parts = cleanStr.split("-").map(Number);
+  if (parts.length > 0 && !isNaN(parts[0])) return parts[0].toString();
+  return "TBD";
+}
+
 export default function HistoryAndVideosPage() {
   const [activeTab, setActiveTab] = useState<"events" | "videos">("events");
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -39,11 +61,11 @@ export default function HistoryAndVideosPage() {
         supabase
           .from("events")
           .select("*")
-          .order("data_inizio", { ascending: true }),
+          .order("data_inizio", { ascending: false }), // Ordine decrescente per lo storico (dai più recenti ai più vecchi)
         supabase
           .from("videos")
           .select("*")
-          .order("titolo", { ascending: true }), // ⬅️ Modificato: ordine alfabetico per nome/titolo
+          .order("titolo", { ascending: true }),
       ]);
 
       if (eventsRes.error)
@@ -58,17 +80,6 @@ export default function HistoryAndVideosPage() {
 
     loadData();
   }, []);
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "Data da definire";
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    return new Intl.DateTimeFormat("it-IT", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(date);
-  };
 
   const getPlatformInfo = (url: string) => {
     if (!url) return { name: "Video", bg: "bg-amber-500/90 text-zinc-950", icon: "🔗" };
@@ -95,6 +106,30 @@ export default function HistoryAndVideosPage() {
     );
   }, [events, searchQuery]);
 
+  // 🎯 Raggruppamento per Anno
+  const eventsByYear = useMemo(() => {
+    const groups: { [year: string]: EventItem[] } = {};
+    filteredEvents.forEach((ev) => {
+      const year = getEventYear(ev.data_inizio || ev.data_evento);
+      if (!groups[year]) groups[year] = [];
+      groups[year].push(ev);
+    });
+    return groups;
+  }, [filteredEvents]);
+
+  // 🎯 Statistiche Passaporto
+  const stats = useMemo(() => {
+    const total = events.length;
+    const winterCount = events.filter(
+      (e) =>
+        e.titolo?.toLowerCase().includes("winter") ||
+        e.luogo?.toLowerCase().includes("winter")
+    ).length;
+    const places = new Set(events.map((e) => e.luogo).filter(Boolean)).size;
+
+    return { total, winterCount, places };
+  }, [events]);
+
   const filteredVideos = useMemo(() => {
     return videos.filter(
       (v) =>
@@ -104,15 +139,12 @@ export default function HistoryAndVideosPage() {
   }, [videos, searchQuery]);
 
   return (
-    <main className="min-h-dvh p-4 md:p-6 pb-36 max-w-4xl mx-auto space-y-5 select-none bg-transparent">
-      
+    <main className="min-h-dvh p-4 md:p-6 pb-36 max-w-4xl mx-auto space-y-6 select-none bg-transparent">
       {/* 📖 HERO HEADER COMPATTO ORIZZONTALE */}
       <header className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-zinc-900/90 via-zinc-950/85 to-black/90 border border-amber-400/30 p-4 sm:p-5 shadow-xl backdrop-blur-2xl">
-        {/* Glow ambientale soft e contenuto */}
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-amber-500/15 rounded-full blur-2xl pointer-events-none" />
 
         <div className="relative z-10 flex items-center gap-3.5 sm:gap-5 text-left">
-          {/* Icona Libro 3D Compatta */}
           <div className="relative shrink-0 group">
             <div className="absolute inset-0 bg-amber-400/25 rounded-full blur-xl scale-125 transition-all duration-300 group-hover:scale-150" />
             <img
@@ -122,7 +154,6 @@ export default function HistoryAndVideosPage() {
             />
           </div>
 
-          {/* Dettagli Testuali */}
           <div className="space-y-0.5 min-w-0">
             <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/25 text-amber-300 text-[9px] font-black uppercase tracking-wider shadow-2xs">
               <span>✨ Archivio & Videoteca</span>
@@ -154,7 +185,7 @@ export default function HistoryAndVideosPage() {
             }`}
           >
             <span className="text-sm">📚</span>
-            <span>Storico Eventi</span>
+            <span>Diario Spedizioni</span>
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono transition-colors ${
                 activeTab === "events"
@@ -221,51 +252,140 @@ export default function HistoryAndVideosPage() {
           {[1, 2, 3].map((n) => (
             <div
               key={n}
-              className="h-20 w-full bg-black/40 border border-amber-400/20 rounded-2xl animate-pulse backdrop-blur-md"
+              className="h-28 w-full bg-black/40 border border-amber-400/20 rounded-3xl animate-pulse backdrop-blur-md"
             />
           ))}
         </div>
       ) : (
         <>
-          {/* ==================== TAB 1: STORICO EVENTI ==================== */}
+          {/* ==================== TAB 1: DIARIO SPEDIZIONI ==================== */}
           {activeTab === "events" && (
-            <div className="space-y-3 max-w-2xl mx-auto animate-in fade-in duration-300">
+            <div className="space-y-6 max-w-2xl mx-auto animate-in fade-in duration-300">
+              
+              {/* 🏕️ PASSAPORTO / RECAP COMPATTO */}
+              {!searchQuery && (
+                <div className="grid grid-cols-3 gap-2 bg-black/60 border border-amber-400/20 p-3 rounded-2xl backdrop-blur-xl text-center">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-amber-200/60 uppercase font-black tracking-wider">
+                      Spedizioni
+                    </span>
+                    <span className="text-lg font-black text-[#ebdec8] font-mono">
+                      {stats.total}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center border-x border-amber-400/15">
+                    <span className="text-[10px] text-sky-300/70 uppercase font-black tracking-wider">
+                      Ed. Winter ❄️
+                    </span>
+                    <span className="text-lg font-black text-sky-200 font-mono">
+                      {stats.winterCount}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-amber-200/60 uppercase font-black tracking-wider">
+                      Luoghi 📍
+                    </span>
+                    <span className="text-lg font-black text-[#ebdec8] font-mono">
+                      {stats.places}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {filteredEvents.length === 0 ? (
                 <div className="text-center py-10 p-6 rounded-3xl bg-black/50 border border-amber-400/20 text-[#ebdec8] backdrop-blur-md">
-                  🔍 Nessun evento trovato per "{searchQuery}"
+                  🔍 Nessuna spedizione trovata per "{searchQuery}"
                 </div>
               ) : (
-                <div className="relative pl-6 space-y-3">
-                  <div className="absolute left-2.5 top-3 bottom-3 w-[2px] bg-gradient-to-b from-amber-300/60 via-amber-400/20 to-transparent" />
+                /* LISTA RAGGRUPPATA PER ANNO */
+                Object.keys(eventsByYear).map((year) => (
+                  <div key={year} className="space-y-3">
+                    {/* Header Anno con Badge Stilizzato */}
+                    <div className="flex items-center gap-3 px-1">
+                      <span className="px-3 py-1 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 font-mono text-xs font-black tracking-widest shadow-xs">
+                        🗓️ {year}
+                      </span>
+                      <div className="h-[1px] flex-1 bg-gradient-to-r from-amber-400/30 via-amber-400/10 to-transparent" />
+                    </div>
 
-                  {filteredEvents.map((event) => (
-                    <div key={event.id} className="relative group">
-                      <div className="absolute -left-[19px] top-4 w-3.5 h-3.5 rounded-full bg-zinc-950 border-2 border-amber-300 group-hover:scale-125 group-hover:bg-amber-300 transition-all shadow-[0_0_10px_rgba(251,191,36,0.6)]" />
+                    {/* Griglia di Card Evento */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      {eventsByYear[year].map((event) => {
+                        const isWinter =
+                          event.titolo?.toLowerCase().includes("winter") ||
+                          event.luogo?.toLowerCase().includes("winter");
 
-                      <Link href={`/events/${event.id}`} className="block">
-                        <Card className="p-3 bg-black/70 border border-amber-400/25 hover:border-amber-300/60 backdrop-blur-xl transition-all duration-300 group-hover:translate-x-1 shadow-lg">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="space-y-0.5">
-                              <h2 className="text-base font-bold text-[#ebdec8] group-hover:text-amber-300 transition-colors flex items-center gap-2">
-                                <span>🏕️</span>
-                                <span>{event.titolo}</span>
-                              </h2>
-                              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-zinc-300">
-                                {event.luogo && <span>📍 {event.luogo}</span>}
-                                <span className="text-amber-200/90 font-medium">
-                                  📅 {formatDate(event.data_inizio || event.data_evento)}
+                        const rawDate = event.data_inizio || event.data_evento;
+                        const dateFormatted = formatMonthYear(rawDate);
+
+                        return (
+                          <Link
+                            key={event.id}
+                            href={`/events/${event.id}`}
+                            className="block group"
+                          >
+                            <div
+                              className={`relative h-full min-h-[140px] rounded-3xl p-4 overflow-hidden border transition-all duration-300 group-hover:-translate-y-1 active:scale-[0.98] flex flex-col justify-between shadow-lg ${
+                                isWinter
+                                  ? "bg-gradient-to-br from-[#182b3a] to-[#0f1b26] border-sky-400/30 text-sky-50 shadow-sky-950/40 group-hover:border-sky-300/70"
+                                  : "bg-gradient-to-br from-[#1b2b25] via-[#14231e] to-[#0d1b1e] border-amber-400/30 text-[#ebdec8] shadow-black/40 group-hover:border-amber-300/70"
+                              }`}
+                            >
+                              {/* Filigrana di Sfondo */}
+                              <div className="absolute -right-4 -bottom-4 opacity-15 text-6xl pointer-events-none group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
+                                {isWinter ? "❄️" : "🔥"}
+                              </div>
+
+                              {/* Top Bar Card */}
+                              <div className="flex items-center justify-between z-10">
+                                {isWinter ? (
+                                  <span className="bg-sky-400/20 text-sky-200 border border-sky-300/30 text-[9px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 uppercase tracking-wider">
+                                    ❄️ WINTER CAMP
+                                  </span>
+                                ) : (
+                                  <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[9px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 uppercase tracking-wider">
+                                    ⛺ SPEDIZIONE
+                                  </span>
+                                )}
+
+                                <span className="text-xs font-black opacity-60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
+                                  ↗
+                                </span>
+                              </div>
+
+                              {/* Info Principali */}
+                              <div className="z-10 my-2">
+                                <h3 className="font-black text-base uppercase tracking-wide leading-snug line-clamp-1 group-hover:text-amber-200 transition-colors">
+                                  {event.titolo}
+                                </h3>
+
+                                {event.descrizione && (
+                                  <p className="text-[11px] opacity-75 line-clamp-2 mt-1 leading-tight font-medium">
+                                    {event.descrizione}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Bottom Details */}
+                              <div className="z-10 pt-2 border-t border-white/10 flex items-center justify-between text-[11px] font-mono">
+                                {event.luogo ? (
+                                  <span className="truncate max-w-[130px] opacity-90 font-semibold flex items-center gap-1">
+                                    📍 {event.luogo}
+                                  </span>
+                                ) : (
+                                  <span />
+                                )}
+                                <span className="font-bold tracking-tight opacity-90 text-[10px]">
+                                  📅 {dateFormatted}
                                 </span>
                               </div>
                             </div>
-                            <span className="text-amber-300 group-hover:translate-x-1 transition-transform text-sm">
-                              ➔
-                            </span>
-                          </div>
-                        </Card>
-                      </Link>
+                          </Link>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))
               )}
             </div>
           )}
@@ -290,7 +410,7 @@ export default function HistoryAndVideosPage() {
                         rel="noopener noreferrer"
                         className="block group"
                       >
-                        <Card className="p-0 overflow-hidden bg-black/70 border border-amber-400/25 hover:border-amber-300/80 backdrop-blur-xl transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_8px_20px_rgba(251,191,36,0.15)] shadow-md relative rounded-xl">
+                        <Card className="p-0 overflow-hidden bg-black/70 border border-amber-400/25 hover:border-amber-300/80 backdrop-blur-xl transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_8px_20px_rgba(251,191,36,0.15)] shadow-md relative rounded-2xl">
                           <div className="relative aspect-video bg-zinc-950 overflow-hidden">
                             {vid.thumbnail_url ? (
                               <img
