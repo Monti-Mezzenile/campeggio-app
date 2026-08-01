@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import Card from "@/components/ui/Card";
+import CustomIcon from "@/components/ui/CustomIcon";
 
 interface EventItem {
   id: string | number;
@@ -47,6 +48,15 @@ function getEventYear(dateStr?: string): string {
   return "TBD";
 }
 
+// 🎯 Helper per parse data senza offset UTC
+function parseLocalDate(dateStr?: string) {
+  if (!dateStr) return 0;
+  const cleanStr = dateStr.split("T")[0];
+  const parts = cleanStr.split("-").map(Number);
+  if (parts.length < 3 || parts.some(isNaN)) return new Date(dateStr).getTime();
+  return new Date(parts[0], parts[1] - 1, parts[2]).getTime();
+}
+
 export default function HistoryAndVideosPage() {
   const [activeTab, setActiveTab] = useState<"events" | "videos">("events");
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -58,14 +68,8 @@ export default function HistoryAndVideosPage() {
     async function loadData() {
       setLoading(true);
       const [eventsRes, videosRes] = await Promise.all([
-        supabase
-          .from("events")
-          .select("*")
-          .order("data_inizio", { ascending: false }), // Ordine decrescente per lo storico (dai più recenti ai più vecchi)
-        supabase
-          .from("videos")
-          .select("*")
-          .order("titolo", { ascending: true }),
+        supabase.from("events").select("*"),
+        supabase.from("videos").select("*").order("titolo", { ascending: true }),
       ]);
 
       if (eventsRes.error)
@@ -73,7 +77,15 @@ export default function HistoryAndVideosPage() {
       if (videosRes.error)
         console.error("Errore video:", videosRes.error.message || videosRes.error);
 
-      setEvents(eventsRes.data || []);
+      // 🎯 Ordinamento: DAL PIÙ VECCHIO AL PIÙ RECENTE
+      const rawEvents = eventsRes.data || [];
+      const sorted = [...rawEvents].sort((a, b) => {
+        const timeA = parseLocalDate(a.data_inizio || a.data_evento);
+        const timeB = parseLocalDate(b.data_inizio || b.data_evento);
+        return timeA - timeB;
+      });
+
+      setEvents(sorted);
       setVideos(videosRes.data || []);
       setLoading(false);
     }
@@ -125,9 +137,8 @@ export default function HistoryAndVideosPage() {
         e.titolo?.toLowerCase().includes("winter") ||
         e.luogo?.toLowerCase().includes("winter")
     ).length;
-    const places = new Set(events.map((e) => e.luogo).filter(Boolean)).size;
 
-    return { total, winterCount, places };
+    return { total, winterCount };
   }, [events]);
 
   const filteredVideos = useMemo(() => {
@@ -261,11 +272,10 @@ export default function HistoryAndVideosPage() {
           {/* ==================== TAB 1: DIARIO SPEDIZIONI ==================== */}
           {activeTab === "events" && (
             <div className="space-y-6 max-w-2xl mx-auto animate-in fade-in duration-300">
-              
-              {/* 🏕️ PASSAPORTO / RECAP COMPATTO */}
+              {/* 🏕️ PASSAPORTO / RECAP COMPATTO (SENZA LUOGHI) */}
               {!searchQuery && (
-                <div className="grid grid-cols-3 gap-2 bg-black/60 border border-amber-400/20 p-3 rounded-2xl backdrop-blur-xl text-center">
-                  <div className="flex flex-col items-center">
+                <div className="grid grid-cols-2 gap-2 bg-black/60 border border-amber-400/20 p-3 rounded-2xl backdrop-blur-xl text-center">
+                  <div className="flex flex-col items-center border-r border-amber-400/15">
                     <span className="text-[10px] text-amber-200/60 uppercase font-black tracking-wider">
                       Spedizioni
                     </span>
@@ -273,20 +283,12 @@ export default function HistoryAndVideosPage() {
                       {stats.total}
                     </span>
                   </div>
-                  <div className="flex flex-col items-center border-x border-amber-400/15">
-                    <span className="text-[10px] text-sky-300/70 uppercase font-black tracking-wider">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-cyan-300/80 uppercase font-black tracking-wider">
                       Ed. Winter ❄️
                     </span>
-                    <span className="text-lg font-black text-sky-200 font-mono">
+                    <span className="text-lg font-black text-cyan-200 font-mono">
                       {stats.winterCount}
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <span className="text-[10px] text-amber-200/60 uppercase font-black tracking-wider">
-                      Luoghi 📍
-                    </span>
-                    <span className="text-lg font-black text-[#ebdec8] font-mono">
-                      {stats.places}
                     </span>
                   </div>
                 </div>
@@ -297,95 +299,102 @@ export default function HistoryAndVideosPage() {
                   🔍 Nessuna spedizione trovata per "{searchQuery}"
                 </div>
               ) : (
-                /* LISTA RAGGRUPPATA PER ANNO */
-                Object.keys(eventsByYear).map((year) => (
-                  <div key={year} className="space-y-3">
-                    {/* Header Anno con Badge Stilizzato */}
-                    <div className="flex items-center gap-3 px-1">
-                      <span className="px-3 py-1 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 font-mono text-xs font-black tracking-widest shadow-xs">
-                        🗓️ {year}
-                      </span>
-                      <div className="h-[1px] flex-1 bg-gradient-to-r from-amber-400/30 via-amber-400/10 to-transparent" />
-                    </div>
+                /* LISTA RAGGRUPPATA E ORDINATA PER ANNO (DAL MENO RECENTE AL PIÙ RECENTE) */
+                Object.keys(eventsByYear)
+                  .sort((a, b) => Number(a) - Number(b))
+                  .map((year) => (
+                    <div key={year} className="space-y-4">
+                      
+                      {/* ⛺ HEADER ANNO IN TINTA #EBDEC8 */}
+                      <div className="flex items-center gap-3 px-1 pt-3">
+                        <div className="flex items-center gap-2.5 bg-[#ebdec8] text-[#1b2b25] px-4 py-2 rounded-2xl border-2 border-[#ebdec8]/40 shadow-[0_4px_16px_rgba(235,222,200,0.25)]">
+                          <CustomIcon name="tenda-grossa" size={26} />
+                          <span className="font-black text-lg tracking-widest mt-0.5">
+                            {year}
+                          </span>
+                        </div>
+                        <div className="h-[3px] flex-1 bg-gradient-to-r from-[#ebdec8]/80 via-[#ebdec8]/20 to-transparent rounded-full" />
+                      </div>
 
-                    {/* Griglia di Card Evento */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                      {eventsByYear[year].map((event) => {
-                        const isWinter =
-                          event.titolo?.toLowerCase().includes("winter") ||
-                          event.luogo?.toLowerCase().includes("winter");
+                      {/* Griglia di Card Evento */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        {eventsByYear[year].map((event) => {
+                          const isWinter =
+                            event.titolo?.toLowerCase().includes("winter") ||
+                            event.luogo?.toLowerCase().includes("winter");
 
-                        const rawDate = event.data_inizio || event.data_evento;
-                        const dateFormatted = formatMonthYear(rawDate);
+                          const rawDate = event.data_inizio || event.data_evento;
+                          const dateFormatted = formatMonthYear(rawDate);
 
-                        return (
-                          <Link
-                            key={event.id}
-                            href={`/events/${event.id}`}
-                            className="block group"
-                          >
-                            <div
-                              className={`relative h-full min-h-[140px] rounded-3xl p-4 overflow-hidden border transition-all duration-300 group-hover:-translate-y-1 active:scale-[0.98] flex flex-col justify-between shadow-lg ${
-                                isWinter
-                                  ? "bg-gradient-to-br from-[#182b3a] to-[#0f1b26] border-sky-400/30 text-sky-50 shadow-sky-950/40 group-hover:border-sky-300/70"
-                                  : "bg-gradient-to-br from-[#1b2b25] via-[#14231e] to-[#0d1b1e] border-amber-400/30 text-[#ebdec8] shadow-black/40 group-hover:border-amber-300/70"
-                              }`}
+                          return (
+                            <Link
+                              key={event.id}
+                              href={`/events/${event.id}`}
+                              className="block group"
                             >
-                              {/* Filigrana di Sfondo */}
-                              <div className="absolute -right-4 -bottom-4 opacity-15 text-6xl pointer-events-none group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
-                                {isWinter ? "❄️" : "🔥"}
-                              </div>
+                              <div
+                                className={`relative h-full min-h-[140px] rounded-3xl p-4 overflow-hidden border-2 transition-all duration-300 group-hover:-translate-y-1 active:scale-[0.98] flex flex-col justify-between shadow-xl ${
+                                  isWinter
+                                    ? "bg-gradient-to-br from-[#0c2340] via-[#143258] to-[#09172a] border-cyan-400/60 text-cyan-50 shadow-cyan-950/50 group-hover:border-cyan-300"
+                                    : "bg-gradient-to-br from-[#6b1d2f] via-[#4a1220] to-[#2a0811] border-amber-400/60 text-[#ebdec8] shadow-black/50 group-hover:border-amber-300"
+                                }`}
+                              >
+                                {/* Filigrana di Sfondo */}
+                                <div className="absolute -right-4 -bottom-4 opacity-20 text-6xl pointer-events-none group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
+                                  {isWinter ? "❄️" : "🔥"}
+                                </div>
 
-                              {/* Top Bar Card */}
-                              <div className="flex items-center justify-between z-10">
-                                {isWinter ? (
-                                  <span className="bg-sky-400/20 text-sky-200 border border-sky-300/30 text-[9px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 uppercase tracking-wider">
-                                    ❄️ WINTER CAMP
+                                {/* Top Bar Card */}
+                                <div className="flex items-center justify-between z-10">
+                                  {isWinter ? (
+                                    <span className="bg-cyan-500/25 text-cyan-200 border border-cyan-300/50 text-[9px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 uppercase tracking-wider shadow-xs">
+                                      ❄️ WINTER CAMP
+                                    </span>
+                                  ) : (
+                                    <span className="bg-amber-500/25 text-amber-200 border border-amber-400/50 text-[9px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 uppercase tracking-wider shadow-xs">
+                                      🔥 SPEDIZIONE
+                                    </span>
+                                  )}
+
+                                  <span className="text-xs font-black opacity-70 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
+                                    ↗
                                   </span>
-                                ) : (
-                                  <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[9px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 uppercase tracking-wider">
-                                    ⛺ SPEDIZIONE
+                                </div>
+
+                                {/* Info Principali */}
+                                <div className="z-10 my-2">
+                                  <h3 className="font-black text-base uppercase tracking-wide leading-snug line-clamp-1 group-hover:text-white transition-colors">
+                                    {event.titolo}
+                                  </h3>
+
+                                  {event.descrizione && (
+                                    <p className="text-[11px] opacity-80 line-clamp-2 mt-1 leading-tight font-medium">
+                                      {event.descrizione}
+                                    </p>
+                                  )}
+                                </div>
+
+                                {/* Bottom Details: LUOGO INTERO NON TRONCATO */}
+                                <div className="z-10 pt-2 border-t border-white/15 flex items-start justify-between gap-2 text-[11px] font-mono">
+                                  {event.luogo ? (
+                                    <span className="opacity-90 font-semibold flex items-start gap-1 leading-tight">
+                                      <span className="shrink-0">📍</span>
+                                      <span>{event.luogo}</span>
+                                    </span>
+                                  ) : (
+                                    <span />
+                                  )}
+                                  <span className="font-bold tracking-tight opacity-95 text-[10px] shrink-0 whitespace-nowrap pt-0.5">
+                                    📅 {dateFormatted}
                                   </span>
-                                )}
-
-                                <span className="text-xs font-black opacity-60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
-                                  ↗
-                                </span>
+                                </div>
                               </div>
-
-                              {/* Info Principali */}
-                              <div className="z-10 my-2">
-                                <h3 className="font-black text-base uppercase tracking-wide leading-snug line-clamp-1 group-hover:text-amber-200 transition-colors">
-                                  {event.titolo}
-                                </h3>
-
-                                {event.descrizione && (
-                                  <p className="text-[11px] opacity-75 line-clamp-2 mt-1 leading-tight font-medium">
-                                    {event.descrizione}
-                                  </p>
-                                )}
-                              </div>
-
-                              {/* Bottom Details */}
-                              <div className="z-10 pt-2 border-t border-white/10 flex items-center justify-between text-[11px] font-mono">
-                                {event.luogo ? (
-                                  <span className="truncate max-w-[130px] opacity-90 font-semibold flex items-center gap-1">
-                                    📍 {event.luogo}
-                                  </span>
-                                ) : (
-                                  <span />
-                                )}
-                                <span className="font-bold tracking-tight opacity-90 text-[10px]">
-                                  📅 {dateFormatted}
-                                </span>
-                              </div>
-                            </div>
-                          </Link>
-                        );
-                      })}
+                            </Link>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))
               )}
             </div>
           )}
