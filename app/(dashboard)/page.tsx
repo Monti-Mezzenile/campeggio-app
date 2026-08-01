@@ -10,6 +10,29 @@ import NextEventCard from "@/components/home/NextEventCard";
 import MyStuff from "@/components/home/MyStuff";
 import MyEvents from "@/components/home/MyEvents";
 
+// 🎯 Helper per parsare stringhe "YYYY-MM-DD" senza problemi di Fuso Orario / UTC
+function parseLocalDate(dateStr: string | null) {
+  if (!dateStr) return null;
+  const cleanStr = dateStr.split("T")[0];
+  const parts = cleanStr.split("-").map(Number);
+  if (parts.length < 3 || parts.some(isNaN)) return new Date(dateStr);
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
+function calculateDays(dateStr: string) {
+  if (!dateStr) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const eventDate = parseLocalDate(dateStr);
+  if (!eventDate) return null;
+  eventDate.setHours(0, 0, 0, 0);
+
+  const difference = eventDate.getTime() - today.getTime();
+  const days = Math.ceil(difference / (1000 * 60 * 60 * 24));
+  return days < 0 ? 0 : days;
+}
+
 export default function Home() {
   const router = useRouter();
 
@@ -19,18 +42,6 @@ export default function Home() {
   const [events, setEvents] = useState<any[]>([]);
   const [nextEvent, setNextEvent] = useState<any>(null);
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
-
-  function calculateDays(date: string) {
-    if (!date) return null;
-    const today = new Date();
-    const eventDate = new Date(date);
-
-    today.setHours(0, 0, 0, 0);
-    eventDate.setHours(0, 0, 0, 0);
-
-    const difference = eventDate.getTime() - today.getTime();
-    return Math.ceil(difference / (1000 * 60 * 60 * 24));
-  }
 
   async function loadData() {
     try {
@@ -56,10 +67,7 @@ export default function Home() {
           .select("*")
           .eq("id", userId)
           .maybeSingle(),
-        supabase
-          .from("events")
-          .select("*")
-          .order("data_evento", { ascending: true }),
+        supabase.from("events").select("*"),
         supabase
           .from("event_members")
           .select("event_id, stato")
@@ -88,21 +96,29 @@ export default function Home() {
         joined: participationMap[event.id] === "partecipo",
       }));
 
-      setEvents(eventsWithStatus);
+      // 🎯 FIX 1: ORDINAMENTO MANUALE RIGOROSO PER DATA INIZIO / DATA EVENTO (CRESCENTE)
+      const sortedEvents = [...eventsWithStatus].sort((a, b) => {
+        const dateA = parseLocalDate(a.data_inizio || a.data_evento)?.getTime() || 0;
+        const dateB = parseLocalDate(b.data_inizio || b.data_evento)?.getTime() || 0;
+        return dateA - dateB;
+      });
+
+      setEvents(sortedEvents);
 
       const now = new Date();
       now.setHours(0, 0, 0, 0);
 
-      let selectedEvent: any = null;
-
-      selectedEvent = eventsWithStatus.find((event) => {
+      // 🎯 FIX 2: Cerca prima un evento IN CORSO oggi
+      let selectedEvent: any = sortedEvents.find((event) => {
         const startDateStr = event.data_inizio || event.data_evento;
         const endDateStr = event.data_fine || startDateStr;
 
         if (!startDateStr) return false;
 
-        const start = new Date(startDateStr);
-        const end = new Date(endDateStr);
+        const start = parseLocalDate(startDateStr);
+        const end = parseLocalDate(endDateStr);
+
+        if (!start || !end) return false;
 
         start.setHours(0, 0, 0, 0);
         end.setHours(23, 59, 59, 999);
@@ -110,12 +126,14 @@ export default function Home() {
         return now >= start && now <= end;
       });
 
+      // 🎯 FIX 3: Se nessun evento è in corso, prendi il PRIMO evento futuro (ovvero il più vicino a oggi)
       if (!selectedEvent) {
-        selectedEvent = eventsWithStatus.find((event) => {
+        selectedEvent = sortedEvents.find((event) => {
           const dateStr = event.data_inizio || event.data_evento;
           if (!dateStr) return false;
 
-          const date = new Date(dateStr);
+          const date = parseLocalDate(dateStr);
+          if (!date) return false;
           date.setHours(0, 0, 0, 0);
 
           return date >= now;
