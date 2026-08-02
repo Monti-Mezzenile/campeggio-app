@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/components/ui/BackButton";
@@ -33,9 +33,9 @@ export default function TentsPage() {
   const [tents, setTents] = useState<EventTentItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ⚡ CARICAMENTO PARALLELO BATCHED (ZERO WATERFALL)
-  async function loadTents() {
-    setLoading(true);
+  // ⚡ CARICAMENTO PARALLELO BATCHED (CON PARAMETRO SILENT PER EVITARE FLICKER)
+  const loadTents = useCallback(async (showLoader = false) => {
+    if (showLoader) setLoading(true);
 
     try {
       // 1. Recupera la lista delle tende dell'evento
@@ -47,13 +47,11 @@ export default function TentsPage() {
       if (eventTentsErr) {
         console.error("Errore event_tents:", eventTentsErr);
         setTents([]);
-        setLoading(false);
         return;
       }
 
       if (!eventTents || eventTents.length === 0) {
         setTents([]);
-        setLoading(false);
         return;
       }
 
@@ -101,13 +99,40 @@ export default function TentsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [id]);
 
   useEffect(() => {
-    if (id) {
-      loadTents();
-    }
-  }, [id]);
+    if (!id) return;
+
+    // 1. Caricamento iniziale con loader
+    loadTents(true);
+
+    // 2. Ricarica automaticamente quando l'utente torna su questa scheda/pagina
+    const handleFocus = () => loadTents(false);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    // 3. Ascolto Realtime per modifiche a tende e membri
+    const channel = supabase
+      .channel(`realtime-tents-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "event_tents", filter: `event_id=eq.${id}` },
+        () => loadTents(false)
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tent_members" },
+        () => loadTents(false)
+      )
+      .subscribe();
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+      supabase.removeChannel(channel);
+    };
+  }, [id, loadTents]);
 
   if (loading) {
     return (
@@ -130,7 +155,7 @@ export default function TentsPage() {
         <div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white flex items-center gap-4">
             <CustomIcon name="tenda-grossa" size={48} />
-            <span>Tende Evento</span>
+            <span>Tende Evento ({tents.length})</span>
           </h1>
           <p className="text-sm text-zinc-400 mt-2">
             Gestisci la disposizione degli alloggi per i partecipanti.

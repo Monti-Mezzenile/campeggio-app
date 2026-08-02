@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import CustomIcon from "@/components/ui/CustomIcon";
@@ -70,15 +70,11 @@ export default function EventPage() {
     const rawUrl = item.url || item.file_url || item.path || item.storage_path || "";
     if (!rawUrl) return "";
 
-    // 1. Se è un URL completo (es. caricato da link esterno o completo)
     if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://") || rawUrl.startsWith("blob:")) {
       return rawUrl;
     }
 
-    // 2. Pulizia slash iniziale per Supabase Storage
     const cleanPath = rawUrl.startsWith("/") ? rawUrl.slice(1) : rawUrl;
-
-    // 3. Risoluzione tramite SDK Ufficiale Supabase usando il bucket corretto: "event-media"
     const { data } = supabase.storage.from("event-media").getPublicUrl(cleanPath);
 
     return data.publicUrl;
@@ -174,9 +170,9 @@ export default function EventPage() {
     );
   }
 
-  async function loadEvent() {
+  const loadEvent = useCallback(async (showLoader = false) => {
     if (!id) return;
-    setLoading(true);
+    if (showLoader) setLoading(true);
 
     try {
       // 1. Dati Utente Corrente
@@ -213,13 +209,22 @@ export default function EventPage() {
       if (eventError || !eventData) {
         console.error("Evento non trovato o errore:", eventError);
         setEvent(null);
-        setLoading(false);
         return;
       }
 
       setEvent(eventData);
 
-      // 3. Query Parallele per Statistiche e Media
+      // 3. Recupera TUTTI i viaggi (trips) collegati a questo evento
+      const { data: tripsData, error: tripsErr } = await supabase
+        .from("trips")
+        .select("id")
+        .eq("event_id", id);
+
+      if (tripsErr) console.error("Errore recupero trips:", tripsErr);
+
+      const tripIds = (tripsData || []).map((t) => t.id);
+
+      // 4. Query Parallele per Statistiche e Media (Utilizzando .in() per supportare molteplici trip)
       const [
         partecipantiRes,
         eventTentsRes,
@@ -236,7 +241,9 @@ export default function EventPage() {
           .eq("event_id", id)
           .eq("stato", "partecipo"),
         supabase.from("event_tents").select("tent_id").eq("event_id", id),
-        supabase.from("trip_cars").select("posti_disponibili").eq("trip_id", id),
+        tripIds.length > 0
+          ? supabase.from("trip_cars").select("posti_disponibili").in("trip_id", tripIds)
+          : Promise.resolve({ data: [] }),
         supabase
           .from("event_equipment")
           .select("*", { count: "exact", head: true })
@@ -256,13 +263,15 @@ export default function EventPage() {
         supabase.from("checklists").select("id").eq("event_id", id),
       ]);
 
+      const carsList = tripCarsRes.data || [];
+
       if (mediaRes.data) {
         setMedia(mediaRes.data);
       }
 
       // Calcolo Posti Letto
       let postiLetto = 0;
-      const tentIds = eventTentsRes.data?.map((t) => t.tent_id) || [];
+      const tentIds = eventTentsRes.data?.map((t) => t.tent_id).filter(Boolean) || [];
       if (tentIds.length > 0) {
         const { data: tents } = await supabase
           .from("tents")
@@ -274,7 +283,7 @@ export default function EventPage() {
       // Calcolo Checklist Items
       let checklistTotale = 0;
       let checklistCompletata = 0;
-      const checklistIds = checklistsRes.data?.map((c) => c.id) || [];
+      const checklistIds = checklistsRes.data?.map((c) => c.id).filter(Boolean) || [];
       if (checklistIds.length > 0) {
         const { data: checklistItems } = await supabase
           .from("checklist_items")
@@ -286,9 +295,9 @@ export default function EventPage() {
           checklistItems?.filter((item) => item.completato).length || 0;
       }
 
-      // Calcolo Posti Auto
-      const postiAuto = (tripCarsRes.data || []).reduce(
-        (tot, car) => tot + (car.posti_disponibili || 0),
+      // Calcolo Posti Auto (Posti liberi + guidatore per auto)
+      const postiAuto = carsList.reduce(
+        (tot, car) => tot + ((car.posti_disponibili || 0) + 1),
         0
       );
 
@@ -298,7 +307,7 @@ export default function EventPage() {
         partecipanti: partecipantiRes.count || 0,
         tende: eventTentsRes.data?.length || 0,
         postiLetto,
-        auto: tripCarsRes.data?.length || 0,
+        auto: carsList.length,
         postiAuto,
         attrezzatura: attrezzaturaRes.count || 0,
         checklistTotale,
@@ -311,13 +320,22 @@ export default function EventPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [id]);
 
   useEffect(() => {
-    if (id) {
-      loadEvent();
-    }
-  }, [id]);
+    if (!id) return;
+
+    loadEvent(true);
+
+    const handleFocus = () => loadEvent(false);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
+  }, [id, loadEvent]);
 
   async function removeParticipation() {
     if (!user) return;
@@ -880,7 +898,7 @@ export default function EventPage() {
                         src={fullUrl}
                         alt={item.caption || "Ricordo evento"}
                         className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-90"
-                        onError={(e) => {
+                        onError={() => {
                           console.error("❌ Errore caricamento immagine thumbnail:", fullUrl);
                         }}
                       />

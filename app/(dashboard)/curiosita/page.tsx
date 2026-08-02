@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-// --- SVG ICONS (Palette-aligned & Clean) ---
+// --- SVG ICONS ---
 function PlusIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -159,7 +159,7 @@ export default function CuriositaPage() {
   return (
     <main className="min-h-dvh p-4 sm:p-6 pb-36 max-w-3xl mx-auto select-none space-y-6 text-[#1c2421] bg-transparent">
       
-      {/* 💡 HERO HEADER (Stile Monti Palette) */}
+      {/* 💡 HERO HEADER */}
       <header className="relative overflow-hidden bg-[#f4efe6]/95 border border-[#e2dacb] rounded-[2rem] p-6 shadow-xl backdrop-blur-md text-center">
         <div className="absolute top-0 right-1/2 translate-x-1/2 -mt-10 w-48 h-48 bg-[#507c6c]/15 rounded-full blur-3xl pointer-events-none" />
 
@@ -281,7 +281,7 @@ export default function CuriositaPage() {
         </button>
       </section>
 
-      {/* 🛠️ TAB 3: TOOL & UTILITY (Colori fedeli alla Palette del Sito) */}
+      {/* 🛠️ TAB 3: TOOL & UTILITY */}
       <section className="bg-[#f4efe6]/95 border border-[#e2dacb] rounded-[2rem] p-4 sm:p-5 shadow-lg backdrop-blur-md space-y-3">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
@@ -297,7 +297,7 @@ export default function CuriositaPage() {
 
         <div className="grid grid-cols-2 gap-3.5 sm:gap-4">
           
-          {/* Tool 1: I Pezzi (Verde Salvia del Sito #507c6c) */}
+          {/* Tool 1: I Pezzi */}
           <button
             onClick={() => router.push("/suoni")}
             className="group relative h-40 rounded-2xl bg-[#507c6c] text-white p-4 text-left shadow-md overflow-hidden transition-all hover:-translate-y-1 active:scale-95 border border-[#42695c] flex flex-col justify-between"
@@ -317,7 +317,7 @@ export default function CuriositaPage() {
             </div>
           </button>
 
-          {/* Tool 2: La Sviolinata (Scuro / Pino del Sito #1c2421) */}
+          {/* Tool 2: La Sviolinata */}
           <button
             onClick={() => router.push("/sviolinata")}
             className="group relative h-40 rounded-2xl bg-[#1c2421] text-white p-4 text-left shadow-md overflow-hidden transition-all hover:-translate-y-1 active:scale-95 border border-black flex flex-col justify-between"
@@ -334,7 +334,7 @@ export default function CuriositaPage() {
             <div className="relative z-10 w-full">
               <h3 className="font-black text-white text-base leading-none tracking-tight">La Sviolinata</h3>
               <p className="text-[10px] font-medium text-[#f4efe6]/80 mt-1.5 leading-tight">
-                Dedicato al sapientino di turno che sa sempre tutto lui. Toccagliela piano.
+                Dedicato al sapientino di turno che sa sempre tutto lui.
               </p>
             </div>
           </button>
@@ -353,7 +353,7 @@ export default function CuriositaPage() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 gap-3.5 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 sm:gap-4">
           
           {/* Bucock */}
           <button
@@ -392,6 +392,26 @@ export default function CuriositaPage() {
             <div className="relative z-10 w-full pt-6">
               <h3 className="font-black text-[#1c2421] text-xs sm:text-sm leading-tight tracking-tight">Corsa Cavalli</h3>
               <p className="text-[10px] font-bold text-[#1c2421]/60 mt-0.5">Regolamento</p>
+            </div>
+          </button>
+
+          {/* NEW: L'Asta degli Avanzi */}
+          <button
+            onClick={() => router.push("/curiosita/asta")}
+            className="group relative h-36 rounded-2xl bg-white border border-[#e2dacb] shadow-sm flex flex-col justify-between p-4 text-left transition-all hover:-translate-y-1 overflow-hidden col-span-2 sm:col-span-1"
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/15 rounded-full blur-2xl group-hover:scale-150 transition-transform pointer-events-none" />
+            <div className="relative z-10">
+              <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-600 text-white shadow-xs">
+                Finale
+              </span>
+            </div>
+            <div className="absolute top-2 right-3 text-3xl pointer-events-none group-hover:scale-125 transition-transform">
+              🃏
+            </div>
+            <div className="relative z-10 w-full pt-6">
+              <h3 className="font-black text-[#1c2421] text-xs sm:text-sm leading-tight tracking-tight">Asta del Bottino</h3>
+              <p className="text-[10px] font-bold text-[#1c2421]/60 mt-0.5">Spartizione degli avanzi</p>
             </div>
           </button>
 
