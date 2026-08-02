@@ -32,17 +32,17 @@ export default function BackgroundManager({
   const activeSrc = getActiveSrc();
 
   return (
-    // SOSTITUITO min-h-screen con min-h-dvh
-    <div className="relative min-h-dvh w-full overflow-x-hidden bg-[#F0D5B3]">
-      {/* Sfondi fissi estesi oltre i bordi */}
-      <div className="fixed -top-10 -bottom-10 left-0 right-0 z-0 bg-[#F0D5B3]">
+    // Copre il 100% dell'altezza dinamica
+    <div className="relative w-full h-[100dvh] bg-[#F0D5B3]">
+      {/* Sfondi bloccati sullo sfondo del telefono */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
         {BACKGROUNDS.map((bg) => {
           const isActive = activeSrc === bg.src;
           return (
             <div
               key={bg.src}
               className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
-                isActive ? "opacity-100" : "opacity-0 pointer-events-none"
+                isActive ? "opacity-100" : "opacity-0"
               }`}
             >
               <img
@@ -55,8 +55,8 @@ export default function BackgroundManager({
         })}
       </div>
 
-      {/* SOSTITUITO min-h-screen con min-h-dvh */}
-      <div className="relative z-10 min-h-dvh bg-transparent pt-[calc(env(safe-area-inset-top)+1rem)]">
+      {/* Contenitore per i children (che saranno il layout della Dashboard) */}
+      <div className="relative z-10 w-full h-full bg-transparent">
         {children}
       </div>
     </div>

@@ -8,11 +8,25 @@ export default function DashboardLayout({
 }) {
   return (
     <BackgroundManager>
-      {/* Rimosso overflow-y-auto per permettere al body/window di gestire lo scroll senza spezzare l'area safe */}
-      <main className="flex-1 pb-28">
-        {children}
-      </main>
-      <BottomNav />
+      {/* 
+        STRUTTURA APP SHELL NATIVA (Risolve tutti i bug di Safari iOS)
+        Blocca l'intera vista a 100dvh esatti e gestisce lo scroll internamente.
+      */}
+      <div className="fixed inset-0 z-10 flex flex-col h-[100dvh] w-full overflow-hidden pt-[calc(env(safe-area-inset-top)+0.2rem)]">
+        
+        {/* Area dei contenuti (Scrollabile Indipendente) */}
+        <main className="flex-1 w-full overflow-y-auto overscroll-y-contain">
+          <div className="w-full max-w-md mx-auto min-h-full flex flex-col">
+            {children}
+            
+            {/* Spacer fisico per non far "toccare" l'ultimo elemento sulla barra */}
+            <div className="w-full shrink-0 h-10" />
+          </div>
+        </main>
+
+        {/* La BottomNav è spinta naturalmente in basso, niente più 'fixed' */}
+        <BottomNav />
+      </div>
     </BackgroundManager>
   );
 }

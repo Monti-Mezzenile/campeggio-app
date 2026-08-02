@@ -13,10 +13,9 @@ export default function BottomNav() {
   const [loadingEvent, setLoadingEvent] = useState(true);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
-  // 🎯 RILEVAMENTO TASTIERA IOS INSTANTANEO TRAMITE FOCUS E BLUR
+  // 🎯 RILEVAMENTO TASTIERA ISTANTANEO (FOCUS NATIVO IOS)
   useEffect(() => {
-    // Intercetta quando l'utente tocca un campo di testo (immediato su iOS)
-    const handleFocus = (e: Event) => {
+    const handleFocusIn = (e: Event) => {
       const target = e.target as HTMLElement;
       if (
         target &&
@@ -28,23 +27,20 @@ export default function BottomNav() {
       }
     };
 
-    // Intercetta quando la tastiera si chiude
-    const handleBlur = () => {
-      // Piccolo delay per evitare smontaggi se si passa da un input all'altro
-      setTimeout(() => setIsKeyboardOpen(false), 100);
+    const handleFocusOut = () => {
+      // Piccolo ritardo per evitare sfarfallii passando da un input all'altro
+      setTimeout(() => setIsKeyboardOpen(false), 50);
     };
 
-    // Il parametro `true` (capture phase) è ESSENZIALE su iOS per intercettare focus/blur
-    window.addEventListener('focus', handleFocus, true);
-    window.addEventListener('blur', handleBlur, true);
+    document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('focusout', handleFocusOut);
 
     return () => {
-      window.removeEventListener('focus', handleFocus, true);
-      window.removeEventListener('blur', handleBlur, true);
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('focusout', handleFocusOut);
     };
   }, []);
 
-  // Fetch dell'evento attivo o futuro
   useEffect(() => {
     async function fetchActiveEvent() {
       try {
@@ -65,7 +61,6 @@ export default function BottomNav() {
             .order('data_inizio', { ascending: true })
             .limit(1)
             .maybeSingle();
-
           event = upcoming;
         }
 
@@ -76,7 +71,6 @@ export default function BottomNav() {
             .order('data_inizio', { ascending: false })
             .limit(1)
             .maybeSingle();
-
           event = lastEvent;
         }
 
@@ -103,21 +97,18 @@ export default function BottomNav() {
 
   const isEventActive = pathname.startsWith('/events');
   const isMascotteActive = pathname.startsWith('/mascotte');
-
   const ICON_SIZE = 42;
 
-  // 🛑 SMONTAGGIO ISTANTANEO: Evita che iOS faccia galleggiare la barra sopra la tastiera
+  // 🛑 SMONTAGGIO IMMEDIATO: Evita che Safari la spari sopra la tastiera
   if (isKeyboardOpen) return null;
 
   return (
-    <nav 
-      className="fixed bottom-0 left-0 right-0 z-50 w-full pointer-events-none transform-gpu"
-      style={{ WebkitTransform: "translate3d(0,0,0)" }} // Forza il rendering GPU su iOS (blocca rimbalzi)
-    >
+    // 💡 NON È PIÙ FIXED. È un normale flex-item in fondo al layout.
+    <nav className="w-full shrink-0 relative z-50 transform-gpu">
       <div 
-        className="w-full bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pt-1.5 pointer-events-auto"
+        className="w-full bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pt-1.5"
         style={{
-          // Aggiunge spazio extra solo su iPhone (X/11/12/13/14/15/16) per la barra inferiore nativa
+          // Aggiunge la safe-area SOLO in basso su iPhone
           paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))'
         }}
       >
@@ -132,9 +123,7 @@ export default function BottomNav() {
             }`}
           >
             <CustomIcon name="tenda-grossa" size={ICON_SIZE} />
-            <span className="text-[9px] font-black uppercase tracking-tight">
-              Home
-            </span>
+            <span className="text-[9px] font-black uppercase tracking-tight">Home</span>
           </button>
 
           {/* 2. CAMPO */}
@@ -148,15 +137,9 @@ export default function BottomNav() {
             }`}
           >
             <div className="w-[42px] h-[42px] flex items-center justify-center relative">
-              <img
-                src="/icons/fuoco.png"
-                alt="Campo Fuoco"
-                className="w-full h-full object-contain drop-shadow-xs"
-              />
+              <img src="/icons/fuoco.png" alt="Campo Fuoco" className="w-full h-full object-contain drop-shadow-xs" />
             </div>
-            <span className="text-[9px] font-black uppercase tracking-tight">
-              Campo
-            </span>
+            <span className="text-[9px] font-black uppercase tracking-tight">Campo</span>
             {activeEventId && (
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse border border-white" />
             )}
@@ -172,15 +155,9 @@ export default function BottomNav() {
             }`}
           >
             <div className="w-[42px] h-[42px] flex items-center justify-center">
-              <img
-                src="/icons/lacavia.png"
-                alt="La cavia"
-                className="w-full h-full object-contain drop-shadow-xs"
-              />
+              <img src="/icons/lacavia.png" alt="La cavia" className="w-full h-full object-contain drop-shadow-xs" />
             </div>
-            <span className="text-[9px] font-black uppercase tracking-tight">
-              La cavia
-            </span>
+            <span className="text-[9px] font-black uppercase tracking-tight">La cavia</span>
           </button>
 
           {/* 4. STORICO */}
@@ -193,9 +170,7 @@ export default function BottomNav() {
             }`}
           >
             <CustomIcon name="libro" size={ICON_SIZE} />
-            <span className="text-[9px] font-black uppercase tracking-tight">
-              Storico
-            </span>
+            <span className="text-[9px] font-black uppercase tracking-tight">Storico</span>
           </button>
 
           {/* 5. CURIOSITÀ */}
@@ -208,9 +183,7 @@ export default function BottomNav() {
             }`}
           >
             <CustomIcon name="lampadina" size={ICON_SIZE} />
-            <span className="text-[9px] font-black uppercase tracking-tight">
-              Curiosità
-            </span>
+            <span className="text-[9px] font-black uppercase tracking-tight">Curiosità</span>
           </button>
 
           {/* 6. PROFILO */}
@@ -223,9 +196,7 @@ export default function BottomNav() {
             }`}
           >
             <CustomIcon name="profilo" size={ICON_SIZE} />
-            <span className="text-[9px] font-black uppercase tracking-tight">
-              Io
-            </span>
+            <span className="text-[9px] font-black uppercase tracking-tight">Io</span>
           </button>
         </div>
       </div>
