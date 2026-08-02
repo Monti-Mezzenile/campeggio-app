@@ -13,24 +13,34 @@ export default function BottomNav() {
   const [loadingEvent, setLoadingEvent] = useState(true);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
-  // 🎯 RILEVAMENTO TASTIERA DEFINITIVO CON VISUAL VIEWPORT API (Nativo iOS/Android)
+  // 🎯 RILEVAMENTO TASTIERA IOS INSTANTANEO TRAMITE FOCUS E BLUR
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.visualViewport) return;
-
-    const vv = window.visualViewport;
-
-    const handleViewportChange = () => {
-      // Se l'altezza visibile è inferiore al 75% dello schermo, la tastiera è aperta
-      const isKeyboard = vv.height < window.innerHeight * 0.75;
-      setIsKeyboardOpen(isKeyboard);
+    // Intercetta quando l'utente tocca un campo di testo (immediato su iOS)
+    const handleFocus = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        setIsKeyboardOpen(true);
+      }
     };
 
-    vv.addEventListener('resize', handleViewportChange);
-    vv.addEventListener('scroll', handleViewportChange);
+    // Intercetta quando la tastiera si chiude
+    const handleBlur = () => {
+      // Piccolo delay per evitare smontaggi se si passa da un input all'altro
+      setTimeout(() => setIsKeyboardOpen(false), 100);
+    };
+
+    // Il parametro `true` (capture phase) è ESSENZIALE su iOS per intercettare focus/blur
+    window.addEventListener('focus', handleFocus, true);
+    window.addEventListener('blur', handleBlur, true);
 
     return () => {
-      vv.removeEventListener('resize', handleViewportChange);
-      vv.removeEventListener('scroll', handleViewportChange);
+      window.removeEventListener('focus', handleFocus, true);
+      window.removeEventListener('blur', handleBlur, true);
     };
   }, []);
 
@@ -94,15 +104,23 @@ export default function BottomNav() {
   const isEventActive = pathname.startsWith('/events');
   const isMascotteActive = pathname.startsWith('/mascotte');
 
-  // Ottimizzato a 42px per far stare 6 icone comodamente anche su schermi stretti
   const ICON_SIZE = 42;
 
-  // 🛑 SE LA TASTIERA È APERTA, SMONTIAMO LA BOTTOMNAV DAL DOM
+  // 🛑 SMONTAGGIO ISTANTANEO: Evita che iOS faccia galleggiare la barra sopra la tastiera
   if (isKeyboardOpen) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 w-full pointer-events-auto">
-      <div className="w-full bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-1.5">
+    <nav 
+      className="fixed bottom-0 left-0 right-0 z-50 w-full pointer-events-none transform-gpu"
+      style={{ WebkitTransform: "translate3d(0,0,0)" }} // Forza il rendering GPU su iOS (blocca rimbalzi)
+    >
+      <div 
+        className="w-full bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pt-1.5 pointer-events-auto"
+        style={{
+          // Aggiunge spazio extra solo su iPhone (X/11/12/13/14/15/16) per la barra inferiore nativa
+          paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))'
+        }}
+      >
         <div className="flex items-center justify-around w-full px-1">
           {/* 1. HOME */}
           <button
@@ -119,7 +137,7 @@ export default function BottomNav() {
             </span>
           </button>
 
-          {/* 2. CAMPO (EVENTO CORRENTE) */}
+          {/* 2. CAMPO */}
           <button
             onClick={handleEventClick}
             disabled={loadingEvent}
@@ -139,13 +157,12 @@ export default function BottomNav() {
             <span className="text-[9px] font-black uppercase tracking-tight">
               Campo
             </span>
-
             {activeEventId && (
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse border border-white" />
             )}
           </button>
 
-          {/* 3. MASCOTTE (LA CAVIA) */}
+          {/* 3. MASCOTTE */}
           <button
             onClick={() => router.push('/mascotte')}
             className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-xl active:scale-90 shrink-0 ${
@@ -196,7 +213,7 @@ export default function BottomNav() {
             </span>
           </button>
 
-          {/* 6. PROFILO (IO) */}
+          {/* 6. PROFILO */}
           <button
             onClick={() => router.push('/profile')}
             className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-xl active:scale-90 shrink-0 ${
