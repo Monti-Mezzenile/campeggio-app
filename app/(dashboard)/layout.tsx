@@ -8,8 +8,16 @@ export default function DashboardLayout({
 }) {
   return (
     <BackgroundManager>
-      {/* Rimosso overflow-y-auto per permettere al body/window di gestire lo scroll senza spezzare l'area safe */}
-      <main className="flex-1 pb-28">
+      {/*
+        Sostituito pb-28 fisso con calc():
+        su Android applica 7.5rem, su iOS aggiunge lo spazio esatto dell'Home Indicator.
+      */}
+      <main
+        className="flex-1 w-full max-w-md mx-auto min-h-dvh"
+        style={{
+          paddingBottom: "calc(7.5rem + env(safe-area-inset-bottom, 0px))",
+        }}
+      >
         {children}
       </main>
       <BottomNav />

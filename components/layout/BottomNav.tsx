@@ -13,24 +13,47 @@ export default function BottomNav() {
   const [loadingEvent, setLoadingEvent] = useState(true);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
-  // 🎯 RILEVAMENTO TASTIERA DEFINITIVO CON VISUAL VIEWPORT API (Nativo iOS/Android)
+  // 🎯 RILEVAMENTO TASTIERA CON VISUAL VIEWPORT + FOCUS EVENT FALLBACK FOR IOS
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.visualViewport) return;
+    if (typeof window === 'undefined') return;
 
-    const vv = window.visualViewport;
-
-    const handleViewportChange = () => {
-      // Se l'altezza visibile è inferiore al 75% dello schermo, la tastiera è aperta
-      const isKeyboard = vv.height < window.innerHeight * 0.75;
-      setIsKeyboardOpen(isKeyboard);
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        setIsKeyboardOpen(true);
+      }
     };
 
-    vv.addEventListener('resize', handleViewportChange);
-    vv.addEventListener('scroll', handleViewportChange);
+    const handleFocusOut = () => {
+      setIsKeyboardOpen(false);
+    };
+
+    window.addEventListener('focusin', handleFocusIn);
+    window.addEventListener('focusout', handleFocusOut);
+
+    if (window.visualViewport) {
+      const vv = window.visualViewport;
+      const handleViewportChange = () => {
+        const isKeyboard = vv.height < window.innerHeight * 0.75;
+        if (isKeyboard) setIsKeyboardOpen(true);
+      };
+
+      vv.addEventListener('resize', handleViewportChange);
+      return () => {
+        window.removeEventListener('focusin', handleFocusIn);
+        window.removeEventListener('focusout', handleFocusOut);
+        vv.removeEventListener('resize', handleViewportChange);
+      };
+    }
 
     return () => {
-      vv.removeEventListener('resize', handleViewportChange);
-      vv.removeEventListener('scroll', handleViewportChange);
+      window.removeEventListener('focusin', handleFocusIn);
+      window.removeEventListener('focusout', handleFocusOut);
     };
   }, []);
 
@@ -94,15 +117,25 @@ export default function BottomNav() {
   const isEventActive = pathname.startsWith('/events');
   const isMascotteActive = pathname.startsWith('/mascotte');
 
-  // Ottimizzato a 42px per far stare 6 icone comodamente anche su schermi stretti
   const ICON_SIZE = 42;
 
   // 🛑 SE LA TASTIERA È APERTA, SMONTIAMO LA BOTTOMNAV DAL DOM
   if (isKeyboardOpen) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 w-full pointer-events-auto">
-      <div className="w-full bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-1.5">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 w-full pointer-events-auto transform-gpu"
+      style={{
+        WebkitBackfaceVisibility: 'hidden',
+        WebkitTransform: 'translate3d(0,0,0)',
+      }}
+    >
+      <div
+        className="w-full bg-[#ebdec8]/95 backdrop-blur-xl border-t border-x border-white/60 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pt-1.5"
+        style={{
+          paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
+        }}
+      >
         <div className="flex items-center justify-around w-full px-1">
           {/* 1. HOME */}
           <button
