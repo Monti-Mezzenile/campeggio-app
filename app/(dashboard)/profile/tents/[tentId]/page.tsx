@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/components/ui/BackButton";
 import CustomIcon from "@/components/ui/CustomIcon";
 
 export default function EditTentPage() {
   const params = useParams();
-  const router = useRouter();
   const tentId = params.tentId as string;
 
   const [nome, setNome] = useState("");
@@ -92,14 +91,13 @@ export default function EditTentPage() {
     setErrorMsg(null);
 
     try {
-      // 1. Dobbiamo avere l'utente loggato per passarlo all'update (fondamentale per le policy RLS)
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Utente non autenticato. Ricarica la pagina.");
-
       let finalFotoUrl = existingFoto;
 
-      // 2. Se ha scelto un file, facciamo l'upload
+      // 1. Upload nuova foto (se l'utente l'ha cambiata)
       if (file) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Utente non autenticato");
+
         const fileExt = file.name.split(".").pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
 
@@ -120,8 +118,8 @@ export default function EditTentPage() {
         finalFotoUrl = "";
       }
 
-      // 3. Eseguiamo l'Update
-      const { error } = await supabase
+      // 2. Eseguiamo l'Update e FORZIAMO la lettura del risultato con .select().single()
+      const { data, error } = await supabase
         .from("tents")
         .update({
           nome: nome.trim(),
@@ -132,15 +130,20 @@ export default function EditTentPage() {
           foto: finalFotoUrl,
         })
         .eq("id", tentId)
-        .eq("user_id", user.id); // Aggiunto per soddisfare le RLS
+        .select()
+        .single(); 
 
       if (error) {
-        throw error;
+        throw new Error("Aggiornamento fallito: " + error.message);
       }
 
-      // 4. Se è andato tutto bene, forziamo il refresh della cache di Next e andiamo indietro
-      router.refresh();
-      router.push("/profile/tents");
+      if (!data) {
+        throw new Error("Nessuna tenda aggiornata. Permessi insufficienti.");
+      }
+
+      // 3. Forziamo il caricamento della pagina da zero aggirando la cache di Next.js!
+      window.location.href = "/profile/tents";
+      
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || "Errore durante il salvataggio.");
@@ -159,8 +162,9 @@ export default function EditTentPage() {
       const { error } = await supabase.from("tents").delete().eq("id", tentId);
       if (error) throw error;
 
-      router.refresh();
-      router.push("/profile/tents");
+      // Aggiriamo la cache anche in caso di eliminazione
+      window.location.href = "/profile/tents";
+      
     } catch (err: any) {
       alert("Errore eliminazione: " + err.message);
       setDeleting(false);
