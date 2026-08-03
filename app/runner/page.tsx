@@ -310,14 +310,14 @@ export default function RunnerPage() {
   const personalRecord = topScores.length > 0 ? topScores[0] : 0;
 
   return (
-    <div className="relative flex flex-col items-center min-h-dvh bg-zinc-950 text-white overflow-x-hidden select-none p-3 sm:p-5 pb-12">
+    <div className="relative flex flex-col items-center min-h-dvh bg-zinc-950 text-white overflow-x-hidden select-none p-3 sm:p-5 pb-28 sm:pb-32">
       
       {/* SFONDO GENERALE */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <img src="/runner-bg.png" alt="Sfondo" className="w-full h-full object-cover blur-sm scale-105 opacity-60 brightness-75" onError={(e) => { (e.target as HTMLImageElement).src = '/Backgr.png'; }} />
       </div>
 
-      {/* 🧭 BARRA SUPERIORE & STATISTICHE LIVE SOPRA L'ARENA */}
+      {/* 🧭 BARRA SUPERIORE */}
       <div className="w-full max-w-xl z-20 space-y-2 mb-3">
         <div className="flex justify-between items-center">
           <Link href="/mascotte" className="bg-zinc-900/90 border border-white/20 text-[11px] font-black px-3.5 py-2 rounded-2xl hover:bg-zinc-800 transition-colors shadow-lg backdrop-blur-md uppercase tracking-wider text-zinc-300">
@@ -329,24 +329,95 @@ export default function RunnerPage() {
             <span className="text-sm font-black text-white">{personalRecord}</span>
           </div>
         </div>
+      </div>
 
-        {/* PANNELLO LIVE DELLA CORSA IN CORSO */}
-        <div className="grid grid-cols-2 gap-2 bg-zinc-900/80 border border-white/10 backdrop-blur-md p-2.5 rounded-2xl shadow-xl">
-          <div className="flex items-center justify-between bg-black/40 px-3 py-1.5 rounded-xl border border-white/5">
+      {/* 📊 TABELLA STATISTICHE & TOP 5 (SPOSTATE IN ALTO PER LASCIARE IL GIOCO IN BASSO) */}
+      <div className="w-full max-w-xl z-20 mb-3 space-y-3">
+        
+        {/* RIEPILOGO STATISTICHE GENERALI */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-zinc-900/80 border border-white/10 backdrop-blur-md p-2.5 sm:p-3 rounded-2xl text-center">
+            <span className="block text-[9px] font-black uppercase text-zinc-400 tracking-wider mb-0.5">Corse Totali</span>
+            <span className="text-sm sm:text-base font-black text-white">{totalRuns} 🏃</span>
+          </div>
+
+          <div className="bg-zinc-900/80 border border-white/10 backdrop-blur-md p-2.5 sm:p-3 rounded-2xl text-center">
+            <span className="block text-[9px] font-black uppercase text-zinc-400 tracking-wider mb-0.5">Bonus Totali</span>
+            <span className="text-sm sm:text-base font-black text-emerald-400">{totalItemsCollected} 🎁</span>
+          </div>
+
+          <div className="bg-zinc-900/80 border border-white/10 backdrop-blur-md p-2.5 sm:p-3 rounded-2xl text-center">
+            <span className="block text-[9px] font-black uppercase text-zinc-400 tracking-wider mb-0.5">Max Score</span>
+            <span className="text-sm sm:text-base font-black text-amber-400">{personalRecord} ⚡</span>
+          </div>
+        </div>
+
+        {/* TOP 5 MIGLIORI PUNTEGGI */}
+        <div className="bg-zinc-900/90 border border-white/10 backdrop-blur-md p-3.5 sm:p-4 rounded-3xl shadow-xl">
+          <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2">
+            <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-1.5">
+              <span>🏆 Top 5 Score</span>
+            </h3>
+            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300">
+              Classifica Personale
+            </span>
+          </div>
+
+          {topScores.length === 0 ? (
+            <p className="text-xs text-zinc-500 italic text-center py-1">
+              Nessuna corsa completata. Premi Play per registrare il tuo primo record!
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {topScores.map((s, idx) => {
+                const badges = ['🥇', '🥈', '🥉', '4°', '5°'];
+                const colors = [
+                  'border-amber-500/40 bg-amber-500/10 text-amber-300',
+                  'border-zinc-400/30 bg-zinc-400/10 text-zinc-300',
+                  'border-orange-600/30 bg-orange-600/10 text-orange-300',
+                  'border-white/5 bg-black/40 text-zinc-400',
+                  'border-white/5 bg-black/40 text-zinc-400',
+                ];
+
+                return (
+                  <div
+                    key={idx}
+                    className={`flex items-center justify-between px-3 py-1.5 rounded-xl border text-xs font-black ${colors[idx] || colors[3]}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs">{badges[idx]}</span>
+                      <span className="uppercase text-[9px] tracking-wider font-bold">
+                        {idx === 0 ? 'Miglior Corsa' : `#${idx + 1}`}
+                      </span>
+                    </div>
+                    <span className="text-xs font-black tracking-wide">{s} PTS</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* 🕹️ PANNELLO LIVE SCORE SOPRA L'ARENA */}
+      <div className="w-full max-w-xl z-20 mb-2">
+        <div className="grid grid-cols-2 gap-2 bg-zinc-900/90 border border-white/10 backdrop-blur-md p-2 rounded-2xl shadow-xl">
+          <div className="flex items-center justify-between bg-black/40 px-3 py-1 rounded-xl border border-white/5">
             <span className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">SCORE</span>
             <span className="text-base font-black text-amber-400">{score}</span>
           </div>
-          <div className="flex items-center justify-between bg-black/40 px-3 py-1.5 rounded-xl border border-white/5">
+          <div className="flex items-center justify-between bg-black/40 px-3 py-1 rounded-xl border border-white/5">
             <span className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">BONUS</span>
             <span className="text-base font-black text-emerald-400">🎁 {itemsCollectedCount}</span>
           </div>
         </div>
       </div>
 
-      {/* 🎮 ARENA DI GIOCO */}
+      {/* 🎮 ARENA DI GIOCO (POSIZIONATA IN BASSO VICINO ALLE DITA) */}
       <div 
         onClick={handleJump} 
-        className="relative w-full max-w-xl h-[380px] sm:h-[400px] rounded-3xl overflow-hidden border-2 border-amber-500/50 shadow-2xl bg-black z-10 shrink-0 cursor-pointer"
+        className="relative w-full max-w-xl h-[360px] sm:h-[400px] rounded-3xl overflow-hidden border-2 border-amber-500/50 shadow-2xl bg-black z-10 shrink-0 cursor-pointer"
       >
         
         {/* VIDEO SFONDO */}
@@ -418,7 +489,7 @@ export default function RunnerPage() {
           </div>
         ))}
 
-        {/* 🏁 START OVERLAY (SOLO DENTRO L'ARENA) */}
+        {/* 🏁 START OVERLAY */}
         {gameState === 'START' && (
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-5 text-center">
             <h1 className="text-2xl font-black uppercase text-amber-400 tracking-tight mb-2">Corsa Clandestina</h1>
@@ -438,7 +509,7 @@ export default function RunnerPage() {
           </div>
         )}
 
-        {/* 💥 GAMEOVER OVERLAY (SOLO DENTRO L'ARENA) */}
+        {/* 💥 GAMEOVER OVERLAY */}
         {gameState === 'GAMEOVER' && (
           <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-30 flex flex-col items-center justify-center p-5 text-center animate-in zoom-in-95">
             <h2 className="text-2xl font-black uppercase text-red-500 mb-1">SCHIANTO.</h2>
@@ -462,75 +533,6 @@ export default function RunnerPage() {
             </button>
           </div>
         )}
-
-      </div>
-
-      {/* 📊 TABELLA STATISTICHE & TOP 5 SOTTO L'ARENA (SEMPRE VISIBILE E CONSULTABILE) */}
-      <div className="w-full max-w-xl z-20 mt-4 space-y-3">
-        
-        {/* TOP 5 MIGLIORI PUNTEGGI */}
-        <div className="bg-zinc-900/90 border border-white/10 backdrop-blur-md p-4 rounded-3xl shadow-xl">
-          <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
-            <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-1.5">
-              <span>🏆 Top 5 Migliori Score</span>
-            </h3>
-            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300">
-              Classifica Personale
-            </span>
-          </div>
-
-          {topScores.length === 0 ? (
-            <p className="text-xs text-zinc-500 italic text-center py-2">
-              Nessuna corsa completata. Premi Play per registrare il tuo primo record!
-            </p>
-          ) : (
-            <div className="space-y-1.5">
-              {topScores.map((s, idx) => {
-                const badges = ['🥇', '🥈', '🥉', '4°', '5°'];
-                const colors = [
-                  'border-amber-500/40 bg-amber-500/10 text-amber-300',
-                  'border-zinc-400/30 bg-zinc-400/10 text-zinc-300',
-                  'border-orange-600/30 bg-orange-600/10 text-orange-300',
-                  'border-white/5 bg-black/40 text-zinc-400',
-                  'border-white/5 bg-black/40 text-zinc-400',
-                ];
-
-                return (
-                  <div
-                    key={idx}
-                    className={`flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-black ${colors[idx] || colors[3]}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{badges[idx]}</span>
-                      <span className="uppercase text-[10px] tracking-wider font-bold">
-                        {idx === 0 ? 'Miglior Corsa' : `Posizione ${idx + 1}`}
-                      </span>
-                    </div>
-                    <span className="text-sm font-black tracking-wide">{s} PTS</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* RIEPILOGO STATISTICHE GENERALI */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-zinc-900/80 border border-white/10 backdrop-blur-md p-3 rounded-2xl text-center">
-            <span className="block text-[9px] font-black uppercase text-zinc-400 tracking-wider mb-0.5">Corse Totali</span>
-            <span className="text-base font-black text-white">{totalRuns} 🏃</span>
-          </div>
-
-          <div className="bg-zinc-900/80 border border-white/10 backdrop-blur-md p-3 rounded-2xl text-center">
-            <span className="block text-[9px] font-black uppercase text-zinc-400 tracking-wider mb-0.5">Bonus Totali</span>
-            <span className="text-base font-black text-emerald-400">{totalItemsCollected} 🎁</span>
-          </div>
-
-          <div className="bg-zinc-900/80 border border-white/10 backdrop-blur-md p-3 rounded-2xl text-center">
-            <span className="block text-[9px] font-black uppercase text-zinc-400 tracking-wider mb-0.5">Max Score</span>
-            <span className="text-base font-black text-amber-400">{personalRecord} ⚡</span>
-          </div>
-        </div>
 
       </div>
 

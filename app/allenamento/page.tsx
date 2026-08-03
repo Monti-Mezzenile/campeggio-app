@@ -137,13 +137,10 @@ export default function AllenamentoPage() {
       triggerFeedback(`❌ CRAMPO!`);
 
       if (newMisses >= 3) {
-        endGame(newRepsFromState(reps));
+        endGame(reps);
       }
     }
   };
-
-  // Helper per ottenere reps aggiornate in caso di fine immediata
-  const newRepsFromState = (currentReps: number) => currentReps;
 
   const triggerFeedback = (msg: string) => {
     setHitFeedback(msg);
@@ -185,13 +182,13 @@ export default function AllenamentoPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-zinc-950 text-white select-none flex flex-col items-center justify-center p-4">
+    <div className="relative flex flex-col items-center min-h-dvh bg-zinc-950 text-white select-none p-3 sm:p-5 pb-28 sm:pb-32 overflow-x-hidden">
       
-      {/* WRAPPER PRINCIPALE CENTRATO */}
-      <div className="w-full max-w-md my-auto space-y-4">
+      {/* WRAPPER PRINCIPALE CON SPAZIATURA OTTIMIZZATA PER MOBILE */}
+      <div className="w-full max-w-md space-y-3 z-10">
         
-        {/* HEADER SUPERIORE */}
-        <div className="flex justify-between items-center bg-zinc-900/90 border border-white/10 p-3 rounded-2xl shadow-xl">
+        {/* 1. HEADER SUPERIORE */}
+        <div className="flex justify-between items-center bg-zinc-900/90 border border-white/10 p-3 rounded-2xl shadow-xl backdrop-blur-md">
           <Link href="/mascotte" className="bg-zinc-800 hover:bg-zinc-700 border border-white/20 text-[10px] font-black px-3.5 py-2 rounded-xl text-zinc-300 transition-all">
             ← MASCOTTE
           </Link>
@@ -203,24 +200,49 @@ export default function AllenamentoPage() {
           </div>
         </div>
 
-        {/* HUD STATO GIOCO */}
-        <div className="grid grid-cols-3 gap-2 bg-gradient-to-r from-sky-950/60 via-zinc-900 to-blue-950/60 p-3 rounded-2xl border border-sky-500/30 text-center font-black shadow-lg">
-          <div>
-            <span className="block text-[8px] text-sky-300 uppercase tracking-wider">Ripetizioni</span>
-            <span className="text-lg text-sky-400">{reps}</span>
-          </div>
-          <div>
-            <span className="block text-[8px] text-sky-300 uppercase tracking-wider">Combo</span>
-            <span className="text-lg text-amber-400">🔥 {combo}</span>
-          </div>
-          <div>
-            <span className="block text-[8px] text-sky-300 uppercase tracking-wider">Errori</span>
-            <span className="text-lg text-rose-500">{misses}/3</span>
+        {/* 2. DASHBOARD STATISTICHE ALLENAMENTO (SPOSTATA IN ALTO) */}
+        <div className="bg-zinc-900/90 border border-white/10 p-3.5 rounded-3xl space-y-2.5 shadow-xl backdrop-blur-md">
+          <h3 className="text-[10px] font-black uppercase tracking-widest text-sky-400 flex items-center justify-between">
+            <span>📊 Registro Palestra</span>
+            <span className="text-[8px] text-zinc-500 font-mono">Salvato in locale</span>
+          </h3>
+
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-zinc-950 p-2.5 rounded-2xl border border-white/5 text-center">
+              <span className="text-[8px] font-black text-zinc-400 block uppercase">Record Reps</span>
+              <span className="text-sm font-black text-sky-400">🏆 {stats.maxReps}</span>
+            </div>
+
+            <div className="bg-zinc-950 p-2.5 rounded-2xl border border-white/5 text-center">
+              <span className="text-[8px] font-black text-zinc-400 block uppercase">Max Combo</span>
+              <span className="text-sm font-black text-amber-400">🔥 {stats.maxCombo}</span>
+            </div>
+
+            <div className="bg-zinc-950 p-2.5 rounded-2xl border border-white/5 text-center">
+              <span className="text-[8px] font-black text-zinc-400 block uppercase">Totale Pesi</span>
+              <span className="text-sm font-black text-emerald-400">🏋️ {stats.totalLifts}</span>
+            </div>
           </div>
         </div>
 
-        {/* ARENA DI GIOCO CENTRATA */}
-        <div className="relative w-full bg-zinc-900/90 rounded-3xl border-2 border-sky-500/50 p-5 shadow-[0_0_30px_rgba(56,189,248,0.15)] flex flex-col items-center gap-5 overflow-hidden">
+        {/* 3. HUD STATO GIOCO (SOPRA L'ARENA) */}
+        <div className="grid grid-cols-3 gap-2 bg-gradient-to-r from-sky-950/60 via-zinc-900 to-blue-950/60 p-2.5 rounded-2xl border border-sky-500/30 text-center font-black shadow-lg backdrop-blur-md">
+          <div>
+            <span className="block text-[8px] text-sky-300 uppercase tracking-wider">Ripetizioni</span>
+            <span className="text-base sm:text-lg text-sky-400">{reps}</span>
+          </div>
+          <div>
+            <span className="block text-[8px] text-sky-300 uppercase tracking-wider">Combo</span>
+            <span className="text-base sm:text-lg text-amber-400">🔥 {combo}</span>
+          </div>
+          <div>
+            <span className="block text-[8px] text-sky-300 uppercase tracking-wider">Errori</span>
+            <span className="text-base sm:text-lg text-rose-500">{misses}/3</span>
+          </div>
+        </div>
+
+        {/* 4. ARENA DI GIOCO (POSIZIONATA IN BASSO VICINO AI POLLICI) */}
+        <div className="relative w-full bg-zinc-900/90 rounded-3xl border-2 border-sky-500/50 p-4 sm:p-5 shadow-[0_0_30px_rgba(56,189,248,0.15)] flex flex-col items-center gap-4 overflow-hidden shrink-0 backdrop-blur-md">
           
           {/* POPUP FEEDBACK SU SOLLEVAMENTO */}
           {hitFeedback && (
@@ -230,7 +252,7 @@ export default function AllenamentoPage() {
           )}
 
           {/* AREA PERSONAGGIO TARTARUGA (SU / GIÙ) */}
-          <div className="relative w-48 h-48 bg-zinc-950/80 rounded-2xl border border-white/10 flex items-center justify-center overflow-hidden p-2">
+          <div className="relative w-40 h-40 sm:w-44 sm:h-44 bg-zinc-950/80 rounded-2xl border border-white/10 flex items-center justify-center overflow-hidden p-2">
             <img
               src={isLifting ? '/allenamento/tartaruga_su.png' : '/allenamento/tartaruga_giu.png'}
               alt="Tartaruga Allenamento"
@@ -238,7 +260,6 @@ export default function AllenamentoPage() {
                 isLifting ? 'scale-110 -translate-y-2' : 'scale-100'
               }`}
               onError={(e) => {
-                // Fallback se le immagini non fossero trovate
                 (e.target as HTMLImageElement).src = '/icons/coniglio.png';
               }}
             />
@@ -274,13 +295,13 @@ export default function AllenamentoPage() {
 
           {/* OVERLAY SCHERMATA INIZIALE */}
           {gameState === 'START' && (
-            <div className="absolute inset-0 bg-zinc-950/90 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center space-y-4">
-              <div className="w-16 h-16 bg-sky-500/20 border-2 border-sky-400 rounded-3xl flex items-center justify-center text-3xl shadow-xl">
+            <div className="absolute inset-0 bg-zinc-950/90 backdrop-blur-md z-30 flex flex-col items-center justify-center p-5 text-center space-y-3">
+              <div className="w-14 h-14 bg-sky-500/20 border-2 border-sky-400 rounded-3xl flex items-center justify-center text-2xl shadow-xl">
                 🏋️
               </div>
               <div>
-                <h2 className="text-xl font-black text-sky-400 uppercase tracking-wide">Allenamento Tartaruga</h2>
-                <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed max-w-xs">
+                <h2 className="text-lg font-black text-sky-400 uppercase tracking-wide">Allenamento Tartaruga</h2>
+                <p className="text-[10px] text-zinc-400 mt-1 leading-relaxed max-w-xs">
                   Schiaccia "SOLLEVA PESI" quando la barra gialla si trova al centro della <b>ZONA VERDE</b>!
                 </p>
               </div>
@@ -295,10 +316,10 @@ export default function AllenamentoPage() {
 
           {/* OVERLAY GAMEOVER */}
           {gameState === 'GAMEOVER' && (
-            <div className="absolute inset-0 bg-zinc-950/95 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center space-y-4 animate-in fade-in duration-200">
-              <h2 className="text-2xl font-black text-rose-500 uppercase">Esausto!</h2>
+            <div className="absolute inset-0 bg-zinc-950/95 backdrop-blur-md z-30 flex flex-col items-center justify-center p-5 text-center space-y-3 animate-in fade-in duration-200">
+              <h2 className="text-xl font-black text-rose-500 uppercase">Esausto!</h2>
               
-              <div className="w-full bg-zinc-900 border border-white/10 p-3.5 rounded-2xl space-y-2">
+              <div className="w-full bg-zinc-900 border border-white/10 p-3 rounded-2xl space-y-1.5">
                 <div className="flex justify-between text-xs font-bold text-zinc-400">
                   <span>Ripetizioni Completate:</span>
                   <span className="text-white font-black">{reps}</span>
@@ -307,9 +328,9 @@ export default function AllenamentoPage() {
                   <span>Miglior Combo:</span>
                   <span className="text-amber-400 font-black">🔥 {maxComboSessionRef.current}</span>
                 </div>
-                <div className="border-t border-white/10 pt-2 flex justify-between items-center">
+                <div className="border-t border-white/10 pt-1.5 flex justify-between items-center">
                   <span className="text-xs font-black text-sky-400 uppercase">XP Guadagnati:</span>
-                  <span className="text-base font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/30">
+                  <span className="text-sm font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/30">
                     +{expEarned} XP
                   </span>
                 </div>
@@ -323,31 +344,6 @@ export default function AllenamentoPage() {
               </button>
             </div>
           )}
-        </div>
-
-        {/* 📊 DASHBOARD STATISTICHE ALLENAMENTO */}
-        <div className="bg-zinc-900/90 border border-white/10 p-3.5 rounded-3xl space-y-2.5 shadow-xl">
-          <h3 className="text-[10px] font-black uppercase tracking-widest text-sky-400 flex items-center justify-between">
-            <span>📊 Registro Palestra</span>
-            <span className="text-[8px] text-zinc-500 font-mono">Salvato in locale</span>
-          </h3>
-
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-zinc-950 p-2.5 rounded-2xl border border-white/5 text-center">
-              <span className="text-[8px] font-black text-zinc-400 block uppercase">Record Reps</span>
-              <span className="text-sm font-black text-sky-400">🏆 {stats.maxReps}</span>
-            </div>
-
-            <div className="bg-zinc-950 p-2.5 rounded-2xl border border-white/5 text-center">
-              <span className="text-[8px] font-black text-zinc-400 block uppercase">Max Combo</span>
-              <span className="text-sm font-black text-amber-400">🔥 {stats.maxCombo}</span>
-            </div>
-
-            <div className="bg-zinc-950 p-2.5 rounded-2xl border border-white/5 text-center">
-              <span className="text-[8px] font-black text-zinc-400 block uppercase">Totale Pesi</span>
-              <span className="text-sm font-black text-emerald-400">🏋️ {stats.totalLifts}</span>
-            </div>
-          </div>
         </div>
 
       </div>

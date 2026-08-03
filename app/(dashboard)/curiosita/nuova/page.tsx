@@ -150,7 +150,7 @@ export default function NuovaCuriositaPage() {
   }
 
   return (
-    <main className="min-h-screen p-3 sm:p-5 pb-24 max-w-3xl mx-auto select-none space-y-3 text-zinc-950">
+    <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 space-y-4 text-zinc-950">
       
       {/* Tasto Indietro */}
       <div>
@@ -158,51 +158,51 @@ export default function NuovaCuriositaPage() {
       </div>
 
       {/* HEADER COMPATTO */}
-      <header className="relative overflow-hidden bg-white/85 border border-white/90 rounded-2xl p-3.5 sm:p-4 shadow-sm backdrop-blur-xl">
+      <header className="relative overflow-hidden bg-white/85 border border-white/90 rounded-2xl p-4 shadow-sm backdrop-blur-xl">
         <div className="relative z-10 flex items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-950 text-[9px] font-black uppercase tracking-wider">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-950 text-[10px] font-black uppercase tracking-wider">
               <SparklesIcon className="text-amber-700" />
               <span>Studio Archivio</span>
             </div>
 
-            <h1 className="text-lg sm:text-xl font-black tracking-tight bg-gradient-to-br from-zinc-950 via-zinc-900 to-amber-950 bg-clip-text text-transparent">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight bg-gradient-to-br from-zinc-950 via-zinc-900 to-amber-950 bg-clip-text text-transparent">
               NUOVA CURIOSITÀ
             </h1>
           </div>
 
-          <span className="shrink-0 text-[9px] font-black uppercase tracking-wider bg-zinc-950 text-amber-400 px-2.5 py-1 rounded-xl border border-amber-500/30">
+          <span className="shrink-0 text-[10px] font-black uppercase tracking-wider bg-zinc-950 text-amber-400 px-3 py-1.5 rounded-xl border border-amber-500/30">
             Bozza
           </span>
         </div>
       </header>
 
-      {/* GRID COMPATTA A DUE COLONNE */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+      {/* GRID RESPONSIVA A DUE COLONNE */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
         
-        {/* MEDIA STUDIO (5 COLS) */}
-        <section className="md:col-span-5 space-y-3">
+        {/* MEDIA STUDIO (5 COLS SU DESKTOP) */}
+        <section className="lg:col-span-5 space-y-4">
           
           {/* COPERTINA */}
-          <div className="bg-white/80 border border-white/90 rounded-2xl p-3 shadow-sm backdrop-blur-xl space-y-2">
+          <div className="bg-white/80 border border-white/90 rounded-2xl p-4 shadow-sm backdrop-blur-xl space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <div className="p-1 rounded-lg bg-amber-500/20 text-amber-950">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-950">
                   <PhotoIcon className="text-amber-950" />
                 </div>
-                <h2 className="text-[10px] font-black uppercase tracking-wider text-zinc-950">
+                <h2 className="text-xs font-black uppercase tracking-wider text-zinc-950">
                   Copertina
                 </h2>
               </div>
-              <span className="text-[8px] font-bold text-zinc-400 uppercase">Opzionale</span>
+              <span className="text-[9px] font-bold text-zinc-400 uppercase">Opzionale</span>
             </div>
 
             {!preview ? (
-              <label className="group relative border border-dashed border-amber-500/30 hover:border-amber-500/60 bg-amber-500/5 rounded-xl p-2.5 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all min-h-[80px]">
-                <div className="p-1.5 rounded-lg bg-white border border-amber-500/20 shadow-2xs group-hover:scale-105 transition-transform">
+              <label className="group relative border border-dashed border-amber-500/30 hover:border-amber-500/60 bg-amber-500/5 rounded-xl p-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all min-h-[100px]">
+                <div className="p-2 rounded-lg bg-white border border-amber-500/20 shadow-2xs group-hover:scale-105 transition-transform">
                   <UploadCloudIcon className="text-amber-950" />
                 </div>
-                <span className="text-[9px] font-black text-amber-950 uppercase tracking-wide block">
+                <span className="text-xs font-black text-amber-950 uppercase tracking-wide block">
                   Carica Foto
                 </span>
                 <input
@@ -217,17 +217,17 @@ export default function NuovaCuriositaPage() {
                 <img
                   src={preview}
                   alt="Preview"
-                  className="w-full h-24 object-cover"
+                  className="w-full h-36 object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-transparent to-transparent opacity-90" />
-                <div className="absolute bottom-1.5 left-2 right-2 flex items-center justify-between text-white">
-                  <span className="text-[8px] font-bold bg-zinc-950/70 px-1.5 py-0.5 rounded border border-white/20 truncate max-w-[90px]">
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white">
+                  <span className="text-[10px] font-bold bg-zinc-950/70 px-2 py-0.5 rounded border border-white/20 truncate max-w-[140px]">
                     {immagine?.name}
                   </span>
                   <button
                     type="button"
                     onClick={removeImage}
-                    className="p-1 rounded-md bg-rose-600 hover:bg-rose-700 text-white transition-colors shadow-2xs"
+                    className="p-1.5 rounded-md bg-rose-600 hover:bg-rose-700 text-white transition-colors shadow-2xs"
                   >
                     <TrashIcon />
                   </button>
@@ -237,26 +237,26 @@ export default function NuovaCuriositaPage() {
           </div>
 
           {/* AUDIO */}
-          <div className="bg-white/80 border border-white/90 rounded-2xl p-3 shadow-sm backdrop-blur-xl space-y-2">
+          <div className="bg-white/80 border border-white/90 rounded-2xl p-4 shadow-sm backdrop-blur-xl space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <div className="p-1 rounded-lg bg-amber-500/20 text-amber-950">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-950">
                   <MusicWaveIcon className="text-amber-950" />
                 </div>
-                <h2 className="text-[10px] font-black uppercase tracking-wider text-zinc-950">
+                <h2 className="text-xs font-black uppercase tracking-wider text-zinc-950">
                   Audio MP3
                 </h2>
               </div>
-              <span className="text-[8px] font-bold text-zinc-400 uppercase">Opzionale</span>
+              <span className="text-[9px] font-bold text-zinc-400 uppercase">Opzionale</span>
             </div>
 
             {!audio ? (
-              <label className="group border border-amber-500/20 bg-white/90 hover:bg-white rounded-xl p-2 flex items-center justify-between cursor-pointer transition-all shadow-2xs">
-                <div className="flex items-center gap-2">
-                  <div className="p-1 rounded-lg bg-amber-500/15 text-amber-950">
+              <label className="group border border-amber-500/20 bg-white/90 hover:bg-white rounded-xl p-3 flex items-center justify-between cursor-pointer transition-all shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-amber-500/15 text-amber-950">
                     <UploadCloudIcon className="text-amber-950" />
                   </div>
-                  <span className="text-[9px] font-black text-zinc-950 uppercase">
+                  <span className="text-xs font-black text-zinc-950 uppercase">
                     Sfoglia Audio
                   </span>
                 </div>
@@ -268,19 +268,19 @@ export default function NuovaCuriositaPage() {
                 />
               </label>
             ) : (
-              <div className="bg-amber-500/15 border border-amber-500/30 rounded-xl p-1.5 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 truncate">
-                  <div className="p-1 rounded-lg bg-amber-500 text-amber-950 shrink-0">
+              <div className="bg-amber-500/15 border border-amber-500/30 rounded-xl p-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-2 truncate">
+                  <div className="p-1.5 rounded-lg bg-amber-500 text-amber-950 shrink-0">
                     <MusicWaveIcon className="text-amber-950" />
                   </div>
-                  <span className="text-[9px] font-black text-amber-950 truncate">
+                  <span className="text-xs font-black text-amber-950 truncate">
                     {audio.name}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={removeAudio}
-                  className="p-1 rounded-md bg-white/80 hover:bg-rose-500 hover:text-white text-zinc-700 transition-colors shrink-0"
+                  className="p-1.5 rounded-md bg-white/80 hover:bg-rose-500 hover:text-white text-zinc-700 transition-colors shrink-0"
                 >
                   <TrashIcon />
                 </button>
@@ -290,23 +290,23 @@ export default function NuovaCuriositaPage() {
 
         </section>
 
-        {/* TESTO & SALVATAGGIO (7 COLS) */}
-        <section className="md:col-span-7 space-y-3">
-          <div className="bg-white/80 border border-white/90 rounded-2xl p-3.5 shadow-sm backdrop-blur-xl space-y-2.5">
+        {/* TESTO & SALVATAGGIO (7 COLS SU DESKTOP) */}
+        <section className="lg:col-span-7 space-y-4">
+          <div className="bg-white/80 border border-white/90 rounded-2xl p-4 sm:p-5 shadow-sm backdrop-blur-xl space-y-3.5">
             
-            {/* HEADER SEZIONE CON ICONA PENNA CORRETTA */}
-            <div className="flex items-center gap-1.5 pb-1.5 border-b border-amber-500/10">
-              <div className="p-1 rounded-lg bg-amber-500/20 text-amber-950">
+            {/* HEADER SEZIONE */}
+            <div className="flex items-center gap-2 pb-2 border-b border-amber-500/10">
+              <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-950">
                 <PenIcon className="text-amber-950" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-amber-950">
+              <span className="text-xs font-black uppercase tracking-wider text-amber-950">
                 Testo del Racconto
               </span>
             </div>
 
             {/* TITOLO */}
-            <div className="space-y-1">
-              <label className="text-[9px] font-black uppercase tracking-wider text-zinc-950 block">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-wider text-zinc-950 block">
                 Titolo
               </label>
               <input
@@ -314,17 +314,17 @@ export default function NuovaCuriositaPage() {
                 value={titolo}
                 onChange={(e) => setTitolo(e.target.value)}
                 placeholder="Inserisci titolo..."
-                className="w-full bg-white/90 border border-amber-500/20 focus:border-amber-500 rounded-xl p-2 text-xs font-bold text-zinc-950 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all shadow-2xs"
+                className="w-full bg-white/90 border border-amber-500/20 focus:border-amber-500 rounded-xl p-3 text-sm font-bold text-zinc-950 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
               />
             </div>
 
             {/* CONTENUTO */}
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-[9px] font-black uppercase tracking-wider text-zinc-950 block">
+                <label className="text-[10px] font-black uppercase tracking-wider text-zinc-950 block">
                   Contenuto
                 </label>
-                <span className="text-[8px] font-bold text-zinc-400">
+                <span className="text-[9px] font-bold text-zinc-400">
                   {contenuto.length} char
                 </span>
               </div>
@@ -332,7 +332,8 @@ export default function NuovaCuriositaPage() {
                 value={contenuto}
                 onChange={(e) => setContenuto(e.target.value)}
                 placeholder="Scrivi qui la curiosità..."
-                className="w-full bg-white/90 border border-amber-500/20 focus:border-amber-500 rounded-xl p-2 h-32 text-xs font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all shadow-2xs resize-none leading-relaxed"
+                rows={6}
+                className="w-full bg-white/90 border border-amber-500/20 focus:border-amber-500 rounded-xl p-3 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs resize-none leading-relaxed"
               />
             </div>
 
@@ -341,11 +342,11 @@ export default function NuovaCuriositaPage() {
               type="button"
               onClick={createCuriosita}
               disabled={saving}
-              className="w-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-amber-950 font-black uppercase tracking-wider rounded-xl p-2.5 text-xs shadow-sm border border-amber-300/60 transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-1.5"
+              className="w-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-amber-950 font-black uppercase tracking-wider rounded-xl p-3.5 text-xs shadow-md border border-amber-300/60 transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 active:scale-[0.98]"
             >
               {saving ? (
                 <>
-                  <div className="w-3 h-3 border-2 border-amber-950 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-amber-950 border-t-transparent rounded-full animate-spin" />
                   <span>Salvataggio...</span>
                 </>
               ) : (
@@ -361,6 +362,6 @@ export default function NuovaCuriositaPage() {
 
       </div>
 
-    </main>
+    </div>
   );
 }

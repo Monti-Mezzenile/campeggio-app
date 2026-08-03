@@ -55,12 +55,12 @@ export default function MenuSection({
   ];
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-1 gap-1.5">
+    <div className="w-full flex flex-col gap-2">
+      <div className="w-full grid grid-cols-1 gap-1.5">
         {pasti.map((pasto) => (
           <div
             key={pasto.key}
-            className="bg-white/80 backdrop-blur-md border border-white rounded-xl p-2 shadow-2xs"
+            className="w-full bg-white/80 backdrop-blur-md border border-white rounded-xl p-2 shadow-2xs"
           >
             <h3 className="text-[10px] font-black uppercase text-[#1b2b25]/70 mb-1">
               {pasto.titolo}
@@ -79,7 +79,7 @@ export default function MenuSection({
                 placeholder="Inserisci il menù..."
               />
             ) : (
-              <div className="bg-white/60 border border-white/60 rounded-lg p-1.5 text-xs font-medium text-[#1b2b25] whitespace-pre-line min-h-[30px]">
+              <div className="w-full bg-white/60 border border-white/60 rounded-lg p-1.5 text-xs font-medium text-[#1b2b25] whitespace-pre-line min-h-[30px]">
                 {menu?.[pasto.key] || (
                   <span className="text-[#1b2b25]/40 italic">Da definire</span>
                 )}
@@ -90,7 +90,7 @@ export default function MenuSection({
       </div>
 
       {canEditMenu && (
-        <div className="mt-0.5 flex flex-col gap-1">
+        <div className="w-full mt-0.5 flex flex-col gap-1">
           {!editingMenu ? (
             <button
               onClick={() => setEditingMenu(true)}
@@ -109,7 +109,7 @@ export default function MenuSection({
           )}
 
           {menuSaved && (
-            <div className="text-center text-emerald-700 text-[10px] font-black">
+            <div className="w-full text-center text-emerald-700 text-[10px] font-black">
               ✅ Menù salvato con successo!
             </div>
           )}

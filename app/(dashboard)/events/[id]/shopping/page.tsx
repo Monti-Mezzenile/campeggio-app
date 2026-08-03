@@ -157,7 +157,7 @@ export default function ShoppingPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-3 max-w-sm mx-auto flex flex-col items-center justify-center">
+      <main className="min-h-screen p-3 w-full max-w-lg mx-auto flex flex-col items-center justify-center">
         <div className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-xl flex items-center justify-center shadow-xs animate-pulse mb-2 border border-white">
           <CustomIcon name="carrello" size={22} />
         </div>
@@ -169,7 +169,7 @@ export default function ShoppingPage() {
   }
 
   return (
-    <main className="min-h-screen p-2.5 sm:p-3 pb-20 max-w-sm sm:max-w-md mx-auto flex flex-col gap-2 select-none">
+    <main className="min-h-screen p-3 pb-20 w-full max-w-lg mx-auto flex flex-col gap-3 select-none">
       
       {/* 🚀 HEADER TOP BAR (COMPATTA) */}
       <header className="flex items-center justify-between pt-0.5">
@@ -190,7 +190,7 @@ export default function ShoppingPage() {
       </header>
 
       {/* 🛒 HERO BANNER (SLIM) */}
-      <section className="bg-white/90 backdrop-blur-2xl rounded-xl px-3 py-2.5 border border-white shadow-xs border-l-4 border-l-emerald-500 flex items-center justify-between relative overflow-hidden">
+      <section className="w-full bg-white/90 backdrop-blur-2xl rounded-2xl px-4 py-3 border border-white shadow-xs border-l-4 border-l-emerald-500 flex items-center justify-between relative overflow-hidden">
         <div className="space-y-0.5 relative z-10">
           <span className="text-[8px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 border border-emerald-200 px-1.5 py-0.2 rounded-full inline-block">
             🛒 Vettovaglie & Macelleria
@@ -217,41 +217,35 @@ export default function ShoppingPage() {
 
       {/* 🥩 SEZIONE CARNE */}
       {activeTab === "carne" && (
-        <section className="bg-white/90 backdrop-blur-2xl rounded-xl p-3 border border-white border-l-4 border-l-emerald-500 shadow-xs">
-          <MeatSection
-            eventId={eventId}
-            user={user}
-            callData={callData}
-            takeCarne={takeCarne}
-            answerCarne={answerCarne}
-            cancelCarne={cancelCarne}
-          />
-        </section>
+        <MeatSection
+          eventId={eventId}
+          user={user}
+          callData={callData}
+          takeCarne={takeCarne}
+          answerCarne={answerCarne}
+          cancelCarne={cancelCarne}
+        />
       )}
 
       {/* 📋 LISTE SPESA STANDARD (FRESCHI, DISPENSA, BEVANDE, ECC.) */}
       {activeTab !== "carne" && activeTab !== "menu" && (
-        <section className="bg-white/90 backdrop-blur-2xl rounded-xl p-3 border border-white border-l-4 border-l-emerald-500 shadow-xs">
-          <ShoppingList
-            eventId={eventId}
-            activeTab={activeTab}
-            items={items}
-            user={user}
-            reload={loadData}
-          />
-        </section>
+        <ShoppingList
+          eventId={eventId}
+          activeTab={activeTab}
+          items={items}
+          user={user}
+          reload={loadData}
+        />
       )}
 
       {/* 🍽️ SEZIONE MENÙ */}
       {activeTab === "menu" && (
-        <section className="bg-white/90 backdrop-blur-2xl rounded-xl p-3 border border-white border-l-4 border-l-amber-500 shadow-xs">
-          <MenuSection
-            eventId={eventId}
-            menu={menu}
-            setMenu={setMenu}
-            canEditMenu={canEditMenu}
-          />
-        </section>
+        <MenuSection
+          eventId={eventId}
+          menu={menu}
+          setMenu={setMenu}
+          canEditMenu={canEditMenu}
+        />
       )}
 
     </main>

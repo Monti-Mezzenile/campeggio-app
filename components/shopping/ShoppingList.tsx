@@ -78,46 +78,55 @@ export default function ShoppingList({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      {/* BARRA INSERIMENTO SLIM */}
-      <div className="flex gap-1.5">
+    <div className="w-full bg-white/90 backdrop-blur-md border border-white rounded-2xl p-4 shadow-sm space-y-3">
+      {/* INTESTAZIONE SEZIONE */}
+      <h2 className="text-xs font-black uppercase tracking-wider text-[#1b2b25]/70 flex items-center gap-1.5">
+        <span>🛒</span> Lista della Spesa
+      </h2>
+
+      {/* FORM AGGIUNTA (STESSO STILE DI MEATSECTION) */}
+      <div className="flex gap-2">
         <input
           value={newItem}
           onChange={(e) => setNewItem(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addItem()}
           placeholder="Aggiungi prodotto..."
-          className="flex-1 bg-white/80 border border-white/90 rounded-xl px-2.5 py-1 text-xs text-[#1b2b25] placeholder-[#1b2b25]/40 focus:outline-hidden shadow-2xs"
+          className="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-[#1b2b25] placeholder-[#1b2b25]/40 focus:outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-xs"
         />
         <button
           onClick={addItem}
           disabled={adding}
-          className="bg-[#1b2b25] text-white px-3 py-1 rounded-xl text-xs font-extrabold active:scale-95 transition shadow-2xs disabled:opacity-50"
+          className="bg-[#1b2b25] text-white px-4 py-2.5 rounded-xl text-sm font-black active:scale-95 transition shadow-xs disabled:opacity-50 shrink-0"
         >
-          {adding ? "..." : "+"}
+          {adding ? "..." : "+ Aggiungi"}
         </button>
       </div>
 
-      {/* LISTA PRODOTTI COMPATTA */}
-      <div className="flex flex-col gap-1.5 max-h-[300px] overflow-y-auto pr-0.5">
+      {/* LISTA PRODOTTI */}
+      <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-0.5">
         {currentItems.length === 0 ? (
-          <p className="text-[10px] font-medium text-[#1b2b25]/50 text-center py-2 italic">
+          <p className="text-xs font-medium text-[#1b2b25]/50 text-center py-4 italic">
             Nessun elemento in questa lista
           </p>
         ) : (
           currentItems.map((item) => (
             <div
               key={item.id}
-              className="bg-white/80 backdrop-blur-md border border-white rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-2 shadow-2xs"
+              className={`border rounded-xl p-3 transition flex items-center justify-between gap-2 shadow-2xs ${
+                item.completato
+                  ? "bg-slate-100/80 border-slate-200"
+                  : "bg-white border-slate-200/80"
+              }`}
             >
-              <label className="flex items-center gap-2 flex-1 cursor-pointer min-w-0">
+              <label className="flex items-center gap-3 flex-1 cursor-pointer min-w-0">
                 <input
                   type="checkbox"
                   checked={item.completato}
                   onChange={() => toggleItem(item)}
-                  className="w-3.5 h-3.5 rounded-md accent-[#1b2b25] cursor-pointer shrink-0"
+                  className="w-4 h-4 rounded-md accent-[#1b2b25] cursor-pointer shrink-0"
                 />
                 <span
-                  className={`text-xs font-bold truncate ${
+                  className={`text-sm font-bold truncate ${
                     item.completato
                       ? "line-through text-[#1b2b25]/40"
                       : "text-[#1b2b25]"
@@ -129,7 +138,8 @@ export default function ShoppingList({
 
               <button
                 onClick={() => deleteItem(item)}
-                className="text-[#1b2b25]/30 hover:text-red-500 text-xs px-1 font-bold shrink-0"
+                className="text-slate-400 hover:text-red-500 text-sm p-1 font-bold shrink-0 active:scale-90 transition"
+                title="Elimina prodotto"
               >
                 ✕
               </button>
