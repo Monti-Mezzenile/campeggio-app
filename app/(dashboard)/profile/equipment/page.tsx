@@ -37,8 +37,8 @@ export default function EquipmentPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Stati per la gestione Form
-  const [isAdding, setIsAdding] = useState(false); // Form in cima per i NUOVI elementi
-  const [editingItem, setEditingItem] = useState<EquipmentItem | null>(null); // Elemento in modifica
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingItem, setEditingItem] = useState<EquipmentItem | null>(null);
 
   // Campi del Form
   const [nome, setNome] = useState("");
@@ -92,7 +92,7 @@ export default function EquipmentPage() {
   }
 
   function startEdit(item: EquipmentItem) {
-    setIsAdding(false); // Chiude il form superiore se aperto
+    setIsAdding(false);
     setEditingItem(item);
     setNome(item.nome);
     setCategoria(item.categoria);
@@ -121,7 +121,6 @@ export default function EquipmentPage() {
       }
 
       if (editingItem) {
-        // --- MODIFICA OGGETTO ESISTENTE ---
         const { data, error } = await supabase
           .from("equipment")
           .update({
@@ -147,7 +146,6 @@ export default function EquipmentPage() {
           );
         }
       } else {
-        // --- CREAZIONE NUOVO OGGETTO ---
         const newItem = {
           user_id: user.id,
           nome: nome.trim(),
@@ -210,14 +208,12 @@ export default function EquipmentPage() {
     loadEquipment();
   }, []);
 
-  // Calcoli Statistici
   const totalTypesCount = equipment.length;
   const totalPiecesCount = equipment.reduce(
     (acc, curr) => acc + (Number(curr.quantita) || 1),
     0
   );
 
-  // Filtraggio combinato (Categoria + Stagione)
   const filteredEquipment = equipment.filter((item) => {
     const matchCategory =
       selectedFilter === "Tutti" || item.categoria === selectedFilter;
@@ -253,7 +249,6 @@ export default function EquipmentPage() {
     }
   };
 
-  // --- COMPONENTE FORM RIUTILIZZABILE (Nuovo / Modifica) ---
   const renderForm = (isEdit: boolean) => (
     <div
       className={
@@ -272,7 +267,6 @@ export default function EquipmentPage() {
         </span>
       </div>
 
-      {/* Nome Oggetto */}
       <div>
         <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
           Nome Oggetto *
@@ -285,7 +279,6 @@ export default function EquipmentPage() {
         />
       </div>
 
-      {/* Selezione Tag Stagione */}
       <div>
         <div className="flex items-center justify-between mb-1">
           <label className="block text-[10px] font-black text-zinc-700 uppercase tracking-wide">
@@ -325,7 +318,6 @@ export default function EquipmentPage() {
         </div>
       </div>
 
-      {/* Categoria e Quantità */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
@@ -370,7 +362,6 @@ export default function EquipmentPage() {
         </div>
       </div>
 
-      {/* Note */}
       <div>
         <label className="block text-[10px] font-black text-zinc-700 mb-1 uppercase tracking-wide">
           Note
@@ -383,7 +374,6 @@ export default function EquipmentPage() {
         />
       </div>
 
-      {/* Pulsanti Azione Form */}
       <div className="flex gap-2 pt-1">
         <button
           onClick={saveEquipment}
@@ -412,17 +402,17 @@ export default function EquipmentPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-4 sm:p-6 pb-28 max-w-xl mx-auto flex flex-col justify-center items-center">
+      <div className="w-full py-16 p-4 sm:p-6 max-w-xl mx-auto flex flex-col justify-center items-center">
         <div className="w-10 h-10 border-4 border-amber-600/20 border-t-amber-600 rounded-full animate-spin mb-3" />
         <p className="text-xs font-bold text-zinc-800 tracking-wide">
           Apertura inventario attrezzatura...
         </p>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen p-3 sm:p-5 pb-32 max-w-xl mx-auto text-zinc-900">
+    <div className="w-full p-3 sm:p-5 max-w-xl mx-auto text-zinc-900">
       {/* Back Button */}
       <div className="mb-3">
         <BackButton label="Profilo" />
@@ -446,7 +436,6 @@ export default function EquipmentPage() {
           )}
         </div>
 
-        {/* Pulsante Apri Form (Nuovo inserimento) */}
         <button
           onClick={() => {
             if (isAdding) {
@@ -467,7 +456,7 @@ export default function EquipmentPage() {
         </button>
       </div>
 
-      {/* FORM AGGIUNTA NUOVO OGGETTO (in cima) */}
+      {/* FORM AGGIUNTA NUOVO OGGETTO */}
       {isAdding && renderForm(false)}
 
       {/* SELEZIONE FILTRO STAGIONALE */}
@@ -591,9 +580,7 @@ export default function EquipmentPage() {
                   : "border-slate-200/80 hover:border-slate-300"
               }`}
             >
-              {/* CONTENUTO RIGA OGGETTO */}
               <div className="flex items-center justify-between gap-2.5">
-                {/* SX: Icona, Titolo, Stagione (se presente) e Note */}
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <span
                     className="text-lg shrink-0 p-1.5 rounded-lg bg-zinc-100/80 border border-zinc-200/60"
@@ -628,7 +615,6 @@ export default function EquipmentPage() {
                   </div>
                 </div>
 
-                {/* DX: Pulsanti Azione (Modifica & Elimina) */}
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => startEdit(item)}
@@ -653,12 +639,11 @@ export default function EquipmentPage() {
                 </div>
               </div>
 
-              {/* FORM DI MODIFICA INTEGRATO INLINE */}
               {isBeingEdited && renderForm(true)}
             </div>
           );
         })}
       </div>
-    </main>
+    </div>
   );
 }
