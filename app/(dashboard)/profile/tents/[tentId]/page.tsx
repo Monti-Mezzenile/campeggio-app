@@ -91,13 +91,13 @@ export default function EditTentPage() {
     setErrorMsg(null);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Utente non autenticato.");
+
       let finalFotoUrl = existingFoto;
 
       // 1. Upload nuova foto (se l'utente l'ha cambiata)
       if (file) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("Utente non autenticato");
-
         const fileExt = file.name.split(".").pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
 
@@ -118,7 +118,7 @@ export default function EditTentPage() {
         finalFotoUrl = "";
       }
 
-      // 2. Eseguiamo l'Update e FORZIAMO la lettura del risultato con .select().single()
+      // 2. Update eseguito con .select() senza .single() per prevenire il crash PGRST116
       const { data, error } = await supabase
         .from("tents")
         .update({
@@ -130,18 +130,20 @@ export default function EditTentPage() {
           foto: finalFotoUrl,
         })
         .eq("id", tentId)
-        .select()
-        .single(); 
+        .select();
 
       if (error) {
         throw new Error("Aggiornamento fallito: " + error.message);
       }
 
-      if (!data) {
-        throw new Error("Nessuna tenda aggiornata. Permessi insufficienti.");
+      // Se l'array è vuoto, Supabase ha bloccato l'aggiornamento (permessi RLS mancanti)
+      if (!data || data.length === 0) {
+        throw new Error(
+          "Modifica non riuscita: non disponi dei permessi RLS per aggiornare questa tenda."
+        );
       }
 
-      // 3. Forziamo il caricamento della pagina da zero aggirando la cache di Next.js!
+      // 3. Forziamo il caricamento aggirando la cache di Next.js
       window.location.href = "/profile/tents";
       
     } catch (err: any) {
