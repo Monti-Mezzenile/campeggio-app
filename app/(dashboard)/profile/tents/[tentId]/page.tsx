@@ -94,7 +94,6 @@ export default function EditTentPage() {
     try {
       let finalFotoUrl = existingFoto;
 
-      // Upload nuova foto se è stato selezionato un nuovo file
       if (file) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Utente non autenticato");
@@ -116,7 +115,6 @@ export default function EditTentPage() {
 
         finalFotoUrl = data.publicUrl;
       } else if (!previewUrl) {
-        // Se l'utente ha cliccato rimuovi foto
         finalFotoUrl = "";
       }
 
@@ -164,17 +162,17 @@ export default function EditTentPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-4 sm:p-6 pb-28 max-w-xl mx-auto flex flex-col justify-center items-center">
+      <div className="w-full py-16 p-4 sm:p-6 max-w-xl mx-auto flex flex-col justify-center items-center">
         <div className="w-10 h-10 border-4 border-amber-600/20 border-t-amber-600 rounded-full animate-spin mb-3" />
         <p className="text-xs font-bold text-zinc-800 tracking-wide">
           Caricamento scheda tenda...
         </p>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 pb-32 max-w-xl mx-auto text-zinc-900">
+    <div className="w-full p-4 sm:p-6 max-w-xl mx-auto text-zinc-900">
       {/* Back Button */}
       <div className="mb-4">
         <BackButton label="Le mie tende" />
@@ -235,7 +233,6 @@ export default function EditTentPage() {
 
       {/* FORM CARD */}
       <div className="bg-white/80 border border-white/90 rounded-3xl p-5 sm:p-6 shadow-xl backdrop-blur-md space-y-5">
-        {/* Messaggio di errore */}
         {errorMsg && (
           <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 text-xs font-bold flex items-center gap-2">
             <span>⚠️</span>
@@ -256,7 +253,7 @@ export default function EditTentPage() {
           />
         </div>
 
-        {/* Marca & Modello (Grid 2 colonne) */}
+        {/* Marca & Modello */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-bold text-zinc-800 mb-1.5 uppercase tracking-wide">
@@ -283,13 +280,12 @@ export default function EditTentPage() {
           </div>
         </div>
 
-        {/* Selettore Posti Letto con Presets */}
+        {/* Selettore Posti Letto */}
         <div>
           <label className="block text-xs font-bold text-zinc-800 mb-1.5 uppercase tracking-wide">
             Capienza Posti Letto <span className="text-rose-500">*</span>
           </label>
           <div className="flex items-center gap-3">
-            {/* Controllo Stepper */}
             <div className="flex items-center bg-zinc-100 rounded-xl border border-zinc-300 p-1">
               <button
                 type="button"
@@ -310,7 +306,6 @@ export default function EditTentPage() {
               </button>
             </div>
 
-            {/* Tasti Rapidi Preset */}
             <div className="flex gap-1.5 flex-1 overflow-x-auto no-scrollbar">
               {[2, 3, 4, 6, 8].map((num) => (
                 <button
@@ -415,7 +410,7 @@ export default function EditTentPage() {
           )}
         </button>
 
-        {/* Danger Zone (Elimina Tenda) */}
+        {/* Danger Zone */}
         <div className="pt-4 border-t border-zinc-200/80 flex justify-center">
           <button
             type="button"
@@ -428,6 +423,6 @@ export default function EditTentPage() {
           </button>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

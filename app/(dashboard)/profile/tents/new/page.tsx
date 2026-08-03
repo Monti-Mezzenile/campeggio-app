@@ -20,7 +20,6 @@ export default function NewProfileTentPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Gestione selezione foto + anteprima
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
@@ -61,7 +60,6 @@ export default function NewProfileTentPage() {
 
       let fotoUrl = "";
 
-      // Caricamento Immagine se presente
       if (file) {
         const fileExt = file.name.split(".").pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
@@ -84,7 +82,6 @@ export default function NewProfileTentPage() {
         fotoUrl = data.publicUrl;
       }
 
-      // Inserimento a DB
       const { error } = await supabase.from("tents").insert({
         user_id: user.id,
         nome: nome.trim(),
@@ -112,7 +109,7 @@ export default function NewProfileTentPage() {
   }
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 pb-32 max-w-xl mx-auto text-zinc-900">
+    <div className="w-full p-4 sm:p-6 max-w-xl mx-auto text-zinc-900">
       {/* Back Button */}
       <div className="mb-4">
         <BackButton label="Le mie tende" />
@@ -148,7 +145,6 @@ export default function NewProfileTentPage() {
                 />
               </div>
             ) : (
-              /* Dimensioni del box bloccate a w-20 h-20, icona resa più grande (size=58) */
               <div className="w-20 h-20 rounded-xl bg-amber-50 border border-amber-200/80 shrink-0 flex items-center justify-center overflow-hidden">
                 <CustomIcon name="tenda-grossa" size={58} />
               </div>
@@ -174,7 +170,6 @@ export default function NewProfileTentPage() {
 
       {/* FORM CARD */}
       <div className="bg-white/80 border border-white/90 rounded-3xl p-5 sm:p-6 shadow-xl backdrop-blur-md space-y-5">
-        {/* Error Alert */}
         {errorMsg && (
           <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 text-xs font-bold flex items-center gap-2">
             <span>⚠️</span>
@@ -195,7 +190,7 @@ export default function NewProfileTentPage() {
           />
         </div>
 
-        {/* Marca & Modello (Grid 2 colonne) */}
+        {/* Marca & Modello */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-bold text-zinc-800 mb-1.5 uppercase tracking-wide">
@@ -222,13 +217,12 @@ export default function NewProfileTentPage() {
           </div>
         </div>
 
-        {/* Selettore Posti Letto con Presets */}
+        {/* Selettore Posti Letto */}
         <div>
           <label className="block text-xs font-bold text-zinc-800 mb-1.5 uppercase tracking-wide">
             Capienza Posti Letto <span className="text-rose-500">*</span>
           </label>
           <div className="flex items-center gap-3">
-            {/* Controllo Stepper */}
             <div className="flex items-center bg-zinc-100 rounded-xl border border-zinc-300 p-1">
               <button
                 type="button"
@@ -249,7 +243,6 @@ export default function NewProfileTentPage() {
               </button>
             </div>
 
-            {/* Tasti Rapidi Preset */}
             <div className="flex gap-1.5 flex-1 overflow-x-auto no-scrollbar">
               {[2, 3, 4, 6, 8].map((num) => (
                 <button
@@ -269,7 +262,7 @@ export default function NewProfileTentPage() {
           </div>
         </div>
 
-        {/* Caricamento Foto con Dropzone */}
+        {/* Caricamento Foto */}
         <div>
           <label className="block text-xs font-bold text-zinc-800 mb-1.5 uppercase tracking-wide">
             Foto della Tenda
@@ -352,6 +345,6 @@ export default function NewProfileTentPage() {
           )}
         </button>
       </div>
-    </main>
+    </div>
   );
 }
