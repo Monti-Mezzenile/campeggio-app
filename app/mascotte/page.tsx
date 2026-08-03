@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
 
-// 📈 SOGLIE EXP RI-BILANCIATE (Molto più impegnativo salire di livello)
+// 📈 SOGLIE EXP RI-BILANCIATE
 const EXP_THRESHOLDS: Record<number, number> = {
   1: 0,
   2: 800,
@@ -27,6 +27,33 @@ const getStageFromExp = (exp: number): number => {
     }
   }
   return 1;
+};
+
+// ⏱️ Calcola i valori reali attuali considerando il tempo trascorso
+const calculateLiveStats = (mascotData: any) => {
+  if (!mascotData) return mascotData;
+  const now = new Date();
+  const lastUpdate = mascotData.last_updated_at ? new Date(mascotData.last_updated_at) : new Date();
+  const hoursPassed = Math.max(0, (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60));
+
+  let currentFame = mascotData.fame ?? 100;
+  let currentSete = mascotData.sete ?? 100;
+  let currentSvago = mascotData.svago ?? 100;
+  let currentExp = mascotData.exp ?? 0;
+
+  if (hoursPassed > 0.05) {
+    currentFame = Math.max(0, currentFame - hoursPassed * DECAY_RATES.fame);
+    currentSete = Math.max(0, currentSete - hoursPassed * DECAY_RATES.sete);
+    currentSvago = Math.max(0, currentSvago - hoursPassed * DECAY_RATES.svago);
+  }
+
+  return {
+    ...mascotData,
+    fame: currentFame,
+    sete: currentSete,
+    svago: currentSvago,
+    fase: getStageFromExp(currentExp)
+  };
 };
 
 const EVOLUTION_STAGES: Record<number, { name: string; image: string }> = {
@@ -169,7 +196,6 @@ export default function MascottePage() {
     }, 1500); 
   };
 
-  // 🔔 Controllo e Notifica per i Bisogni
   const checkAndNotifyNeeds = async (fame: number, sete: number, svago: number) => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
     
@@ -203,6 +229,8 @@ export default function MascottePage() {
   };
 
   useEffect(() => {
+    let realtimeChannel: any = null;
+
     const loadData = async () => {
       try {
         setLoading(true);
@@ -238,49 +266,33 @@ export default function MascottePage() {
           myMascot = newMascot;
         }
 
-        const now = new Date();
-        const lastUpdate = myMascot.last_updated_at ? new Date(myMascot.last_updated_at) : new Date();
-        const hoursPassed = Math.max(0, (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60));
-
-        let currentFame = myMascot.fame ?? 100;
-        let currentSete = myMascot.sete ?? 100;
-        let currentSvago = myMascot.svago ?? 100;
-        let currentExp = myMascot.exp ?? 0;
-
-        if (hoursPassed > 0.05) { 
-          currentFame = Math.max(0, currentFame - hoursPassed * DECAY_RATES.fame);
-          currentSete = Math.max(0, currentSete - hoursPassed * DECAY_RATES.sete);
-          currentSvago = Math.max(0, currentSvago - hoursPassed * DECAY_RATES.svago);
-
-          if (currentFame < 10 || currentSete < 10 || currentSvago < 10) {
-            const penaltyHours = Math.floor(hoursPassed);
-            if (penaltyHours > 2) {
-              currentExp = Math.max(0, currentExp - penaltyHours * 2);
-            }
-          }
-        }
-
-        const calculatedFase = getStageFromExp(currentExp);
+        // Calcola stats live della mia mascotte
+        const updatedMyMascot = calculateLiveStats(myMascot);
 
         await supabase.from('mascots').update({ 
-          fame: currentFame, 
-          sete: currentSete, 
-          svago: currentSvago, 
-          exp: currentExp, 
-          fase: calculatedFase, 
+          fame: updatedMyMascot.fame, 
+          sete: updatedMyMascot.sete, 
+          svago: updatedMyMascot.svago, 
+          exp: updatedMyMascot.exp, 
+          fase: updatedMyMascot.fase, 
           owner_name: ownerName,
           last_updated_at: new Date().toISOString()
         }).eq('id', myMascot.id);
 
         setMascot({ 
-          id: myMascot.id, fame: currentFame, sete: currentSete, svago: currentSvago, exp: currentExp, 
-          fase: calculatedFase, nome: myMascot.nome_mascotte || 'Bestia Anonima' 
+          id: myMascot.id, 
+          fame: updatedMyMascot.fame, 
+          sete: updatedMyMascot.sete, 
+          svago: updatedMyMascot.svago, 
+          exp: updatedMyMascot.exp, 
+          fase: updatedMyMascot.fase, 
+          nome: myMascot.nome_mascotte || 'Bestia Anonima' 
         });
         setTempName(myMascot.nome_mascotte || 'Bestia Anonima');
 
-        checkAndNotifyNeeds(currentFame, currentSete, currentSvago);
+        checkAndNotifyNeeds(updatedMyMascot.fame, updatedMyMascot.sete, updatedMyMascot.svago);
 
-        // Recupero mascotte rivali
+        // Recupero e calcolo decadimento dinamico delle mascotte rivali
         const { data: others } = await supabase
           .from('mascots')
           .select('*')
@@ -288,15 +300,57 @@ export default function MascottePage() {
           .order('exp', { ascending: false });
 
         if (others) {
-          const formattedOthers = others.map(o => ({
-            ...o,
-            fase: getStageFromExp(o.exp ?? 0)
-          }));
+          const formattedOthers = others.map(o => calculateLiveStats(o));
           setOtherMascots(formattedOthers);
         }
 
         const { data: logs } = await supabase.from('mascot_logs').select('*').eq('receiver_user_id', currentUser.id).order('created_at', { ascending: false }).limit(10);
         if (logs) setInfamieLogs(logs);
+
+        // 🔴 REALTIME SUPABASE: Ascolta cambiamenti live su Mascotte e Log
+        realtimeChannel = supabase
+          .channel('public_mascots_realtime')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'mascots' },
+            (payload) => {
+              const updated = payload.new as any;
+              if (!updated) return;
+
+              if (updated.user_id === currentUser.id) {
+                const liveMy = calculateLiveStats(updated);
+                setMascot(prev => ({
+                  ...prev,
+                  fame: liveMy.fame,
+                  sete: liveMy.sete,
+                  svago: liveMy.svago,
+                  exp: liveMy.exp,
+                  fase: liveMy.fase,
+                  nome: liveMy.nome_mascotte || prev.nome
+                }));
+              } else {
+                setOtherMascots(prev => {
+                  const exists = prev.some(m => m.id === updated.id);
+                  const calculated = calculateLiveStats(updated);
+                  if (exists) {
+                    return prev.map(m => m.id === updated.id ? calculated : m);
+                  }
+                  return [...prev, calculated].sort((a, b) => (b.exp || 0) - (a.exp || 0));
+                });
+              }
+            }
+          )
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'mascot_logs', filter: `receiver_user_id=eq.${currentUser.id}` },
+            (payload) => {
+              const newLog = payload.new as any;
+              if (newLog) {
+                setInfamieLogs(prev => [newLog, ...prev].slice(0, 10));
+              }
+            }
+          )
+          .subscribe();
 
       } catch (err) {
         console.error("Errore generico:", err);
@@ -306,6 +360,21 @@ export default function MascottePage() {
     };
 
     loadData();
+
+    // ⏱️ TIMER DI AGGIORNAMENTO LOCALE (Ogni 15 secondi ricalcola il decadimento a schermo)
+    const interval = setInterval(() => {
+      setOtherMascots(prev => prev.map(m => calculateLiveStats(m)));
+      setMascot(prev => {
+        if (!prev.id) return prev;
+        const updated = calculateLiveStats(prev);
+        return { ...prev, fame: updated.fame, sete: updated.sete, svago: updated.svago };
+      });
+    }, 15000);
+
+    return () => {
+      clearInterval(interval);
+      if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+    };
   }, []);
 
   const enablePushNotifications = async () => {
@@ -454,7 +523,7 @@ export default function MascottePage() {
     }
 
     setOtherMascots((prev) =>
-      prev.map((m) => (m.id === rival.id ? { ...m, fame: updatedFame, sete: updatedSete, svago: updatedSvago } : m))
+      prev.map((m) => (m.id === rival.id ? { ...m, fame: updatedFame, sete: updatedSete, svago: updatedSvago, last_updated_at: new Date().toISOString() } : m))
     );
 
     setToastMsg(`Azione eseguita su ${rival.nome_mascotte || 'Anonimo'}!`);
@@ -737,20 +806,23 @@ export default function MascottePage() {
                         <div className="flex items-center gap-1.5 text-[7px] font-black text-zinc-400">
                           <span className="w-7">FAME</span>
                           <div className="flex-1 bg-black/80 h-1.5 rounded-full overflow-hidden">
-                            <div className={`h-full ${oFame < 20 ? 'bg-red-500' : 'bg-rose-500'}`} style={{ width: `${oFame}%` }} />
+                            <div className={`h-full ${oFame < 20 ? 'bg-red-500' : 'bg-rose-500'}`} style={{ width: `${Math.round(oFame)}%` }} />
                           </div>
+                          <span className="text-[8px] font-bold text-zinc-300 w-6 text-right">{Math.round(oFame)}%</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-[7px] font-black text-zinc-400">
                           <span className="w-7">SETE</span>
                           <div className="flex-1 bg-black/80 h-1.5 rounded-full overflow-hidden">
-                            <div className={`h-full ${oSete < 20 ? 'bg-red-500' : 'bg-sky-500'}`} style={{ width: `${oSete}%` }} />
+                            <div className={`h-full ${oSete < 20 ? 'bg-red-500' : 'bg-sky-500'}`} style={{ width: `${Math.round(oSete)}%` }} />
                           </div>
+                          <span className="text-[8px] font-bold text-zinc-300 w-6 text-right">{Math.round(oSete)}%</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-[7px] font-black text-zinc-400">
                           <span className="w-7">SVAGO</span>
                           <div className="flex-1 bg-black/80 h-1.5 rounded-full overflow-hidden">
-                            <div className={`h-full ${oSvago < 20 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${oSvago}%` }} />
+                            <div className={`h-full ${oSvago < 20 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${Math.round(oSvago)}%` }} />
                           </div>
+                          <span className="text-[8px] font-bold text-zinc-300 w-6 text-right">{Math.round(oSvago)}%</span>
                         </div>
                       </div>
                     </div>

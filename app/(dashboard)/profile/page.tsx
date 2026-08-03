@@ -7,6 +7,8 @@ import LogoutButton from "@/components/ui/LogoutButton";
 import { supabase } from "@/lib/supabase";
 import CustomIcon from "@/components/ui/CustomIcon";
 
+const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
+
 // 🖼️ MAPPA EVOLUZIONI PER PROFILO
 const EVOLUTION_STAGES: Record<number, { name: string; image: string }> = {
   1: { name: 'Coniglio Piccolo', image: '/tamagotchi/fase1_coniglio_piccolo.png' },
@@ -31,6 +33,42 @@ const EXP_THRESHOLDS: Record<number, number> = {
   7: 38000,
   8: 60000,
   9: 100000,
+};
+
+const getStageFromExp = (exp: number): number => {
+  for (let stage = 9; stage >= 1; stage--) {
+    if (exp >= EXP_THRESHOLDS[stage]) {
+      return stage;
+    }
+  }
+  return 1;
+};
+
+// ⏱️ Calcola le statistiche reali correnti in base al tempo trascorso
+const calculateLiveStats = (mascotData: any) => {
+  if (!mascotData) return mascotData;
+  const now = new Date();
+  const lastUpdate = mascotData.last_updated_at ? new Date(mascotData.last_updated_at) : new Date();
+  const hoursPassed = Math.max(0, (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60));
+
+  let currentFame = mascotData.fame ?? 100;
+  let currentSete = mascotData.sete ?? 100;
+  let currentSvago = mascotData.svago ?? 100;
+  let currentExp = mascotData.exp ?? 0;
+
+  if (hoursPassed > 0.05) {
+    currentFame = Math.max(0, currentFame - hoursPassed * DECAY_RATES.fame);
+    currentSete = Math.max(0, currentSete - hoursPassed * DECAY_RATES.sete);
+    currentSvago = Math.max(0, currentSvago - hoursPassed * DECAY_RATES.svago);
+  }
+
+  return {
+    ...mascotData,
+    fame: currentFame,
+    sete: currentSete,
+    svago: currentSvago,
+    fase: getStageFromExp(currentExp)
+  };
 };
 
 export default function ProfilePage() {
@@ -84,7 +122,9 @@ export default function ProfilePage() {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    setMascot(mascotData);
+    if (mascotData) {
+      setMascot(calculateLiveStats(mascotData));
+    }
 
     // 3. Medaglie
     const { data: badges } = await supabase
@@ -164,7 +204,44 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
-    loadProfile();
+    let realtimeChannel: any = null;
+
+    async function initProfileData() {
+      await loadProfile();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        // 🔴 Ascolta aggiornamenti Live sulla mascotte dell'utente
+        realtimeChannel = supabase
+          .channel(`profile_mascot_realtime_${user.id}`)
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'mascots', filter: `user_id=eq.${user.id}` },
+            (payload) => {
+              const updated = payload.new as any;
+              if (updated) {
+                setMascot(calculateLiveStats(updated));
+              }
+            }
+          )
+          .subscribe();
+      }
+    }
+
+    initProfileData();
+
+    // ⏱️ Ricalcola il decadimento a schermo ogni 15 secondi
+    const interval = setInterval(() => {
+      setMascot((prev: any) => (prev ? calculateLiveStats(prev) : prev));
+    }, 15000);
+
+    return () => {
+      clearInterval(interval);
+      if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+    };
   }, []);
 
   if (loading) {

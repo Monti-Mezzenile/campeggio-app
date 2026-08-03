@@ -310,7 +310,7 @@ export default function RunnerPage() {
   const personalRecord = topScores.length > 0 ? topScores[0] : 0;
 
   return (
-    <div className="relative flex flex-col items-center min-h-dvh bg-zinc-950 text-white overflow-x-hidden select-none p-3 sm:p-5 pb-28 sm:pb-32">
+    <div className="relative flex flex-col items-center min-h-dvh bg-zinc-950 text-white overflow-x-hidden select-none pt-14 sm:pt-8 pt-[calc(3.5rem+env(safe-area-inset-top))] px-3 sm:px-5 pb-28 sm:pb-32">
       
       {/* SFONDO GENERALE */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">

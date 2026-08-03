@@ -182,7 +182,7 @@ export default function AllenamentoPage() {
   }
 
   return (
-    <div className="relative flex flex-col items-center min-h-dvh bg-zinc-950 text-white select-none p-3 sm:p-5 pb-28 sm:pb-32 overflow-x-hidden">
+    <div className="relative flex flex-col items-center min-h-dvh bg-zinc-950 text-white select-none pt-14 sm:pt-8 pt-[calc(3.5rem+env(safe-area-inset-top))] px-3 sm:px-5 pb-28 sm:pb-32 overflow-x-hidden">
       
       {/* WRAPPER PRINCIPALE CON SPAZIATURA OTTIMIZZATA PER MOBILE */}
       <div className="w-full max-w-md space-y-3 z-10">
