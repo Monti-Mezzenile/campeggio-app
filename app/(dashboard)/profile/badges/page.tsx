@@ -465,7 +465,7 @@ export default function BadgesPage() {
               : "text-zinc-600 hover:text-zinc-900"
           }`}
         >
-          <img src="/icons/gilet.png" alt="Gilet" className="w-4 h-4 object-contain" />
+          <img src="/icons/Gilet.png" alt="Gilet" className="w-4 h-4 object-contain" />
           <span>Gilet ({myBadges.length})</span>
         </button>
 
@@ -490,7 +490,7 @@ export default function BadgesPage() {
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-5 border-b border-white/20 pb-2">
               <span className="text-[11px] font-black text-emerald-100 uppercase tracking-widest flex items-center gap-2">
-                <img src="/icons/gilet.png" alt="Gilet" className="w-4 h-4 object-contain" />
+                <img src="/icons/Gilet.png" alt="Gilet" className="w-4 h-4 object-contain" />
                 Spille & Patch
               </span>
               <span className="text-[10px] font-extrabold text-white bg-black/20 px-2.5 py-0.5 rounded-full border border-white/20">
@@ -500,7 +500,7 @@ export default function BadgesPage() {
 
             {myBadges.length === 0 ? (
               <div className="py-16 text-center text-emerald-50">
-                <img src="/icons/gilet.png" alt="Gilet" className="w-10 h-10 mx-auto mb-2 opacity-60 object-contain" />
+                <img src="/icons/Gilet.png" alt="Gilet" className="w-10 h-10 mx-auto mb-2 opacity-60 object-contain" />
                 <p className="text-xs font-black uppercase tracking-wider">
                   Nessuna medaglia applicata
                 </p>
