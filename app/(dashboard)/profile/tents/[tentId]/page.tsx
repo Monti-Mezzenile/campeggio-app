@@ -92,12 +92,14 @@ export default function EditTentPage() {
     setErrorMsg(null);
 
     try {
+      // 1. Dobbiamo avere l'utente loggato per passarlo all'update (fondamentale per le policy RLS)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Utente non autenticato. Ricarica la pagina.");
+
       let finalFotoUrl = existingFoto;
 
+      // 2. Se ha scelto un file, facciamo l'upload
       if (file) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("Utente non autenticato");
-
         const fileExt = file.name.split(".").pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
 
@@ -118,6 +120,7 @@ export default function EditTentPage() {
         finalFotoUrl = "";
       }
 
+      // 3. Eseguiamo l'Update
       const { error } = await supabase
         .from("tents")
         .update({
@@ -128,12 +131,15 @@ export default function EditTentPage() {
           note: note.trim(),
           foto: finalFotoUrl,
         })
-        .eq("id", tentId);
+        .eq("id", tentId)
+        .eq("user_id", user.id); // Aggiunto per soddisfare le RLS
 
       if (error) {
         throw error;
       }
 
+      // 4. Se è andato tutto bene, forziamo il refresh della cache di Next e andiamo indietro
+      router.refresh();
       router.push("/profile/tents");
     } catch (err: any) {
       console.error(err);
@@ -153,6 +159,7 @@ export default function EditTentPage() {
       const { error } = await supabase.from("tents").delete().eq("id", tentId);
       if (error) throw error;
 
+      router.refresh();
       router.push("/profile/tents");
     } catch (err: any) {
       alert("Errore eliminazione: " + err.message);
