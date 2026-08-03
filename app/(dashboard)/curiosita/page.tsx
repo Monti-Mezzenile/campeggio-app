@@ -143,7 +143,7 @@ export default function CuriositaPage() {
 
   if (loading) {
     return (
-      <main className="min-h-dvh p-4 md:p-6 pb-36 max-w-3xl mx-auto space-y-6 bg-transparent">
+      <div className="w-full p-4 md:p-6 max-w-3xl mx-auto space-y-6 bg-transparent">
         <div className="flex justify-center pt-6">
           <div className="h-12 w-48 bg-[#f4efe6]/60 animate-pulse rounded-full backdrop-blur-md border border-white" />
         </div>
@@ -152,12 +152,12 @@ export default function CuriositaPage() {
             <div key={n} className="h-36 bg-[#f4efe6]/60 border border-white animate-pulse rounded-3xl backdrop-blur-md" />
           ))}
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-dvh p-4 sm:p-6 pb-36 max-w-3xl mx-auto select-none space-y-6 text-[#1c2421] bg-transparent">
+    <div className="w-full p-4 sm:p-6 max-w-3xl mx-auto select-none space-y-6 text-[#1c2421] bg-transparent">
       
       {/* 💡 HERO HEADER */}
       <header className="relative overflow-hidden bg-[#f4efe6]/95 border border-[#e2dacb] rounded-[2rem] p-6 shadow-xl backdrop-blur-md text-center">
@@ -395,7 +395,7 @@ export default function CuriositaPage() {
             </div>
           </button>
 
-          {/* NEW: L'Asta degli Avanzi */}
+          {/* L'Asta degli Avanzi */}
           <button
             onClick={() => router.push("/curiosita/asta")}
             className="group relative h-36 rounded-2xl bg-white border border-[#e2dacb] shadow-sm flex flex-col justify-between p-4 text-left transition-all hover:-translate-y-1 overflow-hidden col-span-2 sm:col-span-1"
@@ -406,7 +406,8 @@ export default function CuriositaPage() {
                 Finale
               </span>
             </div>
-            <div className="absolute top-2 right-3 text-3xl pointer-events-none group-hover:scale-125 transition-transform">
+            {/* ICONA INGRANDITA IN MANIERA PROPORZIONALE ALLE ALTRE SCHEDE */}
+            <div className="absolute top-1 right-1 w-24 h-24 flex items-center justify-center pointer-events-none opacity-90 group-hover:scale-110 transition-transform text-5xl sm:text-6xl drop-shadow-md">
               🃏
             </div>
             <div className="relative z-10 w-full pt-6">
@@ -491,6 +492,6 @@ export default function CuriositaPage() {
         )}
       </section>
 
-    </main>
+    </div>
   );
 }
