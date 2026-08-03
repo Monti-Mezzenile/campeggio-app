@@ -11,7 +11,7 @@ interface Badge {
   tipo?: string;
   immagine_url?: string;
   created_at?: string;
-  ordine_medaglie?: number; // Aggiunto per il type-checking
+  ordine_medaglie?: number;
 }
 
 interface UserBadge {
@@ -63,7 +63,6 @@ export default function BadgesPage() {
 
       setIsAdmin(profile?.ruolo === "admin");
 
-      // Modifica effettuata qui: Ordinamento primario per "ordine_medaglie"
       const { data: badgeData } = await supabase
         .from("badges")
         .select("*")
@@ -125,7 +124,7 @@ export default function BadgesPage() {
   const winterBadges = badges.filter(isWinterBadge);
   const specialBadges = badges.filter(isSpecialBadge);
 
-  // --- CONTEGGI SATELLITE (Senza Speciali per lo Status) ---
+  // --- CONTEGGI SATELLITE ---
   const totalStandardCount = badges.filter((b) => !isSpecialBadge(b)).length;
   const ownedStandardCount = myBadges.filter(
     (mb) => mb.badge && !isSpecialBadge(mb.badge)
@@ -136,7 +135,6 @@ export default function BadgesPage() {
       ? Math.round((ownedStandardCount / totalStandardCount) * 100)
       : 0;
 
-  // Frasi ironiche ricalibrate su soglie più basse (senza speciali)
   const getMotivationalQuote = (count: number) => {
     if (count === 0)
       return "Praticamente un fantasma. Vuoi iniziare a combinare qualcosa o sei qui solo per fare presenza?";
@@ -349,17 +347,17 @@ export default function BadgesPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-6 max-w-xl mx-auto flex flex-col justify-center items-center">
+      <div className="w-full py-16 p-6 max-w-xl mx-auto flex flex-col justify-center items-center">
         <div className="w-8 h-8 border-3 border-[#639885]/30 border-t-[#639885] rounded-full animate-spin mb-2" />
         <p className="text-[11px] font-black text-zinc-800 uppercase tracking-widest">
           Preparazione Gilet...
         </p>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen p-3 sm:p-5 pb-28 max-w-lg mx-auto">
+    <div className="w-full p-3 sm:p-5 max-w-lg mx-auto">
       {/* Back Button */}
       <div className="mb-3">
         <BackButton label="Profilo" />
@@ -406,7 +404,6 @@ export default function BadgesPage() {
           />
         </div>
 
-        {/* Frase cattiva/ironica ricalibrata */}
         <p className="text-[11px] font-bold text-zinc-600 italic leading-snug">
           "{getMotivationalQuote(ownedStandardCount)}"
         </p>
@@ -644,6 +641,6 @@ export default function BadgesPage() {
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }
