@@ -22,7 +22,7 @@ const EVOLUTION_STAGES: Record<number, { name: string; image: string }> = {
   9: { name: 'Cavallo Supremo', image: '/tamagotchi/fase9_cavallo_supremo.png' },
 };
 
-// 📈 SOGLIE EXP RI-BILANCIATE (Aggiornate a 800 XP per la Fase 2)
+// 📈 SOGLIE EXP RI-BILANCIATE
 const EXP_THRESHOLDS: Record<number, number> = {
   1: 0,
   2: 800,
@@ -204,7 +204,8 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
-    let realtimeChannel: any = null;
+    let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+    let isMounted = true;
 
     async function initProfileData() {
       await loadProfile();
@@ -213,21 +214,24 @@ export default function ProfilePage() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (user) {
-        // 🔴 Ascolta aggiornamenti Live sulla mascotte dell'utente
+      if (user && isMounted) {
+        // Inizializza il canale solo se il componente è montato e cancella eventuali iscrizioni residue
+        const channelName = `profile_mascot_realtime_${user.id}`;
+        
         realtimeChannel = supabase
-          .channel(`profile_mascot_realtime_${user.id}`)
+          .channel(channelName)
           .on(
             'postgres_changes',
             { event: '*', schema: 'public', table: 'mascots', filter: `user_id=eq.${user.id}` },
             (payload) => {
               const updated = payload.new as any;
-              if (updated) {
+              if (updated && isMounted) {
                 setMascot(calculateLiveStats(updated));
               }
             }
-          )
-          .subscribe();
+          );
+
+        realtimeChannel.subscribe();
       }
     }
 
@@ -235,12 +239,17 @@ export default function ProfilePage() {
 
     // ⏱️ Ricalcola il decadimento a schermo ogni 15 secondi
     const interval = setInterval(() => {
-      setMascot((prev: any) => (prev ? calculateLiveStats(prev) : prev));
+      if (isMounted) {
+        setMascot((prev: any) => (prev ? calculateLiveStats(prev) : prev));
+      }
     }, 15000);
 
     return () => {
+      isMounted = false;
       clearInterval(interval);
-      if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
     };
   }, []);
 
