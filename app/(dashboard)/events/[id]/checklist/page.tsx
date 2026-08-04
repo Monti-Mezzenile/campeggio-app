@@ -75,7 +75,7 @@ export default function ChecklistPage() {
 
     setChecklistId(checklist.id);
 
-    /* 2. CARICO L'ATTREZZATURA PERSONALE (Estraggo categoria e colonna stagione) */
+    /* 2. CARICO L'ATTREZZATURA PERSONALE */
     const { data: equipmentData } = await supabase
       .from("equipment")
       .select("*")
@@ -84,7 +84,7 @@ export default function ChecklistPage() {
     const userEquipment = equipmentData || [];
     setEquipment(userEquipment);
 
-    /* 3. CARICO GLI ELEMENTI CHECKLIST E ASSOCIO CATEGORIA E STAGIONE DAL TABELLARE EQUIPMENT */
+    /* 3. CARICO GLI ELEMENTI CHECKLIST */
     const { data: itemsData } = await supabase
       .from("checklist_items")
       .select("*")
@@ -94,14 +94,12 @@ export default function ChecklistPage() {
     const processedItems = (itemsData || []).map((item: any) => {
       if (item.equipment_id) {
         const eq = userEquipment.find((e) => e.id === item.equipment_id);
-        
-        // Leggo ed elaboro la colonna stagione da equipment
         const rawStagione = eq?.stagione ? String(eq.stagione).toLowerCase().trim() : null;
 
         return { 
           ...item, 
           category: eq?.categoria || "Altro",
-          stagione: rawStagione // 'estivo', 'invernale', 'entrambi', oppure null
+          stagione: rawStagione
         };
       }
       return { ...item, category: "Manuale", stagione: null };
@@ -274,7 +272,7 @@ export default function ChecklistPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-6 max-w-md mx-auto flex flex-col items-center justify-center">
+      <main className="w-full min-h-screen p-4 max-w-md mx-auto flex flex-col items-center justify-center">
         <div className="w-16 h-16 rounded-full bg-white/50 backdrop-blur-md flex items-center justify-center shadow-lg animate-pulse mb-3 border border-white">
           <CustomIcon name="zaino" size={36} />
         </div>
@@ -290,10 +288,8 @@ export default function ChecklistPage() {
     ? Math.round((completati / items.length) * 100)
     : 0;
 
-  // Filtraggio Combinato: Categoria + Colonna stagione da Equipment
   const filteredItems = items.filter((item) => {
     const matchCategory = activeTab === "Tutti" || item.category === activeTab;
-    
     const itemSeason = item.stagione ? item.stagione.toLowerCase() : null;
     const matchSeason =
       seasonFilter === "tutti" ||
@@ -304,13 +300,13 @@ export default function ChecklistPage() {
   });
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 pb-36 max-w-md mx-auto flex flex-col gap-5 select-none">
+    <main className="w-full min-h-screen p-3 sm:p-4 pb-36 max-w-md mx-auto flex flex-col gap-4 select-none">
       
       {/* 🚀 BARRA TOP */}
-      <header className="flex items-center justify-between pt-1">
+      <header className="w-full flex items-center justify-between pt-1">
         <button
           onClick={() => router.back()}
-          className="w-10 h-10 rounded-full bg-white/80 text-[#1b2b25] flex items-center justify-center font-black text-lg shadow-sm backdrop-blur-md active:scale-90 transition border border-white"
+          className="w-10 h-10 rounded-full bg-white/80 text-[#1b2b25] flex items-center justify-center font-black text-lg shadow-sm backdrop-blur-md active:scale-90 transition border border-white shrink-0"
         >
           ←
         </button>
@@ -321,24 +317,24 @@ export default function ChecklistPage() {
           </span>
         </div>
 
-        <div className="w-10" />
+        <div className="w-10 shrink-0" />
       </header>
 
       {/* 📊 HERO PROGRESS CARD */}
-      <section className="bg-white/90 backdrop-blur-2xl rounded-[2.5rem] p-6 border border-white shadow-sm space-y-4 relative overflow-hidden">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-full inline-block">
+      <section className="w-full bg-white/90 backdrop-blur-2xl rounded-3xl p-5 border border-white shadow-sm space-y-4 relative overflow-hidden">
+        <div className="flex items-center justify-between gap-2">
+          <div className="space-y-1 min-w-0">
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-full inline-block truncate">
               {percentuale === 100 && items.length > 0
                 ? "🎉 Tutto Pronto!"
                 : "🎒 Preparativi Zaino"}
             </span>
-            <h1 className="text-2xl font-black text-[#1b2b25] tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-[#1b2b25] tracking-tight truncate">
               I Tuoi Oggetti
             </h1>
           </div>
 
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <span className="font-mono text-2xl font-black text-[#1b2b25]">
               {completati}
               <span className="text-sm font-bold text-[#1b2b25]/40">
@@ -352,7 +348,7 @@ export default function ChecklistPage() {
         </div>
 
         {/* BARRA DI AVANZAMENTO */}
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 w-full">
           <div className="w-full h-3 rounded-full bg-slate-100 border border-slate-200 overflow-hidden p-0.5 shadow-inner">
             <div
               className="h-full bg-emerald-500 rounded-full transition-all duration-500 shadow-2xs"
@@ -367,26 +363,26 @@ export default function ChecklistPage() {
       </section>
 
       {/* 🎒 IMPORTA DA EQUIPAGGIAMENTO PERSONALE */}
-      <section className="space-y-3">
+      <section className="w-full space-y-3">
         <button
           onClick={() => setShowEquipment(!showEquipment)}
-          className="w-full py-3.5 px-5 rounded-[2rem] bg-[#1b2b25] text-[#ebdec8] text-xs font-black uppercase tracking-wider shadow-sm active:scale-[0.98] transition flex items-center justify-between border border-[#1b2b25]"
+          className="w-full py-3.5 px-4 rounded-2xl bg-[#1b2b25] text-[#ebdec8] text-xs font-black uppercase tracking-wider shadow-sm active:scale-[0.98] transition flex items-center justify-between border border-[#1b2b25]"
         >
-          <div className="flex items-center gap-3">
-            <CustomIcon name="zaino" size={26} />
-            <span>Importa dal tuo Zaino</span>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <CustomIcon name="zaino" size={24} className="shrink-0" />
+            <span className="truncate">Importa dal tuo Zaino</span>
           </div>
-          <span className="text-sm">{showEquipment ? "▲" : "▼"}</span>
+          <span className="text-sm shrink-0 ml-2">{showEquipment ? "▲" : "▼"}</span>
         </button>
 
         {showEquipment && (
-          <div className="bg-white/90 backdrop-blur-2xl border border-white rounded-[2.5rem] p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-[#1b2b25]">
+          <div className="w-full bg-white/90 backdrop-blur-2xl border border-white rounded-3xl p-4 shadow-sm space-y-4">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xs font-black uppercase tracking-wider text-[#1b2b25] truncate">
                   Attrezzatura Salvata ({equipment.length})
                 </h3>
-                <p className="text-[10px] font-bold text-[#1b2b25]/50 mt-0.5">
+                <p className="text-[10px] font-bold text-[#1b2b25]/50 mt-0.5 truncate">
                   Seleziona gli oggetti da mettere in lista
                 </p>
               </div>
@@ -413,7 +409,7 @@ export default function ChecklistPage() {
 
                   return (
                     <div key={cat.id} className="space-y-2">
-                      <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-1.5 ml-1">
+                      <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-1.5 ml-1 truncate">
                         <span>{cat.icon}</span> {cat.label}
                       </h4>
                       
@@ -427,7 +423,7 @@ export default function ChecklistPage() {
                             <div
                               key={item.id}
                               onClick={() => !isAlreadyInList && toggleEquipment(item.id)}
-                              className={`flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer select-none ${
+                              className={`w-full flex items-center justify-between gap-2 p-2.5 sm:p-3 rounded-xl border transition cursor-pointer select-none ${
                                 isAlreadyInList
                                   ? "bg-slate-100/50 border-slate-200 opacity-50 cursor-not-allowed"
                                   : isSelected
@@ -435,12 +431,12 @@ export default function ChecklistPage() {
                                   : "bg-white border-slate-200 hover:bg-slate-50"
                               }`}
                             >
-                              <div className="flex items-center gap-2 min-w-0">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
                                 <span className="text-xs font-bold text-[#1b2b25] truncate">
                                   {item.nome}
                                 </span>
                                 {seasonBadge && (
-                                  <span className={`text-[8px] font-black uppercase px-1.5 py-0.2 rounded-md border ${seasonBadge.color}`}>
+                                  <span className={`text-[8px] font-black uppercase px-1.5 py-0.2 rounded-md border shrink-0 ${seasonBadge.color}`}>
                                     {seasonBadge.icon}
                                   </span>
                                 )}
@@ -474,7 +470,7 @@ export default function ChecklistPage() {
             {selectedEquipment.length > 0 && (
               <button
                 onClick={addEquipmentToChecklist}
-                className="w-full py-3 rounded-2xl bg-[#1b2b25] text-[#ebdec8] text-xs font-black uppercase tracking-wider shadow-sm active:scale-95 transition mt-2"
+                className="w-full py-3 rounded-xl bg-[#1b2b25] text-[#ebdec8] text-xs font-black uppercase tracking-wider shadow-sm active:scale-95 transition mt-2"
               >
                 Aggiungi Selezionati ({selectedEquipment.length})
               </button>
@@ -484,23 +480,23 @@ export default function ChecklistPage() {
       </section>
 
       {/* ➕ FORM NUOVO ELEMENTO MANUALE */}
-      <section>
+      <section className="w-full">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             addItem();
           }}
-          className="flex gap-2"
+          className="flex gap-2 w-full"
         >
           <input
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             placeholder="Aggiungi oggetto libero (es. Torcia)..."
-            className="flex-1 bg-white/90 backdrop-blur-md border border-white rounded-2xl px-4 py-3 text-xs font-bold text-[#1b2b25] placeholder-[#1b2b25]/40 outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-xs"
+            className="flex-1 min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-2xl px-4 py-3 text-xs font-bold text-[#1b2b25] placeholder-[#1b2b25]/40 outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-xs"
           />
           <button
             type="submit"
-            className="px-5 rounded-2xl bg-[#1b2b25] text-[#ebdec8] text-lg font-black shadow-sm active:scale-95 transition flex items-center justify-center"
+            className="px-5 rounded-2xl bg-[#1b2b25] text-[#ebdec8] text-lg font-black shadow-sm active:scale-95 transition flex items-center justify-center shrink-0"
           >
             +
           </button>
@@ -509,14 +505,14 @@ export default function ChecklistPage() {
 
       {/* 🗂 FILTRI: CATEGORIA E STAGIONE DA EQUIPMENT */}
       {items.length > 0 && (
-        <section className="space-y-3">
+        <section className="w-full space-y-3">
           
           {/* CATEGORIE (Tab Orizzontale) */}
-          <div className="overflow-x-auto no-scrollbar pb-1">
-            <div className="flex items-center gap-2 w-max px-1">
+          <div className="w-full overflow-x-auto no-scrollbar pb-1">
+            <div className="flex items-center gap-2 w-max px-0.5">
               <button
                 onClick={() => setActiveTab("Tutti")}
-                className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
+                className={`px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
                   activeTab === "Tutti"
                     ? "bg-[#1b2b25] text-[#ebdec8] border-[#1b2b25]"
                     : "bg-white text-[#1b2b25]/70 border-white hover:border-slate-200 shadow-2xs"
@@ -528,7 +524,7 @@ export default function ChecklistPage() {
               {items.some(i => i.category === "Manuale") && (
                  <button
                    onClick={() => setActiveTab("Manuale")}
-                   className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
+                   className={`px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
                      activeTab === "Manuale"
                        ? "bg-[#1b2b25] text-[#ebdec8] border-[#1b2b25]"
                        : "bg-white text-[#1b2b25]/70 border-white hover:border-slate-200 shadow-2xs"
@@ -547,7 +543,7 @@ export default function ChecklistPage() {
                   <button
                     key={cat.id}
                     onClick={() => setActiveTab(cat.id)}
-                    className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
+                    className={`px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
                       activeTab === cat.id
                         ? "bg-[#1b2b25] text-[#ebdec8] border-[#1b2b25]"
                         : "bg-white text-[#1b2b25]/70 border-white hover:border-slate-200 shadow-2xs"
@@ -562,11 +558,11 @@ export default function ChecklistPage() {
             </div>
           </div>
 
-          {/* SOTTO-FILTRO STAGIONE (Basato su colonna stagione) */}
-          <div className="grid grid-cols-3 gap-1.5 bg-white/60 p-1 rounded-2xl border border-white backdrop-blur-md shadow-2xs">
+          {/* SOTTO-FILTRO STAGIONE */}
+          <div className="w-full grid grid-cols-3 gap-1 bg-white/60 p-1 rounded-2xl border border-white backdrop-blur-md shadow-2xs">
             <button
               onClick={() => setSeasonFilter("tutti")}
-              className={`py-1.5 px-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+              className={`py-1.5 px-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 ${
                 seasonFilter === "tutti"
                   ? "bg-[#1b2b25] text-white shadow-xs"
                   : "text-[#1b2b25]/60 hover:bg-white/50"
@@ -577,7 +573,7 @@ export default function ChecklistPage() {
             </button>
             <button
               onClick={() => setSeasonFilter("estivo")}
-              className={`py-1.5 px-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+              className={`py-1.5 px-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 ${
                 seasonFilter === "estivo"
                   ? "bg-amber-500 text-amber-950 shadow-xs border border-amber-600"
                   : "text-[#1b2b25]/60 hover:bg-white/50"
@@ -588,7 +584,7 @@ export default function ChecklistPage() {
             </button>
             <button
               onClick={() => setSeasonFilter("invernale")}
-              className={`py-1.5 px-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+              className={`py-1.5 px-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 ${
                 seasonFilter === "invernale"
                   ? "bg-blue-600 text-white shadow-xs border border-blue-700"
                   : "text-[#1b2b25]/60 hover:bg-white/50"
@@ -602,10 +598,10 @@ export default function ChecklistPage() {
       )}
 
       {/* 📋 LISTA ELEMENTI CHECKLIST (Filtrata) */}
-      <section className="space-y-2.5">
+      <section className="w-full space-y-2">
         {items.length === 0 ? (
-          <div className="bg-white/70 backdrop-blur-2xl border border-white p-8 rounded-[2.5rem] shadow-sm text-center space-y-2">
-            <CustomIcon name="zaino" size={52} className="mx-auto mb-1 opacity-40" />
+          <div className="w-full bg-white/70 backdrop-blur-2xl border border-white p-6 rounded-3xl shadow-sm text-center space-y-2">
+            <CustomIcon name="zaino" size={48} className="mx-auto mb-1 opacity-40" />
             <h3 className="text-sm font-black text-[#1b2b25]">
               La Checklist è Vuota
             </h3>
@@ -614,7 +610,7 @@ export default function ChecklistPage() {
             </p>
           </div>
         ) : filteredItems.length === 0 ? (
-           <div className="bg-white/70 backdrop-blur-2xl border border-white p-8 rounded-[2.5rem] shadow-sm text-center space-y-2">
+          <div className="w-full bg-white/70 backdrop-blur-2xl border border-white p-6 rounded-3xl shadow-sm text-center space-y-2">
             <p className="text-xs font-semibold text-[#1b2b25]/50 italic">
               Nessun oggetto trovato per la stagione/categoria selezionata.
             </p>
@@ -628,11 +624,11 @@ export default function ChecklistPage() {
             return (
               <div
                 key={item.id}
-                className={`group bg-white/90 backdrop-blur-2xl rounded-2xl p-3.5 border border-white shadow-2xs flex items-center justify-between gap-3 transition-all ${
+                className={`group w-full bg-white/90 backdrop-blur-2xl rounded-2xl p-3 border border-white shadow-2xs flex items-center justify-between gap-2.5 transition-all ${
                   isDone ? "opacity-60 bg-white/50" : ""
                 }`}
               >
-                <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer select-none">
+                <label className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={!!item.completato}
@@ -642,7 +638,7 @@ export default function ChecklistPage() {
                   
                   {/* CHECKBOX CUSTOM */}
                   <div
-                    className={`w-6 h-6 rounded-xl border flex items-center justify-center text-xs font-black transition-all shrink-0 ${
+                    className={`w-5 h-5 rounded-lg border flex items-center justify-center text-xs font-black transition-all shrink-0 ${
                       isDone
                         ? "bg-emerald-500 border-emerald-600 text-white scale-95 shadow-2xs"
                         : "bg-white border-slate-300 text-transparent hover:border-emerald-400"
@@ -651,7 +647,7 @@ export default function ChecklistPage() {
                     ✓
                   </div>
 
-                  <div className="min-w-0 flex flex-col items-start gap-1">
+                  <div className="min-w-0 flex-1 flex flex-col items-start gap-0.5">
                     <span
                       className={`text-xs font-bold text-[#1b2b25] block truncate w-full ${
                         isDone ? "line-through text-[#1b2b25]/60" : ""
@@ -660,10 +656,10 @@ export default function ChecklistPage() {
                       {item.nome}
                     </span>
 
-                    {/* BADGES: CATEGORIA + STAGIONE DA EQUIPMENT */}
-                    <div className="flex flex-wrap items-center gap-1.5">
+                    {/* BADGES */}
+                    <div className="flex flex-wrap items-center gap-1 max-w-full">
                       {activeTab === "Tutti" && (
-                        <span className="text-[9px] font-black uppercase text-[#1b2b25]/70 bg-[#1b2b25]/5 border border-[#1b2b25]/10 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 whitespace-nowrap">
+                        <span className="text-[8px] sm:text-[9px] font-black uppercase text-[#1b2b25]/70 bg-[#1b2b25]/5 border border-[#1b2b25]/10 px-1.5 py-0.2 rounded-md inline-flex items-center gap-1 whitespace-nowrap">
                           {standardCat ? (
                             <>
                               <span>{standardCat.icon}</span>
@@ -684,7 +680,7 @@ export default function ChecklistPage() {
                       )}
 
                       {seasonBadge && (
-                        <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 whitespace-nowrap border shadow-2xs ${seasonBadge.color}`}>
+                        <span className={`text-[8px] sm:text-[9px] font-black uppercase px-1.5 py-0.2 rounded-md inline-flex items-center gap-1 whitespace-nowrap border shadow-2xs ${seasonBadge.color}`}>
                           <span>{seasonBadge.icon}</span>
                           <span>{seasonBadge.label}</span>
                         </span>
@@ -695,7 +691,7 @@ export default function ChecklistPage() {
 
                 <button
                   onClick={() => deleteItem(item.id)}
-                  className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-600 border border-rose-200 text-xs font-black active:scale-90 transition flex items-center justify-center hover:bg-rose-500 hover:text-white shrink-0 shadow-2xs"
+                  className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 border border-rose-200 text-xs font-black active:scale-90 transition flex items-center justify-center hover:bg-rose-500 hover:text-white shrink-0 shadow-2xs"
                   title="Elimina"
                 >
                   🗑️
