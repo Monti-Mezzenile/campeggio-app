@@ -50,7 +50,6 @@ export default function LoginPage() {
     };
   }, [router]);
 
-  // Quando si passa alla registrazione, fa ripartire il video dal secondo 0
   useEffect(() => {
     if (isSignUp && signupVideoRef.current) {
       signupVideoRef.current.currentTime = 0;
@@ -94,124 +93,143 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="fixed inset-0 h-[100dvh] w-full overflow-hidden flex items-center justify-center px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-[calc(env(safe-area-inset-bottom)+0.5rem)] bg-[#0d1b1e] select-none">
+    <main className="fixed inset-0 h-[100dvh] w-full overflow-hidden flex flex-col justify-between items-center px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-[#0d1b1e] select-none">
       
-      {/* 🎥 VIDEO 1: LOGIN (Loop continuo) */}
+      {/* 🎥 VIDEO 1: LOGIN */}
       <video
         autoPlay
         muted
         playsInline
         loop
         preload="auto"
-        className={`fixed inset-0 w-full h-full object-cover scale-105 transition-opacity duration-700 pointer-events-none ${
+        className={`fixed inset-0 w-full h-full object-cover scale-105 transition-opacity duration-1000 pointer-events-none ${
           !isSignUp ? "opacity-100 z-0" : "opacity-0 z-0"
         }`}
       >
         <source src="/videos/monti-login.mp4" type="video/mp4" />
       </video>
 
-      {/* 🎥 VIDEO 2: CREA ACCOUNT (Si ferma all'ultimo frame SENZA loop) */}
+      {/* 🎥 VIDEO 2: CREA ACCOUNT */}
       <video
         ref={signupVideoRef}
         autoPlay
         muted
         playsInline
         preload="auto"
-        className={`fixed inset-0 w-full h-full object-cover scale-105 transition-opacity duration-700 pointer-events-none ${
+        className={`fixed inset-0 w-full h-full object-cover scale-105 transition-opacity duration-1000 pointer-events-none ${
           isSignUp ? "opacity-100 z-0" : "opacity-0 z-0"
         }`}
       >
         <source src="/videos/monti-crea.mp4" type="video/mp4" />
       </video>
 
-      {/* OVERLAY GLASS */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] pointer-events-none z-0" />
+      {/* OVERLAY SFUMATO (Sfumatura scura solo in alto e in basso per la leggibilità del testo) */}
+      <div className="fixed inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/70 pointer-events-none z-0" />
 
-      {/* CONTENT CONTAINER */}
-      <div className="relative z-10 text-center max-w-sm w-full flex flex-col items-center justify-center gap-3 sm:gap-4 px-2 py-2 max-h-full overflow-y-auto no-scrollbar">
-        {/* LOGO */}
-        <div className="relative w-48 sm:w-56 h-16 sm:h-20 flex items-center justify-center shrink-0">
+      {/* BLOCCO SUPERIORE: LOGO + TAB + INPUTS */}
+      <div className="relative z-10 max-w-sm w-full flex flex-col items-center gap-2.5">
+        
+        {/* LOGO MONTI */}
+        <div className="relative w-44 sm:w-52 h-12 sm:h-14 shrink-0 filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
           <Image
             src="/images/logo-monti.png"
             alt="MONTI Logo"
-            width={220}
-            height={80}
+            fill
             priority
-            className="object-contain drop-shadow-2xl"
+            className="object-contain"
           />
         </div>
 
-        {/* DESCRIZIONE */}
-        <div className="space-y-1.5 sm:space-y-2 shrink-0">
-          <p className="text-[#FFF4E3] text-xs sm:text-sm leading-relaxed drop-shadow-md font-medium">
-            {isSignUp
-              ? "Unisciti alla spedizione. Crea le tue credenziali da campo."
-              : "Perché dopo anni di campeggi improvvisati era ora di fingere di essere organizzati."}
-          </p>
-          <p className="text-[#FFF4E3]/90 text-[11px] italic font-medium border-l-2 border-[#FFF4E3]/30 pl-3 text-left">
-            "Il caos era la legge della natura; l'ordine era il sogno dell'uomo."
-            <span className="block text-[9px] text-[#FFF4E3]/60 not-italic mt-0.5 font-normal">
-              — Henry Adams
-            </span>
-          </p>
-        </div>
-
-        {/* FORM LOGIN / REGISTRAZIONE */}
-        <form onSubmit={handleSubmit} className="w-full space-y-2.5 pt-1 shrink-0">
-          <input
-            type="email"
-            placeholder="Email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            /* text-base (16px) blocca lo zoom nativo ed evita lo scroll su iOS */
-            className="w-full px-4 py-2.5 bg-white/10 border border-[#FFF4E3]/30 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/50 focus:outline-none focus:border-[#FFF4E3] backdrop-blur-md text-base"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            /* text-base (16px) blocca lo zoom nativo ed evita lo scroll su iOS */
-            className="w-full px-4 py-2.5 bg-white/10 border border-[#FFF4E3]/30 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/50 focus:outline-none focus:border-[#FFF4E3] backdrop-blur-md text-base"
-          />
-          {errorMsg && (
-            <p className="text-red-400 text-xs text-center font-medium bg-red-950/40 py-1 rounded-lg border border-red-500/30">
-              {errorMsg}
-            </p>
-          )}
-          <Button
-            type="submit"
-            disabled={authLoading}
-            className="w-full bg-white/20 border border-[#FFF4E3]/40 text-[#FFF4E3] backdrop-blur-md shadow-lg hover:bg-white/30 active:scale-98 transition py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
-          >
-            <span>
-              {authLoading
-                ? "Elaborazione..."
-                : isSignUp
-                ? "Crea Account"
-                : "Accedi"}
-            </span>
-          </Button>
-        </form>
-
-        {/* LINK SWITCH LOGIN / REGISTRAZIONE */}
-        <div className="pt-1 border-t border-[#FFF4E3]/10 w-full shrink-0">
+        {/* TAB SWITCHER DEDICATO (LOGIN vs REGISTRAZIONE) */}
+        <div className="w-full p-1 bg-black/50 backdrop-blur-xl rounded-2xl border border-white/15 flex items-center shadow-2xl">
           <button
             type="button"
             onClick={() => {
-              setIsSignUp(!isSignUp);
+              setIsSignUp(false);
               setErrorMsg(null);
             }}
-            className="text-xs text-[#FFF4E3]/80 hover:text-white underline font-medium transition"
+            className={`flex-1 py-1.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all duration-300 flex items-center justify-center gap-1.5 ${
+              !isSignUp
+                ? "bg-white/20 text-white shadow-md border border-white/20 backdrop-blur-md"
+                : "text-white/40 hover:text-white/80"
+            }`}
           >
-            {isSignUp
-              ? "Hai già un account? Accedi qui"
-              : "Non hai un account? Registrati"}
+            <span>🔑</span>
+            <span>Accedi</span>
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignUp(true);
+              setErrorMsg(null);
+            }}
+            className={`flex-1 py-1.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all duration-300 flex items-center justify-center gap-1.5 ${
+              isSignUp
+                ? "bg-emerald-500/80 text-white shadow-lg shadow-emerald-950/40 border border-emerald-400/40 backdrop-blur-md"
+                : "text-white/40 hover:text-white/80"
+            }`}
+          >
+            <span>⛺</span>
+            <span>Registrati</span>
           </button>
         </div>
-        <p className="text-[10px] text-[#FFF4E3]/70 tracking-wider uppercase font-bold shrink-0">
+
+        {/* CARD FORM COMPATTA IN ALTO */}
+        <div className={`w-full bg-black/40 backdrop-blur-xl border rounded-2xl p-3.5 shadow-2xl transition-all duration-500 space-y-2.5 ${
+          isSignUp ? "border-emerald-500/40 shadow-emerald-950/30" : "border-white/15"
+        }`}>
+          <form onSubmit={handleSubmit} className="w-full space-y-2">
+            <input
+              type="email"
+              placeholder="Email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3.5 py-2 bg-black/40 border border-white/15 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/40 focus:outline-none focus:border-emerald-400/80 backdrop-blur-md text-base transition-all"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-3.5 py-2 bg-black/40 border border-white/15 rounded-xl text-[#FFF4E3] placeholder-[#FFF4E3]/40 focus:outline-none focus:border-emerald-400/80 backdrop-blur-md text-base transition-all"
+            />
+
+            {errorMsg && (
+              <p className="text-rose-300 text-xs text-center font-bold bg-rose-950/60 py-1 px-2 rounded-lg border border-rose-500/40 backdrop-blur-md">
+                ⚠️ {errorMsg}
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              disabled={authLoading}
+              className={`w-full py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-300 shadow-lg flex items-center justify-center gap-2 ${
+                isSignUp
+                  ? "bg-emerald-500 hover:bg-emerald-400 text-slate-950 border border-emerald-300 shadow-emerald-950/50"
+                  : "bg-white/20 hover:bg-white/30 text-[#FFF4E3] border border-white/30 backdrop-blur-md"
+              }`}
+            >
+              <span>
+                {authLoading
+                  ? "Verifica..."
+                  : isSignUp
+                  ? "Crea Account Spedizione"
+                  : "Accedi al Campo"}
+              </span>
+            </Button>
+          </form>
+        </div>
+      </div>
+
+      {/* FOOTER IN BASSO (Citazione e claim ancorati al fondo) */}
+      <div className="relative z-10 text-center space-y-1 max-w-xs">
+        <p className="text-[#FFF4E3]/80 text-[10px] italic font-medium drop-shadow-md leading-tight">
+          "Il caos era la legge della natura; l'ordine era il sogno dell'uomo."
+        </p>
+        <p className="text-[9px] text-[#FFF4E3]/50 tracking-widest uppercase font-black">
           Solo per veri sopravvissuti
         </p>
       </div>
