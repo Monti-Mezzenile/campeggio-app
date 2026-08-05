@@ -225,75 +225,76 @@ export default function CommunitySection() {
               {/* TASTO CHIUSURA IN ALTO A DESTRA */}
               <button
                 onClick={() => setSelectedFriend(null)}
-                className="absolute right-4 top-4 z-10 w-8 h-8 rounded-full bg-[#15241D] text-[#EFE8DB] font-black text-xs flex items-center justify-center hover:bg-[#20362C] transition shadow-lg border border-white/10"
+                className="absolute right-3.5 top-3.5 z-20 w-7 h-7 rounded-full bg-[#15241D] text-[#EFE8DB] font-black text-xs flex items-center justify-center hover:bg-[#20362C] transition shadow-md border border-white/10"
               >
                 ✕
               </button>
 
-              {/* HEADER TESSERINO */}
-              <div className="p-5 pt-6 bg-[#EFE8DB] border-b border-[#D8CEBC] relative shrink-0 text-center flex flex-col items-center space-y-3">
+              {/* HEADER TESSERINO COMPATTO (FOTO A SINISTRA, DATI A DESTRA) */}
+              <div className="p-4 pr-12 bg-[#EFE8DB] border-b border-[#D8CEBC] relative shrink-0 flex items-center gap-3.5 text-left">
                 
-                {/* AVATAR + STEMMA CAVALLO/CONIGLIO */}
-                <div className="relative mb-1">
+                {/* FOTO PROFILO + BADGE STEMMA OVERLAY */}
+                <div className="relative shrink-0">
                   {selectedFriend.avatar_url ? (
                     <img
                       src={selectedFriend.avatar_url}
                       alt={selectedFriend.nome}
-                      className="w-20 h-20 rounded-3xl object-cover border-2 border-[#15241D] shadow-xl"
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-[#15241D] shadow-md"
                     />
                   ) : (
-                    <div className="w-20 h-20 rounded-3xl bg-[#15241D] text-[#EFE8DB] font-black text-3xl flex items-center justify-center border-2 border-[#15241D] shadow-xl">
+                    <div className="w-16 h-16 rounded-2xl bg-[#15241D] text-[#EFE8DB] font-black text-2xl flex items-center justify-center border-2 border-[#15241D] shadow-md">
                       {selectedFriend.nome.charAt(0).toUpperCase()}
                     </div>
                   )}
 
-                  {/* STEMMA PADRE FONDATORE O CAMPEAGGIATORE */}
-                  <div className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 bg-[#15241D] text-white text-[10px] font-black uppercase tracking-wider px-4 py-1.5 rounded-full border-2 border-[#EFE8DB] shadow-lg flex items-center gap-2 whitespace-nowrap w-max shrink-0">
+                  {/* STEMMA BADGE COMPATTO IN BASSO A DESTRA DELL'AVATAR */}
+                  <div
+                    className="absolute -bottom-1 -right-1 bg-[#15241D] p-1 rounded-lg border border-[#EFE8DB] shadow-md flex items-center justify-center"
+                    title={selectedFriend.padre_fondatore ? "Padre Fondatore" : "Campeggiatore"}
+                  >
                     <img
                       src={selectedFriend.padre_fondatore ? "/icons/cavallo.png" : "/icons/coniglio.png"}
-                      alt={selectedFriend.padre_fondatore ? "Cavallo" : "Coniglio"}
-                      className="w-5 h-5 object-contain"
+                      alt="Stemma"
+                      className="w-4 h-4 object-contain"
                     />
-                    <span>{selectedFriend.padre_fondatore ? "Padre Fondatore" : "Campeggiatore"}</span>
                   </div>
                 </div>
 
-                {/* NOME COMPLETO & RUOLO */}
-                <div className="space-y-1 w-full px-2 pt-2">
-                  <h2 className="text-xl font-black text-[#15241D] leading-tight">
+                {/* INFO UTENTE A DESTRA */}
+                <div className="flex-1 min-w-0 space-y-1">
+                  {/* NOME COMPLETO */}
+                  <h2 className="text-base font-black text-[#15241D] leading-tight truncate">
                     {selectedFriend.full_name || selectedFriend.nome}
                   </h2>
-                  
-                  {selectedFriend.ruolo && (
-                    <div className="pt-0.5">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-[#15241D] bg-[#4A7261]/20 border border-[#4A7261]/30 px-3 py-1 rounded-xl inline-block">
+
+                  {/* RUOLO / NOME CONIGLIO / TITOLO */}
+                  <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-black">
+                    {selectedFriend.nome_coniglio && (
+                      <span className="bg-[#15241D] text-[#EFE8DB] px-2 py-0.5 rounded-md inline-flex items-center gap-1 truncate max-w-full">
+                        <img src="/icons/coniglio.png" alt="Coniglio" className="w-3.5 h-3.5 object-contain" />
+                        <span className="truncate">{selectedFriend.nome_coniglio}</span>
+                      </span>
+                    )}
+
+                    {selectedFriend.ruolo && (
+                      <span className="text-[#15241D] bg-[#4A7261]/20 border border-[#4A7261]/30 px-2 py-0.5 rounded-md truncate">
                         🏷️ {selectedFriend.ruolo}
                       </span>
-                    </div>
+                    )}
+
+                    <span className="text-[#4A7261] font-bold">
+                      {selectedFriend.padre_fondatore ? "• Padre Fondatore" : "• Campeggiatore"}
+                    </span>
+                  </div>
+
+                  {/* MOTTO COMPATTO */}
+                  {selectedFriend.motto && (
+                    <p className="text-[10px] italic text-[#15241D]/80 truncate pt-0.5">
+                      “{selectedFriend.motto}”
+                    </p>
                   )}
                 </div>
 
-                {/* NOME CONIGLIO */}
-                {selectedFriend.nome_coniglio && (
-                  <div className="inline-flex items-center gap-2 bg-[#15241D] text-[#EFE8DB] px-4 py-1.5 rounded-2xl text-xs font-black shadow-md border border-white/10">
-                    <img
-                      src="/icons/coniglio.png"
-                      alt="Coniglio"
-                      className="w-5 h-5 object-contain"
-                    />
-                    <span className="text-[#A1B2A8]">Coniglio:</span>
-                    <span className="text-white font-black">{selectedFriend.nome_coniglio}</span>
-                  </div>
-                )}
-
-                {/* MOTTO */}
-                {selectedFriend.motto && (
-                  <div className="w-full bg-[#15241D] text-[#EFE8DB] p-3 rounded-2xl text-[11px] italic relative shadow-inner">
-                    <span className="text-[#4A7261] font-black mr-1 text-sm">“</span>
-                    {selectedFriend.motto}
-                    <span className="text-[#4A7261] font-black ml-1 text-sm">”</span>
-                  </div>
-                )}
               </div>
 
               {/* CORPO TESSERINO */}
