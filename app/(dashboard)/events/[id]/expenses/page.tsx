@@ -6,6 +6,19 @@ import { supabase } from "@/lib/supabase";
 import ExpenseSummary from "@/components/event/ExpenseSummary";
 import CustomIcon from "@/components/ui/CustomIcon";
 
+interface Settlement {
+  from: string;
+  to: string;
+  amount: number;
+}
+
+interface UserBalance {
+  id: string;
+  nome: string;
+  avatar_url?: string;
+  balance: number;
+}
+
 export default function ExpensesPage() {
   const params = useParams();
   const router = useRouter();
@@ -53,12 +66,10 @@ export default function ExpensesPage() {
     const { data: expenseData, error: expenseError } = await supabase
       .from("expenses")
       .select(`
-        *
-        ,
+        *,
         profiles!expenses_payer_id_fkey(
           nome
-        )
-        ,
+        ),
         expense_members:expense_members_expense_fk(
           quota,
           user_id,
@@ -116,8 +127,6 @@ export default function ExpensesPage() {
       .select()
       .single();
 
-    console.log("INSERT EXPENSE:", { expense, error });
-
     if (error) {
       alert(error.message);
       return;
@@ -149,10 +158,7 @@ export default function ExpensesPage() {
 
   async function deleteExpense(id: string) {
     const ok = confirm("Eliminare questa spesa?");
-
-    if (!ok) {
-      return;
-    }
+    if (!ok) return;
 
     const { error } = await supabase.from("expenses").delete().eq("id", id);
 
@@ -163,6 +169,89 @@ export default function ExpensesPage() {
 
     await loadData();
   }
+
+  // 🧮 CALCOLO CONGUAGLIO E SALDI NETTI ("CHI DEVE DARE A CHI")
+  function calculateSettlements(): {
+    userBalances: UserBalance[];
+    settlements: Settlement[];
+  } {
+    const balanceMap: Record<string, { nome: string; avatar_url?: string; balance: number }> = {};
+
+    participants.forEach((p) => {
+      if (p?.id) {
+        balanceMap[p.id] = {
+          nome: p.nome || "Partecipante",
+          avatar_url: p.avatar_url,
+          balance: 0,
+        };
+      }
+    });
+
+    expenses.forEach((exp) => {
+      const payerId = exp.payer_id;
+      const totalAmount = Number(exp.importo) || 0;
+
+      if (balanceMap[payerId]) {
+        balanceMap[payerId].balance += totalAmount;
+      }
+
+      const members = exp.expense_members || [];
+      members.forEach((m: any) => {
+        const userId = m.user_id;
+        const quota = Number(m.quota) || 0;
+        if (balanceMap[userId]) {
+          balanceMap[userId].balance -= quota;
+        }
+      });
+    });
+
+    const userBalances: UserBalance[] = Object.entries(balanceMap).map(
+      ([id, data]) => ({
+        id,
+        nome: data.nome,
+        avatar_url: data.avatar_url,
+        balance: Math.round(data.balance * 100) / 100,
+      })
+    );
+
+    const debtors: { nome: string; amount: number }[] = [];
+    const creditors: { nome: string; amount: number }[] = [];
+
+    userBalances.forEach((b) => {
+      if (b.balance < -0.01) {
+        debtors.push({ nome: b.nome, amount: Math.abs(b.balance) });
+      } else if (b.balance > 0.01) {
+        creditors.push({ nome: b.nome, amount: b.balance });
+      }
+    });
+
+    const settlements: Settlement[] = [];
+    let i = 0;
+    let j = 0;
+
+    while (i < debtors.length && j < creditors.length) {
+      const debtor = debtors[i];
+      const creditor = creditors[j];
+
+      const settledAmount = Math.min(debtor.amount, creditor.amount);
+
+      settlements.push({
+        from: debtor.nome,
+        to: creditor.nome,
+        amount: Math.round(settledAmount * 100) / 100,
+      });
+
+      debtor.amount -= settledAmount;
+      creditor.amount -= settledAmount;
+
+      if (debtor.amount < 0.01) i++;
+      if (creditor.amount < 0.01) j++;
+    }
+
+    return { userBalances, settlements };
+  }
+
+  const { userBalances, settlements } = calculateSettlements();
 
   if (loading) {
     return (
@@ -180,7 +269,7 @@ export default function ExpensesPage() {
   return (
     <main className="min-h-screen p-4 sm:p-6 pb-36 max-w-md mx-auto flex flex-col gap-5 select-none">
       
-      {/* 🚀 HEADER & NAVIGATION */}
+      {/* 🚀 HEADER */}
       <header className="flex items-center justify-between pt-1">
         <button
           onClick={() => router.back()}
@@ -215,9 +304,79 @@ export default function ExpensesPage() {
         <CustomIcon name="soldi" size={72} className="shrink-0 drop-shadow-sm" />
       </section>
 
-      {/* 📊 SINTESI SPESE (COMPONENTE ESISTENTE) */}
+      {/* 📊 SINTESI SPESE */}
       <section className="bg-white/90 backdrop-blur-2xl rounded-[2.5rem] p-4 border border-white shadow-sm">
         <ExpenseSummary participants={participants} expenses={expenses} />
+      </section>
+
+      {/* 🤝 CONGUAGLIO E RIMBORSI ("CHI DEVE DARE A CHI") */}
+      <section className="bg-white/90 backdrop-blur-2xl rounded-[2.5rem] p-5 border border-white shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-black text-[#1b2b25] uppercase tracking-wider flex items-center gap-2">
+            <span>🤝</span> Rimborsi e Pareggio Cassa
+          </h2>
+        </div>
+
+        {/* LISTA RIMBORSI DIRETTI */}
+        {settlements.length === 0 ? (
+          <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl text-center">
+            <p className="text-xs font-bold text-emerald-950">
+              🎉 Tutti i conti sono in pari! Nessun rimborso dovuto.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {settlements.map((s, idx) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 shadow-2xs"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs font-black text-amber-950 truncate">
+                    {s.from}
+                  </span>
+                  <span className="text-xs font-bold text-amber-800">deve dare a</span>
+                  <span className="text-xs font-black text-amber-950 truncate">
+                    {s.to}
+                  </span>
+                </div>
+                <span className="font-mono text-xs font-black text-amber-950 bg-amber-200/60 border border-amber-300 px-2.5 py-1 rounded-xl shrink-0">
+                  {s.amount.toFixed(2)} €
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Dettaglio Saldi Personali */}
+        <div className="pt-3 border-t border-[#1b2b25]/10 space-y-2">
+          <span className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/50 block">
+            Posizione Netta Singoli Partecipanti:
+          </span>
+          <div className="grid grid-cols-2 gap-2">
+            {userBalances.map((b) => (
+              <div
+                key={b.id}
+                className="flex items-center justify-between p-2.5 rounded-2xl bg-white/70 border border-white shadow-2xs text-xs"
+              >
+                <span className="font-bold text-[#1b2b25] truncate">
+                  {b.nome}
+                </span>
+                <span
+                  className={`font-mono text-[11px] font-black px-2 py-0.5 rounded-lg ${
+                    b.balance > 0
+                      ? "text-emerald-700 bg-emerald-100"
+                      : b.balance < 0
+                      ? "text-rose-700 bg-rose-100"
+                      : "text-slate-600 bg-slate-100"
+                  }`}
+                >
+                  {b.balance > 0 ? `+${b.balance.toFixed(2)}` : b.balance.toFixed(2)} €
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* ➕ MODULO NUOVA SPESA */}
@@ -229,7 +388,6 @@ export default function ExpensesPage() {
         </div>
 
         <div className="space-y-3">
-          {/* INPUT DESCRIZIONE */}
           <input
             value={descrizione}
             onChange={(e) => setDescrizione(e.target.value)}
@@ -237,7 +395,6 @@ export default function ExpensesPage() {
             className="w-full bg-white/80 backdrop-blur-md border border-white rounded-2xl px-4 py-3 text-xs font-black text-[#1b2b25] placeholder-[#1b2b25]/40 outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
           />
 
-          {/* INPUT IMPORTO */}
           <div className="relative">
             <input
               value={importo}
@@ -252,7 +409,6 @@ export default function ExpensesPage() {
             </span>
           </div>
 
-          {/* SELETTORE PARTECIPANTI */}
           <div className="space-y-2 pt-1">
             <div className="flex items-center justify-between">
               <label className="text-[10px] font-black uppercase tracking-wider text-[#1b2b25]/60 px-1">
@@ -323,7 +479,6 @@ export default function ExpensesPage() {
             </div>
           </div>
 
-          {/* BOTTONE INSERIMENTO */}
           <button
             onClick={addExpense}
             className="w-full py-3.5 px-4 rounded-2xl bg-[#1b2b25] text-[#ebdec8] text-xs font-black uppercase tracking-wider shadow-md active:scale-95 transition flex items-center justify-center gap-2 mt-2"
@@ -333,7 +488,7 @@ export default function ExpensesPage() {
         </div>
       </section>
 
-      {/* 📋 LISTA SPESE EFFETTUATE */}
+      {/* 📋 HISTORIC MOVEMENTS */}
       <section className="space-y-3">
         <h3 className="text-xs font-black uppercase tracking-wider text-[#1b2b25]/60 px-2">
           Storico Movimenti ({expenses.length})
@@ -383,7 +538,6 @@ export default function ExpensesPage() {
                 </div>
               </div>
 
-              {/* RIPARTO QUOTE */}
               <div className="pt-2 border-t border-[#1b2b25]/10 space-y-1.5">
                 <span className="text-[9px] font-black uppercase tracking-wider text-[#1b2b25]/50 block">
                   Diviso tra {exp.expense_members?.length || 0} membri:

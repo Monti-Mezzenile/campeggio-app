@@ -229,7 +229,8 @@ export default function MascottePage() {
   };
 
   useEffect(() => {
-    let realtimeChannel: any = null;
+    let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+    let isMounted = true;
 
     const loadData = async () => {
       try {
@@ -237,10 +238,10 @@ export default function MascottePage() {
 
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         if (!currentUser) {
-          setWarningMsg("Ehi fantasma, vedi di loggarti prima di mettere piede in questo campeggio.");
+          if (isMounted) setWarningMsg("Ehi fantasma, vedi di loggarti prima di mettere piede in questo campeggio.");
           return;
         }
-        setUser(currentUser);
+        if (isMounted) setUser(currentUser);
 
         const ownerName = currentUser.user_metadata?.full_name || 
                           currentUser.user_metadata?.name || 
@@ -250,7 +251,7 @@ export default function MascottePage() {
         if ('serviceWorker' in navigator && 'PushManager' in window) {
           const reg = await navigator.serviceWorker.getRegistration();
           const sub = await reg?.pushManager.getSubscription();
-          if (sub) setPushEnabled(true);
+          if (sub && isMounted) setPushEnabled(true);
         }
 
         let { data: myMascot } = await supabase.from('mascots').select('*').eq('user_id', currentUser.id).maybeSingle();
@@ -279,6 +280,8 @@ export default function MascottePage() {
           last_updated_at: new Date().toISOString()
         }).eq('id', myMascot.id);
 
+        if (!isMounted) return;
+
         setMascot({ 
           id: myMascot.id, 
           fame: updatedMyMascot.fame, 
@@ -299,21 +302,25 @@ export default function MascottePage() {
           .neq('user_id', currentUser.id)
           .order('exp', { ascending: false });
 
-        if (others) {
+        if (others && isMounted) {
           const formattedOthers = others.map(o => calculateLiveStats(o));
           setOtherMascots(formattedOthers);
         }
 
         const { data: logs } = await supabase.from('mascot_logs').select('*').eq('receiver_user_id', currentUser.id).order('created_at', { ascending: false }).limit(10);
-        if (logs) setInfamieLogs(logs);
+        if (logs && isMounted) setInfamieLogs(logs);
 
-        // 🔴 REALTIME SUPABASE: Ascolta cambiamenti live su Mascotte e Log
+        if (!isMounted) return;
+
+        // 🔴 REALTIME SUPABASE: Usa un canale univoco per evitare collisioni di iscrizione
+        const channelName = `mascotte_realtime_${currentUser.id}_${Date.now()}`;
         realtimeChannel = supabase
-          .channel('public_mascots_realtime')
+          .channel(channelName)
           .on(
             'postgres_changes',
             { event: '*', schema: 'public', table: 'mascots' },
             (payload) => {
+              if (!isMounted) return;
               const updated = payload.new as any;
               if (!updated) return;
 
@@ -344,6 +351,7 @@ export default function MascottePage() {
             'postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'mascot_logs', filter: `receiver_user_id=eq.${currentUser.id}` },
             (payload) => {
+              if (!isMounted) return;
               const newLog = payload.new as any;
               if (newLog) {
                 setInfamieLogs(prev => [newLog, ...prev].slice(0, 10));
@@ -355,7 +363,7 @@ export default function MascottePage() {
       } catch (err) {
         console.error("Errore generico:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
@@ -363,6 +371,7 @@ export default function MascottePage() {
 
     // ⏱️ TIMER DI AGGIORNAMENTO LOCALE (Ogni 15 secondi ricalcola il decadimento a schermo)
     const interval = setInterval(() => {
+      if (!isMounted) return;
       setOtherMascots(prev => prev.map(m => calculateLiveStats(m)));
       setMascot(prev => {
         if (!prev.id) return prev;
@@ -372,8 +381,11 @@ export default function MascottePage() {
     }, 15000);
 
     return () => {
+      isMounted = false;
       clearInterval(interval);
-      if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
     };
   }, []);
 
