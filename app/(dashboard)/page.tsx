@@ -9,6 +9,7 @@ import Header from "@/components/home/Header";
 import NextEventCard from "@/components/home/NextEventCard";
 import MyStuff from "@/components/home/MyStuff";
 import MyEvents from "@/components/home/MyEvents";
+import CommunitySection from "@/components/home/CommunitySection";
 
 // 🎯 Helper per parsare stringhe "YYYY-MM-DD" senza problemi di Fuso Orario / UTC
 function parseLocalDate(dateStr: string | null) {
@@ -196,6 +197,9 @@ export default function Home() {
 
       {/* Le mie cose */}
       <MyStuff />
+
+      {/* 🪪 Community - Rastrelliera Tesserini */}
+      <CommunitySection />
 
       {/* Lista Eventi */}
       <MyEvents events={events} isAdmin={profile?.ruolo === "admin"} />

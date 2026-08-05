@@ -50,9 +50,9 @@ export default function PreparationMonti({
         tag: "Notte",
         link: `/events/${eventId}/tents`,
         bgColor: "bg-[#1b2b25]",
-        textColor: "text-[#ebdec8]",
-        tagBg: "bg-[#ebdec8]/20",
-        tagText: "text-[#ebdec8]",
+        textColor: "text-[#EFE8DB]",
+        tagBg: "bg-[#EFE8DB]/20",
+        tagText: "text-[#EFE8DB]",
       });
     }
 
@@ -89,9 +89,9 @@ export default function PreparationMonti({
         tag: "Auto",
         link: `/events/${eventId}/cars`,
         bgColor: "bg-[#6c9a8b]",
-        textColor: "text-[#ebdec8]",
+        textColor: "text-[#EFE8DB]",
         tagBg: "bg-[#1b2b25]/30",
-        tagText: "text-[#ebdec8]",
+        tagText: "text-[#EFE8DB]",
       });
     }
 
@@ -114,9 +114,9 @@ export default function PreparationMonti({
         tag: "Grigliata",
         link: `/events/${eventId}/shopping?tab=carne`,
         bgColor: "bg-[#8b261b]",
-        textColor: "text-[#ebdec8]",
-        tagBg: "bg-[#ebdec8]/20",
-        tagText: "text-[#ebdec8]",
+        textColor: "text-[#EFE8DB]",
+        tagBg: "bg-[#EFE8DB]/20",
+        tagText: "text-[#EFE8DB]",
       });
     }
 
@@ -148,7 +148,7 @@ export default function PreparationMonti({
           subtitle: `${completed}/${total} pronti`,
           tag: "Checklist",
           link: `/events/${eventId}/checklist`,
-          bgColor: "bg-[#ebdec8]",
+          bgColor: "bg-[#EFE8DB]",
           textColor: "text-[#1b2b25]",
           tagBg: "bg-[#1b2b25]/10",
           tagText: "text-[#1b2b25]",
@@ -195,7 +195,7 @@ export default function PreparationMonti({
     <section className="mt-6">
       {/* Header Sezione */}
       <div className="flex items-center justify-between mb-3 px-1">
-        <h2 className="text-xs font-black uppercase tracking-widest text-[#ebdec8]/70">
+        <h2 className="text-xs font-black uppercase tracking-widest text-[#EFE8DB]">
           PREPARIAMO IL CAMPO
         </h2>
         {items.length > 0 && (
@@ -207,15 +207,15 @@ export default function PreparationMonti({
 
       {/* Stato: Tutto Completato */}
       {items.length === 0 ? (
-        <div className="bg-[#6c9a8b] rounded-3xl p-5 text-[#ebdec8] shadow-lg flex items-center justify-between gap-3 border border-[#ebdec8]/20">
+        <div className="bg-[#6c9a8b] rounded-3xl p-5 text-[#EFE8DB] shadow-lg flex items-center justify-between gap-3 border border-[#EFE8DB]/20">
           <div>
-            <span className="text-[9px] font-black uppercase tracking-widest bg-[#1b2b25]/20 px-2.5 py-1 rounded-full text-[#ebdec8]">
+            <span className="text-[9px] font-black uppercase tracking-widest bg-[#1b2b25]/20 px-2.5 py-1 rounded-full text-[#EFE8DB]">
               EQUIPAGGIAMENTO PRONTO
             </span>
             <h3 className="text-lg font-black mt-2 leading-tight">
               Sei pronto per MONTI!
             </h3>
-            <p className="text-xs text-[#ebdec8]/80 mt-0.5">
+            <p className="text-xs text-[#EFE8DB]/80 mt-0.5">
               Nessuna azione in sospeso.
             </p>
           </div>

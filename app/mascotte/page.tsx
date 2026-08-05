@@ -167,7 +167,16 @@ function urlBase64ToUint8Array(base64String: string) {
 
 export default function MascottePage() {
   const [user, setUser] = useState<any>(null);
-  const [mascot, setMascot] = useState({ id: null as string | null, fame: 50, sete: 50, svago: 50, exp: 0, fase: 1, nome: 'Vittima del Campeggio' });
+  const [mascot, setMascot] = useState({
+    id: null as string | null,
+    fame: 50,
+    sete: 50,
+    svago: 50,
+    exp: 0,
+    fase: 1,
+    nome: 'Vittima del Campeggio',
+    last_updated_at: new Date().toISOString()
+  });
   const [otherMascots, setOtherMascots] = useState<any[]>([]);
   const [infamieLogs, setInfamieLogs] = useState<any[]>([]);
   
@@ -214,7 +223,7 @@ export default function MascottePage() {
             const reg = await navigator.serviceWorker.getRegistration();
             if (reg) {
               reg.showNotification('⚠️ Mascotte in Pericolo!', {
-                body: `La tua mascotte ${needs.join(' e ')}. Entra subito e curala!`,
+                body: `La tua cavia ${needs.join(' e ')}. Entra subito e curala!`,
                 icon: '/tamagotchi/fase1_coniglio_piccolo.png',
                 vibrate: [200, 100, 200]
               } as any);
@@ -267,7 +276,6 @@ export default function MascottePage() {
           myMascot = newMascot;
         }
 
-        // Calcola stats live della mia mascotte
         const updatedMyMascot = calculateLiveStats(myMascot);
 
         await supabase.from('mascots').update({ 
@@ -289,13 +297,13 @@ export default function MascottePage() {
           svago: updatedMyMascot.svago, 
           exp: updatedMyMascot.exp, 
           fase: updatedMyMascot.fase, 
-          nome: myMascot.nome_mascotte || 'Bestia Anonima' 
+          nome: myMascot.nome_mascotte || 'Bestia Anonima',
+          last_updated_at: myMascot.last_updated_at || new Date().toISOString()
         });
         setTempName(myMascot.nome_mascotte || 'Bestia Anonima');
 
         checkAndNotifyNeeds(updatedMyMascot.fame, updatedMyMascot.sete, updatedMyMascot.svago);
 
-        // Recupero e calcolo decadimento dinamico delle mascotte rivali
         const { data: others } = await supabase
           .from('mascots')
           .select('*')
@@ -312,7 +320,6 @@ export default function MascottePage() {
 
         if (!isMounted) return;
 
-        // 🔴 REALTIME SUPABASE: Usa un canale univoco per evitare collisioni di iscrizione
         const channelName = `mascotte_realtime_${currentUser.id}_${Date.now()}`;
         realtimeChannel = supabase
           .channel(channelName)
@@ -333,7 +340,8 @@ export default function MascottePage() {
                   svago: liveMy.svago,
                   exp: liveMy.exp,
                   fase: liveMy.fase,
-                  nome: liveMy.nome_mascotte || prev.nome
+                  nome: liveMy.nome_mascotte || prev.nome,
+                  last_updated_at: updated.last_updated_at || new Date().toISOString()
                 }));
               } else {
                 setOtherMascots(prev => {
@@ -369,7 +377,6 @@ export default function MascottePage() {
 
     loadData();
 
-    // ⏱️ TIMER DI AGGIORNAMENTO LOCALE (Ogni 15 secondi ricalcola il decadimento a schermo)
     const interval = setInterval(() => {
       if (!isMounted) return;
       setOtherMascots(prev => prev.map(m => calculateLiveStats(m)));
@@ -435,17 +442,19 @@ export default function MascottePage() {
     if (!mascot.id) return;
     const statKey = item.type as 'fame' | 'sete' | 'svago';
 
-    if (mascot[statKey] >= 80) {
+    // 🚨 Indigestione/Sbronza scatta solo se la stat è già al 100% pieno
+    if (mascot[statKey] >= 100) {
       playAudioEffect('hurt');
       const penalty = 15;
       const newSvago = Math.max(0, mascot.svago - penalty);
+      const nowIso = new Date().toISOString();
       
       setToastMsg(item.type === 'sete' ? `🥴 Sbronza colossale! (-15% Svago)` : `🤮 Indigestione! (-15% Svago)`);
-      spawnParticle(`🤮 INDIGESTIONE!`, 'text-lime-400');
+      spawnParticle(`🤮 TROPPO PIENO!`, 'text-lime-400');
       setTimeout(() => setToastMsg(null), 5000);
       
-      setMascot(prev => ({ ...prev, svago: newSvago }));
-      await supabase.from('mascots').update({ svago: newSvago, last_updated_at: new Date().toISOString() }).eq('id', mascot.id);
+      setMascot(prev => ({ ...prev, svago: newSvago, last_updated_at: nowIso }));
+      await supabase.from('mascots').update({ svago: newSvago, last_updated_at: nowIso }).eq('id', mascot.id);
       mascotControls.start({ x: [-15, 15, -10, 10, -5, 5, 0], scale: [1, 0.9, 1.05, 1], transition: { duration: 0.6 } });
       return;
     }
@@ -456,6 +465,7 @@ export default function MascottePage() {
     const newStatValue = Math.min(100, mascot[statKey] + item.val);
     const newExp = mascot.exp + expGained;
     const newFase = getStageFromExp(newExp);
+    const nowIso = new Date().toISOString();
 
     if (newFase > mascot.fase) {
       playAudioEffect('level');
@@ -468,11 +478,20 @@ export default function MascottePage() {
     }
     setTimeout(() => setToastMsg(null), 5000);
 
-    const updatedMascot = { ...mascot, [statKey]: newStatValue, exp: newExp, fase: newFase };
+    const updatedMascot = {
+      ...mascot,
+      [statKey]: newStatValue,
+      exp: newExp,
+      fase: newFase,
+      last_updated_at: nowIso
+    };
     setMascot(updatedMascot);
 
     await supabase.from('mascots').update({
-      [statKey]: newStatValue, exp: newExp, fase: newFase, last_updated_at: new Date().toISOString(),
+      [statKey]: newStatValue,
+      exp: newExp,
+      fase: newFase,
+      last_updated_at: nowIso,
     }).eq('id', mascot.id);
 
     mascotControls.start({ scale: [1, 1.25, 0.9, 1], rotate: [0, -10, 10, 0], transition: { duration: 0.35 } });
@@ -668,7 +687,7 @@ export default function MascottePage() {
             onClick={() => setActiveTab('mascotte')}
             className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${activeTab === 'mascotte' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-400 hover:text-white'}`}
           >
-            🐾 Mascotte
+            🐾 CAVIA
           </button>
           <button 
             onClick={() => setActiveTab('rivali')}
@@ -685,11 +704,11 @@ export default function MascottePage() {
         </div>
       </div>
 
-      {/* TAB 1: MIA MASCOTTE & AZIONI */}
+      {/* TAB 1: MIA CAVIA & AZIONI */}
       {activeTab === 'mascotte' && (
         <div className="w-full max-w-md px-4 mt-3 space-y-4 z-10">
           
-          {/* SCENA VISIVA MASCOTTE */}
+          {/* SCENA VISIVA CAVIA */}
           <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 flex items-center justify-center min-h-[260px] shadow-2xl">
             <img src="/Backgr.png" alt="Camping" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
             
