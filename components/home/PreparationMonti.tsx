@@ -30,16 +30,34 @@ export default function PreparationMonti({
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [items, setItems] = useState<PrepItem[]>([]);
 
   async function loadPreparation() {
     const checks: PrepItem[] = [];
+    setLoadFailed(false);
+
+    try {
 
     /* 1. TENDA (Icona: tenda-grossa.png) */
-    const { data: tentMember } = await supabase
-      .from("tent_members")
+    const { data: eventTents, error: eventTentsError } = await supabase
+      .from("event_tents")
       .select("id")
-      .eq("user_id", userId);
+      .eq("event_id", eventId);
+
+    if (eventTentsError) throw eventTentsError;
+
+    const eventTentIds = (eventTents || []).map((tent) => tent.id);
+    const { data: tentMember, error: tentMemberError } = eventTentIds.length
+      ? await supabase
+          .from("tent_members")
+          .select("id")
+          .eq("user_id", userId)
+          .in("event_tent_id", eventTentIds)
+          .limit(1)
+      : { data: [], error: null };
+
+    if (tentMemberError) throw tentMemberError;
 
     if (!tentMember || tentMember.length === 0) {
       checks.push({
@@ -57,27 +75,39 @@ export default function PreparationMonti({
     }
 
     /* 2. VIAGGIO / MACCHINA */
-    const { data: trip } = await supabase
+    const { data: trips, error: tripsError } = await supabase
       .from("trips")
       .select("id")
-      .eq("event_id", eventId)
-      .limit(1)
-      .maybeSingle();
+      .eq("event_id", eventId);
+
+    if (tripsError) throw tripsError;
 
     let hasCar = false;
-    if (trip) {
-      const { data: driverCar } = await supabase
+    const tripIds = (trips || []).map((trip) => trip.id);
+    if (tripIds.length > 0) {
+      const { data: eventTripCars, error: tripCarsError } = await supabase
         .from("trip_cars")
-        .select("id")
-        .eq("trip_id", trip.id)
-        .eq("driver_id", userId);
+        .select("id, driver_id")
+        .in("trip_id", tripIds);
 
-      const { data: passenger } = await supabase
-        .from("trip_passengers")
-        .select("id")
-        .eq("user_id", userId);
+      if (tripCarsError) throw tripCarsError;
 
-      hasCar = !!driverCar?.length || !!passenger?.length;
+      const tripCarIds = (eventTripCars || []).map((car) => car.id);
+
+      const { data: passenger, error: passengerError } = tripCarIds.length
+        ? await supabase
+            .from("trip_passengers")
+            .select("id")
+            .eq("user_id", userId)
+            .in("trip_car_id", tripCarIds)
+            .limit(1)
+        : { data: [], error: null };
+
+      if (passengerError) throw passengerError;
+
+      hasCar =
+        !!eventTripCars?.some((car) => car.driver_id === userId) ||
+        !!passenger?.length;
     }
 
     if (!hasCar) {
@@ -180,7 +210,12 @@ export default function PreparationMonti({
     }
 
     setItems(checks);
-    setLoading(false);
+    } catch (error) {
+      console.error("Errore caricamento preparazione:", error);
+      setLoadFailed(true);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -189,7 +224,7 @@ export default function PreparationMonti({
     }
   }, [eventId, userId]);
 
-  if (loading) return null;
+  if (loading || loadFailed) return null;
 
   return (
     <section className="mt-6">

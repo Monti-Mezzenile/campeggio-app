@@ -2,17 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { RSVP_STATUS } from "@/lib/rsvp";
 
 
 export default function ExpensesSection({
 
-  eventId,
-  userId
+  eventId
 
 }:{
 
   eventId:string;
-  userId:string;
 
 }){
 
@@ -64,7 +63,7 @@ export default function ExpensesSection({
 
         "stato",
 
-        "partecipo"
+        RSVP_STATUS.PARTECIPO
 
       );
 
@@ -224,35 +223,17 @@ export default function ExpensesSection({
 
 
 
-    const quota=
+    const {error}=await supabase.rpc("create_expense_with_members", {
 
-      totale / selectedUsers.length;
+      p_event_id:eventId,
 
+      p_description:descrizione,
 
+      p_amount:totale,
 
+      p_member_ids:selectedUsers
 
-
-
-
-    const {data:expense,error}=await supabase
-
-      .from("expenses")
-
-      .insert({
-
-        event_id:eventId,
-
-        payer_id:userId,
-
-        descrizione,
-
-        importo:totale
-
-      })
-
-      .select()
-
-      .single();
+    });
 
 
 
@@ -269,52 +250,6 @@ export default function ExpensesSection({
     }
 
 
-
-
-
-
-
-
-    const rows=
-
-      selectedUsers.map(user=>(
-
-        {
-
-          expense_id:expense.id,
-
-          user_id:user,
-
-          quota
-
-        }
-
-      ));
-
-
-
-
-
-
-
-    const {error:memberError}=await supabase
-
-      .from("expense_members")
-
-      .insert(rows);
-
-
-
-
-
-
-    if(memberError){
-
-      alert(memberError.message);
-
-      return;
-
-    }
 
 
 

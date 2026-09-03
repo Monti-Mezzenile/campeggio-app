@@ -74,6 +74,7 @@ export default function RunnerPage() {
   const lastSpawnTime = useRef<number>(0);
   const scoreRef = useRef(0);
   const itemsCollectedRef = useRef(0);
+  const lastFrameTimeRef = useRef<number | null>(null);
 
   // 1️⃣ CARICAMENTO MASCOTTE E STATISTICHE LOCAL STORAGE
   useEffect(() => {
@@ -139,14 +140,21 @@ export default function RunnerPage() {
     setDustList([]);
     setGameState('PLAYING');
     lastSpawnTime.current = Date.now();
+    lastFrameTimeRef.current = null;
   };
 
   useEffect(() => {
     if (gameState !== 'PLAYING') return;
 
-    const updateGame = () => {
-      mascotYRef.current += velocityRef.current;
-      velocityRef.current -= GRAVITY;
+    const updateGame = (timestamp: number) => {
+      const previousTimestamp = lastFrameTimeRef.current ?? timestamp - 1000 / 60;
+      const frameScale = Math.min((timestamp - previousTimestamp) / (1000 / 60), 3);
+      lastFrameTimeRef.current = timestamp;
+
+      mascotYRef.current +=
+        velocityRef.current * frameScale -
+        (GRAVITY * frameScale * (frameScale - 1)) / 2;
+      velocityRef.current -= GRAVITY * frameScale;
 
       if (mascotYRef.current <= 0) {
         mascotYRef.current = 0;
@@ -166,7 +174,12 @@ export default function RunnerPage() {
       }
 
       dustRef.current = dustRef.current
-        .map((d) => ({ ...d, x: d.x - OBSTACLE_SPEED * 0.8, y: d.y + 0.3, size: d.size * 0.92 }))
+        .map((d) => ({
+          ...d,
+          x: d.x - OBSTACLE_SPEED * 0.8 * frameScale,
+          y: d.y + 0.3 * frameScale,
+          size: d.size * Math.pow(0.92, frameScale),
+        }))
         .filter((d) => d.size > 0.8);
       setDustList([...dustRef.current]);
 
@@ -211,7 +224,7 @@ export default function RunnerPage() {
       const mascotTop = mascotYRef.current + 80;
 
       for (const ent of entitiesRef.current) {
-        ent.x -= OBSTACLE_SPEED;
+        ent.x -= OBSTACLE_SPEED * frameScale;
         const entLeft = ent.x;
         const entRight = ent.x + ent.width;
         const entBottom = ent.yOffset;
@@ -245,8 +258,8 @@ export default function RunnerPage() {
       entitiesRef.current = nextEntities;
       setEntities([...nextEntities]);
       
-      scoreRef.current += 1;
-      setScore(scoreRef.current); 
+      scoreRef.current += frameScale;
+      setScore(Math.floor(scoreRef.current));
 
       requestRef.current = requestAnimationFrame(updateGame);
     };
@@ -257,9 +270,8 @@ export default function RunnerPage() {
 
   const endGame = async () => {
     setGameState('GAMEOVER');
-    const finalScore = scoreRef.current;
+    const finalScore = Math.floor(scoreRef.current);
     const gained = Math.floor(finalScore / 15);
-    setExpEarned(gained);
 
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -281,12 +293,14 @@ export default function RunnerPage() {
     }
 
     if (mascotId && gained > 0) {
-      const newExpTotal = currentExp + gained;
-      setCurrentExp(newExpTotal);
-      await supabase.from('mascots').update({
-        exp: newExpTotal,
-        last_updated_at: new Date().toISOString()
-      }).eq('id', mascotId);
+      const { data: newExpTotal, error } = await supabase.rpc('increment_mascot_exp', {
+        p_delta: gained,
+      });
+      if (error) console.error('Errore salvataggio XP runner:', error);
+      if (!error && newExpTotal !== null) {
+        setCurrentExp(newExpTotal);
+        setExpEarned(gained);
+      }
     }
   };
 

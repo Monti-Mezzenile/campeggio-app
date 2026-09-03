@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LogoutButton from "@/components/ui/LogoutButton";
@@ -81,6 +81,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
+  const mascotBaselineRef = useRef<Parameters<typeof calculateLiveStats>[0]>(null);
 
   // Campi del Profilo
   const [nome, setNome] = useState("");
@@ -123,6 +124,7 @@ export default function ProfilePage() {
       .maybeSingle();
 
     if (mascotData) {
+      mascotBaselineRef.current = mascotData;
       setMascot(calculateLiveStats(mascotData));
     }
 
@@ -226,6 +228,7 @@ export default function ProfilePage() {
             (payload) => {
               const updated = payload.new as any;
               if (updated && isMounted) {
+                mascotBaselineRef.current = updated;
                 setMascot(calculateLiveStats(updated));
               }
             }
@@ -240,7 +243,11 @@ export default function ProfilePage() {
     // ⏱️ Ricalcola il decadimento a schermo ogni 15 secondi
     const interval = setInterval(() => {
       if (isMounted) {
-        setMascot((prev: any) => (prev ? calculateLiveStats(prev) : prev));
+        setMascot((prev: any) =>
+          prev && mascotBaselineRef.current
+            ? calculateLiveStats(mascotBaselineRef.current)
+            : prev
+        );
       }
     }, 15000);
 

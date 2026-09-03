@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import CustomIcon from "@/components/ui/CustomIcon";
+import { RSVP_STATUS, type RsvpStatus } from "@/lib/rsvp";
 
 export default function JoinEventPage() {
   const params = useParams();
@@ -15,9 +16,7 @@ export default function JoinEventPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [scelta, setScelta] = useState<
-    "partecipo" | "forse" | "non_posso" | null
-  >(null);
+  const [scelta, setScelta] = useState<RsvpStatus | null>(null);
 
   const [arrivoData, setArrivoData] = useState("");
   const [arrivoOra, setArrivoOra] = useState("");
@@ -26,27 +25,51 @@ export default function JoinEventPage() {
 
   async function loadData() {
     setLoading(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-    if (user) {
+      if (userError || !user) {
+        if (userError) console.log(userError);
+        return;
+      }
+
       setUser(user);
+
+      const [eventResult, membershipResult] = await Promise.all([
+        supabase.from("events").select("*").eq("id", id).single(),
+        supabase
+          .from("event_members")
+          .select("stato, arrivo_data, arrivo_ora, partenza_data, partenza_ora")
+          .eq("event_id", id)
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
+
+      if (eventResult.error) {
+        console.log(eventResult.error);
+        return;
+      }
+      if (membershipResult.error) {
+        console.log(membershipResult.error);
+        return;
+      }
+
+      setEvent(eventResult.data);
+
+      if (membershipResult.data) {
+        const membership = membershipResult.data;
+        setScelta(membership.stato as RsvpStatus);
+        setArrivoData(membership.arrivo_data || "");
+        setArrivoOra(membership.arrivo_ora || "");
+        setPartenzaData(membership.partenza_data || "");
+        setPartenzaOra(membership.partenza_ora || "");
+      }
+    } finally {
+      setLoading(false);
     }
-
-    const { data: eventData, error } = await supabase
-      .from("events")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error) {
-      console.log(error);
-      return;
-    }
-
-    setEvent(eventData);
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -132,10 +155,10 @@ export default function JoinEventPage() {
       event_id: id,
       user_id: user.id,
       stato: scelta,
-      arrivo_data: scelta === "partecipo" ? arrivoData || null : null,
-      arrivo_ora: scelta === "partecipo" ? arrivoOra || null : null,
-      partenza_data: scelta === "partecipo" ? partenzaData || null : null,
-      partenza_ora: scelta === "partecipo" ? partenzaOra || null : null,
+      arrivo_data: scelta === RSVP_STATUS.PARTECIPO ? arrivoData || null : null,
+      arrivo_ora: scelta === RSVP_STATUS.PARTECIPO ? arrivoOra || null : null,
+      partenza_data: scelta === RSVP_STATUS.PARTECIPO ? partenzaData || null : null,
+      partenza_ora: scelta === RSVP_STATUS.PARTECIPO ? partenzaOra || null : null,
     };
 
     const { data: existing, error: checkError } = await supabase
@@ -157,7 +180,9 @@ export default function JoinEventPage() {
       const result = await supabase
         .from("event_members")
         .update(payload)
-        .eq("id", existing.id);
+        .eq("id", existing.id)
+        .eq("event_id", id)
+        .eq("user_id", user.id);
       error = result.error;
     } else {
       const result = await supabase.from("event_members").insert(payload);
@@ -171,19 +196,19 @@ export default function JoinEventPage() {
       return;
     }
 
-    if (scelta === "partecipo" || scelta === "forse") {
-      const { data: existingChecklist } = await supabase
+    if (scelta === RSVP_STATUS.PARTECIPO || scelta === RSVP_STATUS.FORSE) {
+      const { error: checklistError } = await supabase
         .from("checklists")
-        .select("id")
-        .eq("event_id", id)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!existingChecklist) {
-        await supabase.from("checklists").insert({
+        .upsert({
           event_id: id,
           user_id: user.id,
-        });
+        }, { onConflict: "event_id,user_id", ignoreDuplicates: true });
+
+      if (checklistError) {
+        console.log(checklistError);
+        alert(checklistError.message);
+        setSaving(false);
+        return;
       }
     }
     setSaving(false);
@@ -226,19 +251,19 @@ export default function JoinEventPage() {
 
   const choices = [
     {
-      id: "partecipo",
+      id: RSVP_STATUS.PARTECIPO,
       status: "🟢",
       title: "CI SARÒ",
       description: "Il richiamo di Monti è troppo forte.",
     },
     {
-      id: "forse",
+      id: RSVP_STATUS.FORSE,
       status: "🟡",
       title: "FORSE",
       description: "Il mio cervello dice sì, il calendario dice boh.",
     },
     {
-      id: "non_posso",
+      id: RSVP_STATUS.NON_POSSO,
       status: "🔴",
       title: "NON POSSO",
       description: "Sono un soffice batuffolo con le orecchie lunghe.",
@@ -326,7 +351,7 @@ export default function JoinEventPage() {
       </section>
 
       {/* 🏕️ ORGANIZZA IL VIAGGIO (CONDIZIONALE) */}
-      {scelta === "partecipo" && (
+      {scelta === RSVP_STATUS.PARTECIPO && (
         <section className="bg-white/90 backdrop-blur-2xl rounded-[2rem] p-5 shadow-sm border border-white space-y-3">
           <div className="flex items-center gap-2.5">
             <span className="text-xl">🏕️</span>

@@ -40,27 +40,25 @@ export default function CarsEventPage() {
   const [loading, setLoading] = useState(true);
 
   async function getOrCreateTrip() {
-    const { data: trips, error } = await supabase
+    const { data: trip, error } = await supabase
       .from("trips")
       .select("id")
       .eq("event_id", id)
-      .order("id")
-      .limit(1);
+      .eq("tipo", "andata")
+      .maybeSingle();
 
     if (error) {
       console.error("ERRORE TRIP:", error);
       return null;
     }
 
-    let trip = trips?.[0];
-
     if (!trip) {
       const { data: newTrip, error: createError } = await supabase
         .from("trips")
-        .insert({
+        .upsert({
           event_id: id,
           tipo: "andata",
-        })
+        }, { onConflict: "event_id,tipo" })
         .select("id")
         .single();
 
@@ -68,7 +66,7 @@ export default function CarsEventPage() {
         console.error("ERRORE CREAZIONE TRIP:", createError);
         return null;
       }
-      trip = newTrip;
+      return newTrip;
     }
 
     return trip;

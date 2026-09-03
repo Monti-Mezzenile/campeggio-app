@@ -10,6 +10,7 @@ import NextEventCard from "@/components/home/NextEventCard";
 import MyStuff from "@/components/home/MyStuff";
 import MyEvents from "@/components/home/MyEvents";
 import CommunitySection from "@/components/home/CommunitySection";
+import { RSVP_STATUS } from "@/lib/rsvp";
 
 // 🎯 Helper per parsare stringhe "YYYY-MM-DD" senza problemi di Fuso Orario / UTC
 function parseLocalDate(dateStr: string | null) {
@@ -94,7 +95,7 @@ export default function Home() {
       const eventsWithStatus = eventsData.map((event) => ({
         ...event,
         participation: participationMap[event.id] || null,
-        joined: participationMap[event.id] === "partecipo",
+        joined: participationMap[event.id] === RSVP_STATUS.PARTECIPO,
       }));
 
       // 🎯 FIX 1: ORDINAMENTO MANUALE RIGOROSO PER DATA INIZIO / DATA EVENTO (CRESCENTE)

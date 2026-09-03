@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/components/ui/BackButton";
+import { RSVP_STATUS } from "@/lib/rsvp";
 
 interface UserProfile {
   id: string;
@@ -32,8 +33,9 @@ export default function AddPassengerPage() {
       // 1. Recupera la macchina dell'evento (.maybeSingle() anti-crash)
       const { data: tripCar, error: carErr } = await supabase
         .from("trip_cars")
-        .select("*")
+        .select("*, trips!inner(event_id)")
         .eq("id", carId)
+        .eq("trips.event_id", eventId)
         .maybeSingle();
 
       if (carErr || !tripCar) {
@@ -50,7 +52,7 @@ export default function AddPassengerPage() {
           .from("event_members")
           .select("user_id")
           .eq("event_id", eventId)
-          .eq("stato", "partecipo"),
+          .eq("stato", RSVP_STATUS.PARTECIPO),
         supabase
           .from("trip_passengers")
           .select("user_id")

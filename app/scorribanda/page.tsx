@@ -181,7 +181,6 @@ export default function ScorribandaPage() {
     setGameState('GAMEOVER');
     const finalScore = scoreRef.current;
     const gainedXP = Math.max(5, Math.floor(finalScore / 10));
-    setExpEarned(gainedXP);
 
     // Aggiorna Statistiche
     const updatedStats: GameStats = {
@@ -194,12 +193,14 @@ export default function ScorribandaPage() {
 
     // Salva XP nel database Supabase
     if (mascotId && gainedXP > 0) {
-      const newExpTotal = currentExp + gainedXP;
-      setCurrentExp(newExpTotal);
-      await supabase.from('mascots').update({
-        exp: newExpTotal,
-        last_updated_at: new Date().toISOString()
-      }).eq('id', mascotId);
+      const { data: newExpTotal, error } = await supabase.rpc('increment_mascot_exp', {
+        p_delta: gainedXP,
+      });
+      if (error) console.error('Errore salvataggio XP scorribanda:', error);
+      if (!error && newExpTotal !== null) {
+        setCurrentExp(newExpTotal);
+        setExpEarned(gainedXP);
+      }
     }
   };
 

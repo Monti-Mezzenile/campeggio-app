@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import ExpenseSummary from "@/components/event/ExpenseSummary";
 import CustomIcon from "@/components/ui/CustomIcon";
+import { RSVP_STATUS } from "@/lib/rsvp";
 
 interface Settlement {
   from: string;
@@ -54,7 +55,7 @@ export default function ExpensesPage() {
         )
       `)
       .eq("event_id", eventId)
-      .eq("stato", "partecipo");
+      .eq("stato", RSVP_STATUS.PARTECIPO);
 
     if (membersError) {
       console.log("ERRORE PARTECIPANTI:", membersError);
@@ -116,36 +117,15 @@ export default function ExpensesPage() {
 
     const amount = parseFloat(importo);
 
-    const { data: expense, error } = await supabase
-      .from("expenses")
-      .insert({
-        event_id: eventId,
-        payer_id: user.id,
-        descrizione: descrizione.trim(),
-        importo: amount,
-      })
-      .select()
-      .single();
+    const { error } = await supabase.rpc("create_expense_with_members", {
+      p_event_id: eventId,
+      p_description: descrizione.trim(),
+      p_amount: amount,
+      p_member_ids: selectedUsers,
+    });
 
     if (error) {
       alert(error.message);
-      return;
-    }
-
-    const quota = amount / selectedUsers.length;
-
-    const members = selectedUsers.map((id) => ({
-      expense_id: expense.id,
-      user_id: id,
-      quota,
-    }));
-
-    const { error: memberError } = await supabase
-      .from("expense_members")
-      .insert(members);
-
-    if (memberError) {
-      alert(memberError.message);
       return;
     }
 

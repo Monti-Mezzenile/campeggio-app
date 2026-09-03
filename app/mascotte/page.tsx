@@ -196,6 +196,8 @@ export default function MascottePage() {
 
   const mascotRef = useRef<HTMLDivElement>(null);
   const mascotControls = useAnimation();
+  const mascotBaselineRef = useRef<Parameters<typeof calculateLiveStats>[0]>(null);
+  const otherMascotBaselinesRef = useRef<Array<Parameters<typeof calculateLiveStats>[0]>>([]);
 
   const spawnParticle = (text: string, color = 'text-emerald-400') => {
     const id = Date.now() + Math.random();
@@ -278,6 +280,7 @@ export default function MascottePage() {
 
         const updatedMyMascot = calculateLiveStats(myMascot);
 
+        const persistedAt = new Date().toISOString();
         await supabase.from('mascots').update({ 
           fame: updatedMyMascot.fame, 
           sete: updatedMyMascot.sete, 
@@ -285,12 +288,12 @@ export default function MascottePage() {
           exp: updatedMyMascot.exp, 
           fase: updatedMyMascot.fase, 
           owner_name: ownerName,
-          last_updated_at: new Date().toISOString()
+          last_updated_at: persistedAt
         }).eq('id', myMascot.id);
 
         if (!isMounted) return;
 
-        setMascot({ 
+        const nextMascot = {
           id: myMascot.id, 
           fame: updatedMyMascot.fame, 
           sete: updatedMyMascot.sete, 
@@ -298,8 +301,10 @@ export default function MascottePage() {
           exp: updatedMyMascot.exp, 
           fase: updatedMyMascot.fase, 
           nome: myMascot.nome_mascotte || 'Bestia Anonima',
-          last_updated_at: myMascot.last_updated_at || new Date().toISOString()
-        });
+          last_updated_at: persistedAt
+        };
+        mascotBaselineRef.current = nextMascot;
+        setMascot(nextMascot);
         setTempName(myMascot.nome_mascotte || 'Bestia Anonima');
 
         checkAndNotifyNeeds(updatedMyMascot.fame, updatedMyMascot.sete, updatedMyMascot.svago);
@@ -311,6 +316,7 @@ export default function MascottePage() {
           .order('exp', { ascending: false });
 
         if (others && isMounted) {
+          otherMascotBaselinesRef.current = others;
           const formattedOthers = others.map(o => calculateLiveStats(o));
           setOtherMascots(formattedOthers);
         }
@@ -332,6 +338,7 @@ export default function MascottePage() {
               if (!updated) return;
 
               if (updated.user_id === currentUser.id) {
+                mascotBaselineRef.current = updated;
                 const liveMy = calculateLiveStats(updated);
                 setMascot(prev => ({
                   ...prev,
@@ -344,6 +351,10 @@ export default function MascottePage() {
                   last_updated_at: updated.last_updated_at || new Date().toISOString()
                 }));
               } else {
+                otherMascotBaselinesRef.current = [
+                  ...otherMascotBaselinesRef.current.filter((m) => m.id !== updated.id),
+                  updated,
+                ];
                 setOtherMascots(prev => {
                   const exists = prev.some(m => m.id === updated.id);
                   const calculated = calculateLiveStats(updated);
@@ -379,10 +390,10 @@ export default function MascottePage() {
 
     const interval = setInterval(() => {
       if (!isMounted) return;
-      setOtherMascots(prev => prev.map(m => calculateLiveStats(m)));
+      setOtherMascots(otherMascotBaselinesRef.current.map(m => calculateLiveStats(m)));
       setMascot(prev => {
-        if (!prev.id) return prev;
-        const updated = calculateLiveStats(prev);
+        if (!prev.id || !mascotBaselineRef.current) return prev;
+        const updated = calculateLiveStats(mascotBaselineRef.current);
         return { ...prev, fame: updated.fame, sete: updated.sete, svago: updated.svago };
       });
     }, 15000);
@@ -453,7 +464,11 @@ export default function MascottePage() {
       spawnParticle(`🤮 TROPPO PIENO!`, 'text-lime-400');
       setTimeout(() => setToastMsg(null), 5000);
       
-      setMascot(prev => ({ ...prev, svago: newSvago, last_updated_at: nowIso }));
+      setMascot(prev => {
+        const next = { ...prev, svago: newSvago, last_updated_at: nowIso };
+        mascotBaselineRef.current = next;
+        return next;
+      });
       await supabase.from('mascots').update({ svago: newSvago, last_updated_at: nowIso }).eq('id', mascot.id);
       mascotControls.start({ x: [-15, 15, -10, 10, -5, 5, 0], scale: [1, 0.9, 1.05, 1], transition: { duration: 0.6 } });
       return;
@@ -485,6 +500,7 @@ export default function MascottePage() {
       fase: newFase,
       last_updated_at: nowIso
     };
+    mascotBaselineRef.current = updatedMascot;
     setMascot(updatedMascot);
 
     await supabase.from('mascots').update({
@@ -518,68 +534,47 @@ export default function MascottePage() {
 
   const handleRivalAction = async (rival: any, actionType: 'pigna' | 'birra' | 'cibo' | 'troll' | 'gioca') => {
     if (!rival?.id || !user) return;
-    let updatedFame = rival.fame ?? 50;
-    let updatedSete = rival.sete ?? 50;
-    let updatedSvago = rival.svago ?? 50;
-    let actionTitle = "";
-    let logMessage = "";
-    const senderName = mascot.nome || 'Un campeggiatore anonimo';
+    const { data, error } = await supabase.rpc('apply_mascot_action', {
+      p_target_mascot_id: rival.id,
+      p_action_type: actionType,
+    });
 
-    if (actionType === 'pigna') {
-      updatedSvago = Math.max(0, updatedSvago - 12);
-      actionTitle = "🎯 Pigna in faccia!";
-      logMessage = `${senderName} ti ha tirato una pigna in faccia! (-12% Svago)`;
-      playAudioEffect('hurt');
-    } else if (actionType === 'birra') {
-      updatedSete = Math.min(100, updatedSete + 25);
-      actionTitle = "🍺 Birra offerta!";
-      logMessage = `${senderName} ti ha offerto una birra fresca! (+25% Sete)`;
-      playAudioEffect('pop');
-    } else if (actionType === 'cibo') {
-      updatedFame = Math.min(100, updatedFame + 25);
-      actionTitle = "🥩 Cibo lanciato!";
-      logMessage = `${senderName} ti ha lanciato un cosciotto! (+25% Fame)`;
-      playAudioEffect('munch');
-    } else if (actionType === 'troll') {
-      updatedSvago = Math.max(0, updatedSvago - 8);
-      updatedFame = Math.max(0, updatedFame - 8);
-      actionTitle = "👻 Spavento notturno!";
-      logMessage = `${senderName} ti ha spaventato a morte! (-8% Fame e Svago)`;
-      playAudioEffect('hurt');
-    } else if (actionType === 'gioca') {
-      updatedSvago = Math.min(100, updatedSvago + 25);
-      actionTitle = "🎾 Ora del gioco!";
-      logMessage = `${senderName} ha giocato un po' con te! (+25% Svago)`;
-      playAudioEffect('level');
+    if (error || !data) {
+      console.error("Errore azione mascotte:", error);
+      return;
     }
 
+    const result = data as {
+      id: string;
+      fame: number;
+      sete: number;
+      svago: number;
+      last_updated_at: string | null;
+    };
+    otherMascotBaselinesRef.current = otherMascotBaselinesRef.current.map((m) =>
+      m.id === rival.id ? { ...m, ...result } : m
+    );
+
+    if (actionType === 'pigna' || actionType === 'troll') playAudioEffect('hurt');
+    else if (actionType === 'birra') playAudioEffect('pop');
+    else if (actionType === 'cibo') playAudioEffect('munch');
+    else playAudioEffect('level');
+
     setOtherMascots((prev) =>
-      prev.map((m) => (m.id === rival.id ? { ...m, fame: updatedFame, sete: updatedSete, svago: updatedSvago, last_updated_at: new Date().toISOString() } : m))
+      prev.map((m) => (m.id === rival.id ? { ...m, ...result } : m))
     );
 
     setToastMsg(`Azione eseguita su ${rival.nome_mascotte || 'Anonimo'}!`);
     setTimeout(() => setToastMsg(null), 5000);
     setSelectedRival(null);
 
-    await supabase.from('mascots').update({
-      fame: updatedFame, sete: updatedSete, svago: updatedSvago, last_updated_at: new Date().toISOString()
-    }).eq('id', rival.id);
-
-    await supabase.from('mascot_logs').insert([{
-      sender_name: senderName,
-      receiver_user_id: rival.user_id,
-      action_type: actionType,
-      message: logMessage
-    }]);
-
     try {
       await fetch('/api/push-notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          receiverUserId: rival.user_id,
-          title: actionTitle,
-          message: logMessage
+          targetMascotId: rival.id,
+          actionType
         })
       });
     } catch (e) {

@@ -45,7 +45,7 @@ export default function ChecklistPage() {
     }
 
     /* 1. CARICO / CREO LA CHECKLIST PER QUESTO EVENTO */
-    let { data: checklist } = await supabase
+    let { data: checklist, error: checklistError } = await supabase
       .from("checklists")
       .select("*")
       .eq("event_id", eventId)
@@ -54,15 +54,19 @@ export default function ChecklistPage() {
       .limit(1)
       .maybeSingle();
 
+    if (checklistError) {
+      console.log("ERRORE CARICAMENTO CHECKLIST:", checklistError);
+      setLoading(false);
+      return;
+    }
+
     if (!checklist) {
-      const { data: newChecklist, error: createError } = await supabase
+      const { error: createError } = await supabase
         .from("checklists")
-        .insert({
+        .upsert({
           event_id: eventId,
           user_id: user.id,
-        })
-        .select()
-        .single();
+        }, { onConflict: "event_id,user_id", ignoreDuplicates: true });
 
       if (createError) {
         console.log("ERRORE CREAZIONE CHECKLIST:", createError);
@@ -70,7 +74,20 @@ export default function ChecklistPage() {
         return;
       }
 
-      checklist = newChecklist;
+      const { data: createdChecklist, error: reloadError } = await supabase
+        .from("checklists")
+        .select("*")
+        .eq("event_id", eventId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (reloadError || !createdChecklist) {
+        console.log("ERRORE RICARICAMENTO CHECKLIST:", reloadError);
+        setLoading(false);
+        return;
+      }
+
+      checklist = createdChecklist;
     }
 
     setChecklistId(checklist.id);
@@ -196,55 +213,28 @@ export default function ChecklistPage() {
   }
 
   async function toggleItem(id: string, value: boolean) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return;
-
-    const item = items.find((item) => item.id === id);
-    if (!item) return;
-
-    const { error: updateError } = await supabase
-      .from("checklist_items")
-      .update({ completato: value })
-      .eq("id", id);
+    const { error: updateError } = await supabase.rpc(
+      "set_checklist_item_completion",
+      {
+        p_item_id: id,
+        p_completed: value,
+      }
+    );
 
     if (updateError) {
       console.log("ERRORE CHECK ITEM:", updateError);
       return;
     }
 
-    const isPersonalClothing = item.category === "Vestiti e Oggetti Personali";
-
-    if (value && item.equipment_id && !isPersonalClothing) {
-      await supabase
-        .from("event_equipment")
-        .upsert(
-          {
-            event_id: eventId,
-            equipment_id: item.equipment_id,
-            assegnato_a: user.id,
-            confermato: true,
-          },
-          { onConflict: "event_id,equipment_id,assegnato_a" }
-        );
-    }
-
-    if (!value && item.equipment_id && !isPersonalClothing) {
-      await supabase
-        .from("event_equipment")
-        .delete()
-        .eq("event_id", eventId)
-        .eq("equipment_id", item.equipment_id)
-        .eq("assegnato_a", user.id);
-    }
-
     loadChecklist();
   }
 
   async function deleteItem(id: string) {
-    await supabase.from("checklist_items").delete().eq("id", id);
+    const { error } = await supabase.from("checklist_items").delete().eq("id", id);
+    if (error) {
+      console.log("ERRORE ELIMINAZIONE ITEM:", error);
+      return;
+    }
     loadChecklist();
   }
 

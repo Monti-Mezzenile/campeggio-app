@@ -150,7 +150,6 @@ export default function AllenamentoPage() {
   const endGame = async (finalReps = reps) => {
     setGameState('GAMEOVER');
     const gainedXP = Math.max(5, finalReps * 3);
-    setExpEarned(gainedXP);
 
     // Aggiorna e salva statistiche locali
     const updatedStats: GameStats = {
@@ -163,12 +162,14 @@ export default function AllenamentoPage() {
 
     // Salva XP su Supabase
     if (mascotId && gainedXP > 0) {
-      const newExpTotal = currentExp + gainedXP;
-      setCurrentExp(newExpTotal);
-      await supabase.from('mascots').update({
-        exp: newExpTotal,
-        last_updated_at: new Date().toISOString()
-      }).eq('id', mascotId);
+      const { data: newExpTotal, error } = await supabase.rpc('increment_mascot_exp', {
+        p_delta: gainedXP,
+      });
+      if (error) console.error('Errore salvataggio XP allenamento:', error);
+      if (!error && newExpTotal !== null) {
+        setCurrentExp(newExpTotal);
+        setExpEarned(gainedXP);
+      }
     }
   };
 

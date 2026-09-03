@@ -37,6 +37,7 @@ export default function AddPersonPage() {
         .from("event_tents")
         .select("tent_id")
         .eq("id", tentId)
+        .eq("event_id", eventId)
         .maybeSingle();
 
       if (eventTentError || !eventTent) {
@@ -140,31 +141,6 @@ export default function AddPersonPage() {
     setAddingId(userId);
 
     try {
-      // Controllo di sicurezza capienza
-      const { count } = await supabase
-        .from("tent_members")
-        .select("*", { count: "exact", head: true })
-        .eq("event_tent_id", tentId);
-
-      const { data: eventTent } = await supabase
-        .from("event_tents")
-        .select("tent_id")
-        .eq("id", tentId)
-        .maybeSingle();
-
-      const { data: tent } = await supabase
-        .from("tents")
-        .select("posti")
-        .eq("id", eventTent?.tent_id)
-        .maybeSingle();
-
-      if ((count || 0) >= (tent?.posti || 0)) {
-        alert("Questa tenda è ormai completa!");
-        setAddingId(null);
-        return;
-      }
-
-      // Inserimento utente nella tenda
       const { error } = await supabase.from("tent_members").insert({
         event_tent_id: tentId,
         user_id: userId,

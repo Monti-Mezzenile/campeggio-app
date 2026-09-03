@@ -47,6 +47,7 @@ export default function TentDetailPage() {
         .from("event_tents")
         .select("*")
         .eq("id", tentId)
+        .eq("event_id", eventId)
         .maybeSingle();
 
       if (eventTentError || !eventTent) {
@@ -121,9 +122,10 @@ export default function TentDetailPage() {
 
     try {
       const { error } = await supabase
-        .from("tent_members")
-        .delete()
-        .eq("id", tentMemberId);
+      .from("tent_members")
+      .delete()
+      .eq("id", tentMemberId)
+      .eq("event_tent_id", tentId);
 
       if (error) {
         console.error(error);
@@ -148,7 +150,8 @@ export default function TentDetailPage() {
       const { error } = await supabase
         .from("event_tents")
         .delete()
-        .eq("id", tentId);
+        .eq("id", tentId)
+        .eq("event_id", eventId);
 
       if (error) {
         console.error(error);

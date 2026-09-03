@@ -23,14 +23,13 @@ export default function AddEventCarPage() {
   const [loading, setLoading] = useState(true);
   const [addingCarId, setAddingCarId] = useState<string | null>(null);
 
-  // 🛡️ FIX DELL'ERRORE: Usiamo .limit(1) per evitare crash se ci sono più trip per lo stesso evento
   async function getOrCreateTrip() {
-    const { data: trips, error: findError } = await supabase
+    const { data: trip, error: findError } = await supabase
       .from("trips")
       .select("*")
       .eq("event_id", id)
-      .order("id")
-      .limit(1);
+      .eq("tipo", "andata")
+      .maybeSingle();
 
     if (findError) {
       console.error("ERRORE RICERCA TRIP:", findError);
@@ -38,26 +37,27 @@ export default function AddEventCarPage() {
       return null;
     }
 
-    if (trips && trips.length > 0) {
-      return trips[0];
+    if (trip) {
+      return trip;
     }
 
     // Se non esiste ancora un trip per questo evento, ne creiamo uno
-    const { data: newTrips, error: createError } = await supabase
+    const { data: newTrip, error: createError } = await supabase
       .from("trips")
-      .insert({
+      .upsert({
         event_id: id,
         tipo: "andata",
-      })
-      .select();
+      }, { onConflict: "event_id,tipo" })
+      .select()
+      .single();
 
-    if (createError || !newTrips || newTrips.length === 0) {
+    if (createError || !newTrip) {
       console.error("ERRORE CREAZIONE TRIP:", createError);
       alert(createError?.message || "Impossibile creare il viaggio");
       return null;
     }
 
-    return newTrips[0];
+    return newTrip;
   }
 
   async function loadCars() {

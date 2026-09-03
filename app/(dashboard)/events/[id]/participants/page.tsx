@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import CustomIcon from "@/components/ui/CustomIcon";
+import { RSVP_STATUS, type RsvpStatus } from "@/lib/rsvp";
 
 export default function ParticipantsPage() {
   const params = useParams();
@@ -53,9 +54,9 @@ export default function ParticipantsPage() {
 
     const ordered = result.sort((a, b) => {
       const order: any = {
-        partecipo: 0,
-        forse: 1,
-        non_posso: 2,
+        [RSVP_STATUS.PARTECIPO]: 0,
+        [RSVP_STATUS.FORSE]: 1,
+        [RSVP_STATUS.NON_POSSO]: 2,
       };
 
       return (order[a.stato] ?? 3) - (order[b.stato] ?? 3);
@@ -65,7 +66,7 @@ export default function ParticipantsPage() {
     setLoading(false);
   }
 
-  async function changeStatus(memberId: string, stato: string) {
+  async function changeStatus(memberId: string, stato: RsvpStatus) {
     setUpdating(true);
 
     const { error } = await supabase
@@ -108,9 +109,9 @@ export default function ParticipantsPage() {
     );
   }
 
-  const countPartecipo = participants.filter((p) => p.stato === "partecipo").length;
-  const countForse = participants.filter((p) => p.stato === "forse").length;
-  const countNonPosso = participants.filter((p) => p.stato === "non_posso").length;
+  const countPartecipo = participants.filter((p) => p.stato === RSVP_STATUS.PARTECIPO).length;
+  const countForse = participants.filter((p) => p.stato === RSVP_STATUS.FORSE).length;
+  const countNonPosso = participants.filter((p) => p.stato === RSVP_STATUS.NON_POSSO).length;
 
   return (
     <main className="min-h-screen p-4 sm:p-6 pb-32 max-w-md mx-auto flex flex-col gap-5 select-none">
@@ -207,12 +208,12 @@ function ParticipantCard({
   let statoLabel = "In Forse";
   let statusDot = "🟡";
 
-  if (person.stato === "partecipo") {
+  if (person.stato === RSVP_STATUS.PARTECIPO) {
     borderAccent = "border-l-emerald-500";
     statusBadgeBg = "bg-emerald-100 text-emerald-900 border-emerald-200";
     statoLabel = "Partecipo";
     statusDot = "🟢";
-  } else if (person.stato === "non_posso") {
+  } else if (person.stato === RSVP_STATUS.NON_POSSO) {
     borderAccent = "border-l-rose-500";
     statusBadgeBg = "bg-rose-100 text-rose-900 border-rose-200";
     statoLabel = "Non posso";
@@ -317,9 +318,9 @@ function ParticipantCard({
               <div className="grid grid-cols-3 gap-1.5">
                 <button
                   disabled={updating}
-                  onClick={() => changeStatus(person.id, "partecipo")}
+                  onClick={() => changeStatus(person.id, RSVP_STATUS.PARTECIPO)}
                   className={`py-2 px-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition border ${
-                    person.stato === "partecipo"
+                    person.stato === RSVP_STATUS.PARTECIPO
                       ? "bg-emerald-500 text-white border-emerald-600 shadow-xs"
                       : "bg-white text-[#1b2b25] border-white shadow-2xs hover:bg-emerald-50"
                   }`}
@@ -329,9 +330,9 @@ function ParticipantCard({
 
                 <button
                   disabled={updating}
-                  onClick={() => changeStatus(person.id, "forse")}
+                  onClick={() => changeStatus(person.id, RSVP_STATUS.FORSE)}
                   className={`py-2 px-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition border ${
-                    person.stato === "forse"
+                    person.stato === RSVP_STATUS.FORSE
                       ? "bg-amber-500 text-white border-amber-600 shadow-xs"
                       : "bg-white text-[#1b2b25] border-white shadow-2xs hover:bg-amber-50"
                   }`}
@@ -341,9 +342,9 @@ function ParticipantCard({
 
                 <button
                   disabled={updating}
-                  onClick={() => changeStatus(person.id, "non_posso")}
+                  onClick={() => changeStatus(person.id, RSVP_STATUS.NON_POSSO)}
                   className={`py-2 px-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition border ${
-                    person.stato === "non_posso"
+                    person.stato === RSVP_STATUS.NON_POSSO
                       ? "bg-rose-500 text-white border-rose-600 shadow-xs"
                       : "bg-white text-[#1b2b25] border-white shadow-2xs hover:bg-rose-50"
                   }`}

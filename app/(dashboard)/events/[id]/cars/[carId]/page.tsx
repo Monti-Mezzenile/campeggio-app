@@ -40,8 +40,9 @@ export default function CarDetailPage() {
       // 1. Recupera la vettura legata all'evento
       const { data: tripCar, error: tripCarErr } = await supabase
         .from("trip_cars")
-        .select("*")
+        .select("*, trips!inner(event_id)")
         .eq("id", carId)
+        .eq("trips.event_id", eventId)
         .maybeSingle();
 
       // Logga solo se c'è un vero errore SQL/Supabase
@@ -109,7 +110,8 @@ export default function CarDetailPage() {
     const { error } = await supabase
       .from("trip_passengers")
       .delete()
-      .eq("id", pId);
+      .eq("id", pId)
+      .eq("trip_car_id", carId);
 
     if (error) {
       alert(error.message);

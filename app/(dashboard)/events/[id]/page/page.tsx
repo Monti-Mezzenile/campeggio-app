@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { RSVP_STATUS } from "@/lib/rsvp";
 import CustomIcon from "@/components/ui/CustomIcon";
 
 export default function JoinEventPage() {
@@ -72,7 +73,7 @@ export default function JoinEventPage() {
     const { error } = await supabase.from("event_members").upsert({
       event_id: id,
       user_id: user.id,
-      stato: "partecipo",
+      stato: RSVP_STATUS.PARTECIPO,
       arrivo_data: form.arrivo_data,
       arrivo_ora: form.arrivo_ora,
       partenza_data: form.partenza_data,

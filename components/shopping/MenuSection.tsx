@@ -23,14 +23,14 @@ export default function MenuSection({
 
     const { error } = await supabase
       .from("event_menus")
-      .update({
+      .upsert({
+        event_id: eventId,
         venerdi_cena: menu?.venerdi_cena || "",
         sabato_pranzo: menu?.sabato_pranzo || "",
         sabato_cena: menu?.sabato_cena || "",
         domenica_pranzo: menu?.domenica_pranzo || "",
         updated_at: new Date(),
-      })
-      .eq("event_id", eventId);
+      }, { onConflict: "event_id" });
 
     if (error) {
       alert(error.message);

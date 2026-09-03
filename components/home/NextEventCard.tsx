@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import CustomIcon from "@/components/ui/CustomIcon";
+import { RSVP_STATUS } from "@/lib/rsvp";
 
 interface NextEventCardProps {
   event: any;
@@ -17,12 +18,12 @@ export default function NextEventCard({
   // Badge partecipazione in stile timbro
   const getParticipationBadge = (status: string) => {
     switch (status) {
-      case "partecipo":
+      case RSVP_STATUS.PARTECIPO:
         return {
           label: "CI SARÒ!",
           bg: "bg-[#486e61] text-[#ebdec8]",
         };
-      case "forse":
+      case RSVP_STATUS.FORSE:
         return {
           label: "IN FORSE",
           bg: "bg-[#d97706] text-white",

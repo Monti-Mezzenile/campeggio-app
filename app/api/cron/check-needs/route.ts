@@ -1,26 +1,62 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { timingSafeEqual } from 'node:crypto';
 import webpush from 'web-push';
-
-// Configurazione chiavi VAPID per le notifiche Push
-if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(
-    'mailto:tuamail@campeggio.app',
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-  );
-}
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
 
+function hasValidBearerToken(authHeader: string | null, expectedSecret: string) {
+  if (!authHeader?.startsWith('Bearer ')) return false;
+
+  const receivedSecret = authHeader.slice('Bearer '.length);
+  const receivedBuffer = Buffer.from(receivedSecret);
+  const expectedBuffer = Buffer.from(expectedSecret);
+
+  return (
+    receivedBuffer.length === expectedBuffer.length &&
+    timingSafeEqual(receivedBuffer, expectedBuffer)
+  );
+}
+
+function getStatusCode(error: unknown) {
+  if (typeof error !== 'object' || error === null || !('statusCode' in error)) {
+    return null;
+  }
+
+  return typeof error.statusCode === 'number' ? error.statusCode : null;
+}
+
 export async function GET(request: Request) {
-  // Verfica secret di Vercel per evitare chiamate esterne non autorizzate
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    return new NextResponse('Service unavailable', { status: 503 });
+  }
+
   const authHeader = request.headers.get('authorization');
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!hasValidBearerToken(authHeader, cronSecret)) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
+  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!vapidPublicKey || !vapidPrivateKey) {
+    return NextResponse.json({ success: false }, { status: 503 });
+  }
+
+  let supabase: ReturnType<typeof getSupabaseAdmin>;
   try {
+    supabase = getSupabaseAdmin();
+  } catch {
+    return NextResponse.json({ success: false }, { status: 503 });
+  }
+
+  try {
+    webpush.setVapidDetails(
+      process.env.VAPID_MAILTO || 'mailto:tuamail@campeggio.app',
+      vapidPublicKey,
+      vapidPrivateKey
+    );
+
     // 1. Recupera tutte le mascotte
     const { data: mascots, error } = await supabase.from('mascots').select('*');
     if (error) throw error;
@@ -60,9 +96,10 @@ export async function GET(request: Request) {
             try {
               await webpush.sendNotification(subItem.subscription, payload);
               sentCount++;
-            } catch (err: any) {
+            } catch (err: unknown) {
               // Rimuove iscrizioni scadute o non più valide (es. app disinstallata)
-              if (err.statusCode === 410 || err.statusCode === 404) {
+              const statusCode = getStatusCode(err);
+              if (statusCode === 410 || statusCode === 404) {
                 await supabase
                   .from('push_subscriptions')
                   .delete()
@@ -75,7 +112,8 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ success: true, notificationsSent: sentCount });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch {
+    console.error('Esecuzione cron notifiche non riuscita');
+    return NextResponse.json({ success: false }, { status: 500 });
   }
 }

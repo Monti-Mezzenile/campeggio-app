@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import CustomIcon from "@/components/ui/CustomIcon";
+import { RSVP_STATUS } from "@/lib/rsvp";
 
 export default function EventPage() {
   const params = useParams();
@@ -39,7 +40,7 @@ export default function EventPage() {
   // 🎯 CALCOLO SE L'EVENTO È NEL PASSATO
   const isPast = useMemo(() => {
     if (!event) return false;
-    const dateStr = event.data_inizio || event.data_evento;
+    const dateStr = event.data_fine || event.data_inizio || event.data_evento;
     if (!dateStr) return false;
 
     const eventDate = new Date(dateStr);
@@ -98,8 +99,7 @@ export default function EventPage() {
   // --- HELPER BADGE PASS DINAMICO ---
   function renderPassBadge(stato: string | undefined) {
     switch (stato) {
-      case "partecipo":
-      case "ci_saro":
+      case RSVP_STATUS.PARTECIPO:
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-[10px] font-black uppercase tracking-wider shadow-2xs backdrop-blur-md">
             <span className="relative flex h-2 w-2">
@@ -109,15 +109,14 @@ export default function EventPage() {
             Confermato
           </span>
         );
-      case "forse":
+      case RSVP_STATUS.FORSE:
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 text-[10px] font-black uppercase tracking-wider shadow-2xs backdrop-blur-md">
             <span className="w-2 h-2 rounded-full bg-amber-400"></span>
             In Dubbio
           </span>
         );
-      case "non_partecipo":
-      case "non_ci_saro":
+      case RSVP_STATUS.NON_POSSO:
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/40 text-[10px] font-black uppercase tracking-wider shadow-2xs backdrop-blur-md">
             <span className="w-2 h-2 rounded-full bg-rose-400"></span>
@@ -239,7 +238,7 @@ export default function EventPage() {
           .from("event_members")
           .select("*", { count: "exact", head: true })
           .eq("event_id", id)
-          .eq("stato", "partecipo"),
+          .eq("stato", RSVP_STATUS.PARTECIPO),
         supabase.from("event_tents").select("tent_id").eq("event_id", id),
         tripIds.length > 0
           ? supabase.from("trip_cars").select("posti_disponibili").in("trip_id", tripIds)

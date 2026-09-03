@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { RSVP_STATUS } from "@/lib/rsvp";
 
 export default function NewEventPage() {
   const router = useRouter();
@@ -85,7 +86,7 @@ export default function NewEventPage() {
     await supabase.from("event_members").insert({
       event_id: event.id,
       user_id: user.id,
-      stato: "confermato",
+      stato: RSVP_STATUS.PARTECIPO,
     });
 
     router.push(`/events/${event.id}`);
