@@ -3,7 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
-import { syncPushSubscription } from '@/lib/push-notifications';
+import {
+  activateAndTestPush,
+  syncPushSubscription,
+} from '@/lib/push-notifications';
 import { supabase } from '@/lib/supabase';
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
@@ -378,34 +381,24 @@ export default function MascottePage() {
 
     setPushTestPending(true);
     try {
-      const status = await syncPushSubscription(user.id, true);
+      const status = await activateAndTestPush(user.id);
       if (status === 'unsupported') {
         alert("Il tuo browser non supporta le notifiche push web.");
         return;
       }
-      if (status !== 'subscribed') {
+      if (status === 'denied' || status === 'permission-required') {
         alert("Devi concedere i permessi per le notifiche!");
         return;
       }
-      setPushEnabled(true);
-      const testResponse = await fetch('/api/push-test', { method: 'POST' });
-      const testResult = await testResponse.json().catch(() => null);
-
-      if (!testResponse.ok || testResult?.success !== true) {
-        const reason = testResult?.reason;
-        if (reason === 'configuration') {
+      if (status !== 'sent') {
+        if (status === 'configuration') {
           throw new Error('Configurazione server notifiche incompleta.');
         }
-        if (reason === 'expired') {
-          const registration = await navigator.serviceWorker.ready;
-          const expiredSubscription = await registration.pushManager.getSubscription();
-          await expiredSubscription?.unsubscribe();
-          setPushEnabled(false);
-          throw new Error('Subscription scaduta: premi di nuovo Attiva.');
-        }
+        setPushEnabled(false);
         throw new Error('Notifica di prova non consegnata.');
       }
 
+      setPushEnabled(true);
       setToastMsg("🔔 Test inviato! Le notifiche Push sono attive.");
       setTimeout(() => setToastMsg(null), 5000);
     } catch (err) {

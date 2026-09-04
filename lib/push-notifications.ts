@@ -8,6 +8,15 @@ export type PushSubscriptionStatus =
   | 'denied'
   | 'unsupported';
 
+export type PushActivationStatus =
+  | 'sent'
+  | 'permission-required'
+  | 'denied'
+  | 'unsupported'
+  | 'configuration'
+  | 'subscription'
+  | 'delivery';
+
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding)
@@ -70,4 +79,44 @@ export async function syncPushSubscription(
   if (error) throw error;
 
   return 'subscribed';
+}
+
+async function removeBrowserPushSubscription() {
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+  await subscription?.unsubscribe();
+}
+
+async function requestPushTest() {
+  const response = await fetch('/api/push-test', { method: 'POST' });
+  const result = await response.json().catch(() => null) as {
+    success?: boolean;
+    reason?: PushActivationStatus | 'expired';
+  } | null;
+
+  return {
+    ok: response.ok && result?.success === true,
+    reason: result?.reason || 'delivery',
+  };
+}
+
+export async function activateAndTestPush(
+  userId: string
+): Promise<PushActivationStatus> {
+  const subscriptionStatus = await syncPushSubscription(userId, true);
+  if (subscriptionStatus !== 'subscribed') return subscriptionStatus;
+
+  let testResult = await requestPushTest();
+  if (testResult.ok) return 'sent';
+
+  if (testResult.reason === 'expired') {
+    await removeBrowserPushSubscription();
+    const repairedStatus = await syncPushSubscription(userId, true);
+    if (repairedStatus !== 'subscribed') return repairedStatus;
+
+    testResult = await requestPushTest();
+    if (testResult.ok) return 'sent';
+  }
+
+  return testResult.reason === 'expired' ? 'subscription' : testResult.reason;
 }
