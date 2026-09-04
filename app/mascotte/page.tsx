@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
+import { syncPushSubscription } from '@/lib/push-notifications';
 import { supabase } from '@/lib/supabase';
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
@@ -154,17 +155,6 @@ interface Particle {
   color: string;
 }
 
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
 export default function MascottePage() {
   const [user, setUser] = useState<any>(null);
   const [mascot, setMascot] = useState({
@@ -205,38 +195,6 @@ export default function MascottePage() {
     setTimeout(() => {
       setParticles((prev) => prev.filter((p) => p.id !== id));
     }, 1500); 
-  };
-
-  const checkAndNotifyNeeds = async (fame: number, sete: number, svago: number) => {
-    if (typeof window === 'undefined' || !('Notification' in window)) return;
-    
-    if (Notification.permission === 'granted') {
-      const needs = [];
-      if (fame <= 25) needs.push("ha troppa Fame 🥕");
-      if (sete <= 25) needs.push("sta morendo di Sete 💧");
-      if (svago <= 25) needs.push("si sta Annoiando 🎮");
-
-      if (needs.length > 0) {
-        const lastNotif = localStorage.getItem('last_need_notification');
-        const now = Date.now();
-        
-        if (!lastNotif || now - parseInt(lastNotif) > 2 * 60 * 60 * 1000) {
-          try {
-            const reg = await navigator.serviceWorker.getRegistration();
-            if (reg) {
-              reg.showNotification('⚠️ Mascotte in Pericolo!', {
-                body: `La tua cavia ${needs.join(' e ')}. Entra subito e curala!`,
-                icon: '/tamagotchi/fase1_coniglio_piccolo.png',
-                vibrate: [200, 100, 200]
-              } as any);
-              localStorage.setItem('last_need_notification', now.toString());
-            }
-          } catch (e) {
-            console.error("Errore notifica locale:", e);
-          }
-        }
-      }
-    }
   };
 
   useEffect(() => {
@@ -306,8 +264,6 @@ export default function MascottePage() {
         mascotBaselineRef.current = nextMascot;
         setMascot(nextMascot);
         setTempName(myMascot.nome_mascotte || 'Bestia Anonima');
-
-        checkAndNotifyNeeds(updatedMyMascot.fame, updatedMyMascot.sete, updatedMyMascot.svago);
 
         const { data: others } = await supabase
           .from('mascots')
@@ -413,27 +369,17 @@ export default function MascottePage() {
       return;
     }
     try {
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
+      const status = await syncPushSubscription(user.id, true);
+      if (status === 'unsupported') {
+        alert("Il tuo browser non supporta le notifiche push web.");
+        return;
+      }
+      if (status !== 'subscribed') {
         alert("Devi concedere i permessi per le notifiche!");
         return;
       }
-      const registration = await navigator.serviceWorker.register('/sw.js');
-      const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!publicKey) {
-        alert("Chiave VAPID pubblica non configurata in .env.local!");
-        return;
-      }
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey)
-      });
-      await supabase.from('push_subscriptions').upsert({
-        user_id: user.id,
-        subscription: subscription.toJSON()
-      });
       setPushEnabled(true);
-      setToastMsg("🔔 Notifiche Push attivate! Ora saprai chi ti attacca.");
+      setToastMsg("🔔 Notifiche Push attivate anche fuori dalla mascotte!");
       setTimeout(() => setToastMsg(null), 5000);
     } catch (err) {
       console.error("Errore iscrizione push:", err);

@@ -4,6 +4,9 @@ import webpush from 'web-push';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
+const NEED_NOTIFICATION_COOLDOWN_SECONDS = 20 * 60 * 60;
+
+export const runtime = 'nodejs';
 
 function hasValidBearerToken(authHeader: string | null, expectedSecret: string) {
   if (!authHeader?.startsWith('Bearer ')) return false;
@@ -26,14 +29,26 @@ function getStatusCode(error: unknown) {
   return typeof error.statusCode === 'number' ? error.statusCode : null;
 }
 
-export async function GET(request: Request) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) {
-    return new NextResponse('Service unavailable', { status: 503 });
+function isAuthorizedCronRequest(request: Request, cronSecret?: string) {
+  if (cronSecret) {
+    return hasValidBearerToken(
+      request.headers.get('authorization'),
+      cronSecret
+    );
   }
 
-  const authHeader = request.headers.get('authorization');
-  if (!hasValidBearerToken(authHeader, cronSecret)) {
+  // Vercel identifica sempre le invocazioni pianificate con questo user-agent.
+  // Il claim atomico nel database limita comunque ogni mascotte a una notifica
+  // per stato critico durante la finestra di cooldown.
+  return (
+    process.env.VERCEL === '1' &&
+    request.headers.get('user-agent') === 'vercel-cron/1.0'
+  );
+}
+
+export async function GET(request: Request) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!isAuthorizedCronRequest(request, cronSecret)) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
@@ -73,45 +88,60 @@ export async function GET(request: Request) {
       const currentSete = Math.max(0, (mascot.sete ?? 100) - hoursPassed * DECAY_RATES.sete);
       const currentSvago = Math.max(0, (mascot.svago ?? 100) - hoursPassed * DECAY_RATES.svago);
 
-      const needs = [];
-      if (currentFame <= 25) needs.push("Fame 🥕");
-      if (currentSete <= 25) needs.push("Sete 💧");
-      if (currentSvago <= 25) needs.push("Noia 🎮");
+      const needs: Array<{ key: string; label: string }> = [];
+      if (currentFame <= 25) needs.push({ key: 'fame', label: 'Fame 🥕' });
+      if (currentSete <= 25) needs.push({ key: 'sete', label: 'Sete 💧' });
+      if (currentSvago <= 25) needs.push({ key: 'svago', label: 'Noia 🎮' });
 
       if (needs.length > 0) {
         // Recupera i token push dell'utente
-        const { data: subs } = await supabase
+        const { data: subs, error: subscriptionsError } = await supabase
           .from('push_subscriptions')
           .select('subscription')
           .eq('user_id', mascot.user_id);
 
-        if (subs && subs.length > 0) {
-          const payload = JSON.stringify({
-            title: `⚠️ ${mascot.nome_mascotte || 'La tua mascotte'} ha bisogno di te!`,
-            message: `Attenzione: ha troppa ${needs.join(' e ')}. Entra nel campeggio prima che sia troppo tardi!`,
-            icon: '/tamagotchi/fase1_coniglio_piccolo.png'
+        if (subscriptionsError || !subs?.length) continue;
+
+        const needSignature = needs.map((need) => need.key).join(',');
+        const { data: notificationClaimed, error: claimError } =
+          await supabase.rpc('claim_mascot_need_notification', {
+            p_mascot_id: mascot.id,
+            p_need_signature: needSignature,
+            p_cooldown_seconds: NEED_NOTIFICATION_COOLDOWN_SECONDS,
           });
 
-          for (const subItem of subs) {
-            try {
-              await webpush.sendNotification(subItem.subscription, payload);
-              sentCount++;
-            } catch (err: unknown) {
-              // Rimuove iscrizioni scadute o non più valide (es. app disinstallata)
-              const statusCode = getStatusCode(err);
-              if (statusCode === 410 || statusCode === 404) {
-                await supabase
-                  .from('push_subscriptions')
-                  .delete()
-                  .eq('subscription', subItem.subscription);
-              }
+        if (claimError || notificationClaimed !== true) continue;
+
+        const payload = JSON.stringify({
+          title: `⚠️ ${mascot.nome_mascotte || 'La tua mascotte'} ha bisogno di te!`,
+          body: `Attenzione: ${needs.map((need) => need.label).join(' e ')} sono a un livello critico. Entra nel campeggio!`,
+          icon: '/tamagotchi/fase1_coniglio_piccolo.png',
+          tag: `mascot-needs-${mascot.id}`,
+          url: '/mascotte',
+        });
+
+        for (const subItem of subs) {
+          try {
+            await webpush.sendNotification(subItem.subscription, payload);
+            sentCount++;
+          } catch (err: unknown) {
+            // Rimuove iscrizioni scadute o non più valide (es. app disinstallata)
+            const statusCode = getStatusCode(err);
+            if (statusCode === 410 || statusCode === 404) {
+              await supabase
+                .from('push_subscriptions')
+                .delete()
+                .eq('subscription', subItem.subscription);
             }
           }
         }
       }
     }
 
-    return NextResponse.json({ success: true, notificationsSent: sentCount });
+    return NextResponse.json(
+      { success: true, notificationsSent: sentCount },
+      { headers: { 'Cache-Control': 'no-store' } }
+    );
   } catch {
     console.error('Esecuzione cron notifiche non riuscita');
     return NextResponse.json({ success: false }, { status: 500 });
