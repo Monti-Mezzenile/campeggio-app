@@ -6,6 +6,7 @@ import Link from "next/link";
 import LogoutButton from "@/components/ui/LogoutButton";
 import { supabase } from "@/lib/supabase";
 import { compressImageForUpload } from "@/lib/compress-image";
+import { activateAndTestPush } from "@/lib/push-notifications";
 import CustomIcon from "@/components/ui/CustomIcon";
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
@@ -82,6 +83,9 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushTestPending, setPushTestPending] = useState(false);
   const mascotBaselineRef = useRef<Parameters<typeof calculateLiveStats>[0]>(null);
 
   // Campi del Profilo
@@ -100,6 +104,19 @@ export default function ProfilePage() {
     if (!user) {
       setLoading(false);
       return;
+    }
+
+    setAuthUserId(user.id);
+    if (
+      'serviceWorker' in navigator &&
+      'PushManager' in window &&
+      'Notification' in window
+    ) {
+      const registration = await navigator.serviceWorker.getRegistration();
+      const subscription = await registration?.pushManager.getSubscription();
+      setPushEnabled(
+        Notification.permission === 'granted' && Boolean(subscription)
+      );
     }
 
     // 1. Profilo Utente
@@ -169,6 +186,38 @@ export default function ProfilePage() {
       alert("Errore nel caricamento dell'immagine: " + error.message);
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handlePushNotifications() {
+    if (!authUserId || pushTestPending) return;
+
+    setPushTestPending(true);
+    try {
+      const status = await activateAndTestPush(authUserId);
+
+      if (status === 'sent') {
+        setPushEnabled(true);
+        alert('Notifica di prova inviata! Le notifiche sono attive.');
+        return;
+      }
+
+      setPushEnabled(false);
+      if (status === 'unsupported') {
+        alert('Questo browser non supporta le notifiche push.');
+      } else if (status === 'denied' || status === 'permission-required') {
+        alert('Consenti le notifiche dalle impostazioni del browser o del telefono.');
+      } else if (status === 'configuration') {
+        alert('La configurazione notifiche sul server non è completa.');
+      } else {
+        alert('Notifica di prova non consegnata. Riprova tra poco.');
+      }
+    } catch (error) {
+      console.error('Attivazione notifiche push non riuscita', error);
+      setPushEnabled(false);
+      alert('Attivazione non riuscita. Controlla la connessione e riprova.');
+    } finally {
+      setPushTestPending(false);
     }
   }
 
@@ -318,7 +367,25 @@ export default function ProfilePage() {
           <CustomIcon name="tenda-grossa" size={18} />
         </div>
 
-        <div className="w-10 h-10" aria-hidden="true" />
+        <button
+          type="button"
+          onClick={handlePushNotifications}
+          disabled={pushTestPending}
+          className={`relative flex h-10 w-10 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition active:scale-90 disabled:opacity-60 ${
+            pushEnabled
+              ? 'border-emerald-500/40 bg-emerald-500/20'
+              : 'border-white bg-amber-400/80 animate-pulse'
+          }`}
+          aria-label={pushEnabled ? 'Prova notifiche' : 'Attiva notifiche'}
+          title={pushEnabled ? 'Prova notifiche' : 'Attiva notifiche'}
+        >
+          <span className="text-xl" aria-hidden="true">
+            {pushTestPending ? '⏳' : '🔔'}
+          </span>
+          {!pushEnabled && !pushTestPending && (
+            <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+          )}
+        </button>
       </header>
 
       {/* 🪪 1. CARD PROFILO (TESSERINO DA CAMPO) */}

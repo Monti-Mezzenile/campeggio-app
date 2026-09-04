@@ -3,10 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
-import {
-  activateAndTestPush,
-  syncPushSubscription,
-} from '@/lib/push-notifications';
 import { supabase } from '@/lib/supabase';
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
@@ -176,8 +172,6 @@ export default function MascottePage() {
   const [loading, setLoading] = useState(true);
   const [warningMsg, setWarningMsg] = useState('');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [pushEnabled, setPushEnabled] = useState(false);
-  const [pushTestPending, setPushTestPending] = useState(false);
   
   const [activeTab, setActiveTab] = useState<'mascotte' | 'rivali' | 'infamie'>('mascotte');
 
@@ -221,12 +215,6 @@ export default function MascottePage() {
                           currentUser.user_metadata?.name || 
                           (currentUser.email ? currentUser.email.split('@')[0] : null) || 
                           'Campeggiatore';
-
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-          const reg = await navigator.serviceWorker.getRegistration();
-          const sub = await reg?.pushManager.getSubscription();
-          if (sub && isMounted) setPushEnabled(true);
-        }
 
         let { data: myMascot } = await supabase.from('mascots').select('*').eq('user_id', currentUser.id).maybeSingle();
 
@@ -367,50 +355,6 @@ export default function MascottePage() {
       }
     };
   }, []);
-
-  const enablePushNotifications = async () => {
-    if (
-      pushTestPending ||
-      !('serviceWorker' in navigator) ||
-      !('PushManager' in window) ||
-      !user
-    ) {
-      alert("Il tuo browser non supporta le notifiche push web.");
-      return;
-    }
-
-    setPushTestPending(true);
-    try {
-      const status = await activateAndTestPush(user.id);
-      if (status === 'unsupported') {
-        alert("Il tuo browser non supporta le notifiche push web.");
-        return;
-      }
-      if (status === 'denied' || status === 'permission-required') {
-        alert("Devi concedere i permessi per le notifiche!");
-        return;
-      }
-      if (status !== 'sent') {
-        if (status === 'configuration') {
-          throw new Error('Configurazione server notifiche incompleta.');
-        }
-        setPushEnabled(false);
-        throw new Error('Notifica di prova non consegnata.');
-      }
-
-      setPushEnabled(true);
-      setToastMsg("🔔 Test inviato! Le notifiche Push sono attive.");
-      setTimeout(() => setToastMsg(null), 5000);
-    } catch (err) {
-      console.error("Errore iscrizione push:", err);
-      const message = err instanceof Error
-        ? err.message
-        : "Errore nell'attivazione delle notifiche.";
-      alert(message);
-    } finally {
-      setPushTestPending(false);
-    }
-  };
 
   const handleSaveName = async () => {
     if (!tempName.trim() || !mascot.id) return;
@@ -612,18 +556,7 @@ export default function MascottePage() {
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={enablePushNotifications}
-            disabled={pushTestPending}
-            className={`text-[9px] px-2.5 py-1.5 rounded-xl uppercase tracking-wider font-black disabled:opacity-60 ${
-              pushEnabled
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                : 'bg-amber-500 text-black animate-pulse'
-            }`}
-          >
-            {pushTestPending ? '⏳ Test' : pushEnabled ? '🔔 Prova' : '🔔 Attiva'}
-          </button>
+          <div className="w-14" aria-hidden="true" />
         </div>
 
         {/* BARRA ESPERIENZA COMPATTA CON VALORE XP A DESTRA */}
