@@ -110,7 +110,11 @@ export default function PushNotificationManager() {
       }
     } catch (error) {
       console.error('Attivazione notifiche push non riuscita', error);
-      setMessage('Attivazione non riuscita. Controlla la connessione e riprova.');
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Attivazione non riuscita. Controlla la connessione e riprova.'
+      );
     } finally {
       setActivating(false);
     }

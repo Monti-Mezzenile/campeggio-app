@@ -45,38 +45,57 @@ export async function syncPushSubscription(
     return 'unsupported';
   }
 
-  const registration = await navigator.serviceWorker.register('/sw.js', {
-    scope: '/',
-  });
-
   let permission = Notification.permission;
   if (permission === 'default' && requestPermission) {
-    permission = await Notification.requestPermission();
+    try {
+      // Deve essere la prima operazione asincrona dopo il click: alcuni
+      // browser, soprattutto iOS, perdono altrimenti il gesto utente.
+      permission = await Notification.requestPermission();
+    } catch {
+      throw new Error('Il browser non ha aperto la richiesta di autorizzazione.');
+    }
   }
 
   if (permission === 'denied') return 'denied';
   if (permission !== 'granted') return 'permission-required';
+
+  let registration: ServiceWorkerRegistration;
+  try {
+    registration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/',
+    });
+  } catch {
+    throw new Error('Il service worker delle notifiche non è disponibile.');
+  }
 
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   if (!publicKey) {
     throw new Error('Chiave VAPID pubblica non configurata');
   }
 
-  const existingSubscription =
-    await registration.pushManager.getSubscription();
-  const subscription =
-    existingSubscription ??
-    (await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
-    }));
+  let subscription: PushSubscription;
+  try {
+    const existingSubscription =
+      await registration.pushManager.getSubscription();
+    subscription =
+      existingSubscription ??
+      (await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      }));
+  } catch {
+    throw new Error('Il dispositivo non è riuscito a creare la subscription push.');
+  }
 
   const { error } = await supabase.from('push_subscriptions').upsert({
     user_id: userId,
     subscription: subscription.toJSON(),
-  });
+  }, { onConflict: 'user_id' });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Salvataggio subscription push non riuscito', error);
+    throw new Error('La subscription non è stata salvata sul server.');
+  }
 
   return 'subscribed';
 }

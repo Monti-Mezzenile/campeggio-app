@@ -215,7 +215,11 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Attivazione notifiche push non riuscita', error);
       setPushEnabled(false);
-      alert('Attivazione non riuscita. Controlla la connessione e riprova.');
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Attivazione non riuscita. Controlla la connessione e riprova.'
+      );
     } finally {
       setPushTestPending(false);
     }
