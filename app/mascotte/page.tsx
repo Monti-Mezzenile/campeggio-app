@@ -174,6 +174,7 @@ export default function MascottePage() {
   const [warningMsg, setWarningMsg] = useState('');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushTestPending, setPushTestPending] = useState(false);
   
   const [activeTab, setActiveTab] = useState<'mascotte' | 'rivali' | 'infamie'>('mascotte');
 
@@ -365,10 +366,17 @@ export default function MascottePage() {
   }, []);
 
   const enablePushNotifications = async () => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !user) {
+    if (
+      pushTestPending ||
+      !('serviceWorker' in navigator) ||
+      !('PushManager' in window) ||
+      !user
+    ) {
       alert("Il tuo browser non supporta le notifiche push web.");
       return;
     }
+
+    setPushTestPending(true);
     try {
       const status = await syncPushSubscription(user.id, true);
       if (status === 'unsupported') {
@@ -380,11 +388,34 @@ export default function MascottePage() {
         return;
       }
       setPushEnabled(true);
-      setToastMsg("🔔 Notifiche Push attivate anche fuori dalla mascotte!");
+      const testResponse = await fetch('/api/push-test', { method: 'POST' });
+      const testResult = await testResponse.json().catch(() => null);
+
+      if (!testResponse.ok || testResult?.success !== true) {
+        const reason = testResult?.reason;
+        if (reason === 'configuration') {
+          throw new Error('Configurazione server notifiche incompleta.');
+        }
+        if (reason === 'expired') {
+          const registration = await navigator.serviceWorker.ready;
+          const expiredSubscription = await registration.pushManager.getSubscription();
+          await expiredSubscription?.unsubscribe();
+          setPushEnabled(false);
+          throw new Error('Subscription scaduta: premi di nuovo Attiva.');
+        }
+        throw new Error('Notifica di prova non consegnata.');
+      }
+
+      setToastMsg("🔔 Test inviato! Le notifiche Push sono attive.");
       setTimeout(() => setToastMsg(null), 5000);
     } catch (err) {
       console.error("Errore iscrizione push:", err);
-      alert("Errore nell'attivazione delle notifiche.");
+      const message = err instanceof Error
+        ? err.message
+        : "Errore nell'attivazione delle notifiche.";
+      alert(message);
+    } finally {
+      setPushTestPending(false);
     }
   };
 
@@ -588,15 +619,18 @@ export default function MascottePage() {
             )}
           </div>
 
-          {!pushEnabled ? (
-            <button onClick={enablePushNotifications} className="bg-amber-500 text-black font-black text-[9px] px-2.5 py-1.5 rounded-xl uppercase tracking-wider animate-pulse">
-              🔔 Push
-            </button>
-          ) : (
-            <span className="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-1 rounded-xl font-black">
-              🔔 Ok
-            </span>
-          )}
+          <button
+            type="button"
+            onClick={enablePushNotifications}
+            disabled={pushTestPending}
+            className={`text-[9px] px-2.5 py-1.5 rounded-xl uppercase tracking-wider font-black disabled:opacity-60 ${
+              pushEnabled
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                : 'bg-amber-500 text-black animate-pulse'
+            }`}
+          >
+            {pushTestPending ? '⏳ Test' : pushEnabled ? '🔔 Prova' : '🔔 Attiva'}
+          </button>
         </div>
 
         {/* BARRA ESPERIENZA COMPATTA CON VALORE XP A DESTRA */}
