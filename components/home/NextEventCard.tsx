@@ -52,14 +52,14 @@ export default function NextEventCard({
           <div className="flex items-center justify-between gap-2 mb-4">
             <div className="inline-flex items-center gap-2 bg-[#1b2b25]/10 px-3 h-7 rounded-full">
               <CustomIcon name="fuoco" size={60} className="-my-2 shrink-0 drop-shadow-sm" />
-              <span className="text-xs font-black uppercase tracking-wider text-[#1b2b25]">
+              <span className="whitespace-nowrap text-[clamp(9px,2.8vw,12px)] font-black uppercase tracking-tight text-[#1b2b25] sm:tracking-wider">
                 MONTI SI AVVICINA
               </span>
             </div>
 
             {statusInfo && (
               <span
-                className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-md shadow-sm ${statusInfo.bg}`}
+                className={`whitespace-nowrap text-[clamp(8px,2.4vw,10px)] font-black uppercase tracking-wide px-2 sm:px-3 py-1 rounded-md shadow-sm sm:tracking-widest ${statusInfo.bg}`}
               >
                 {statusInfo.label}
               </span>
@@ -112,7 +112,7 @@ export default function NextEventCard({
               </span>
             )}
             <div className="flex flex-col">
-              <span className="text-xs font-black uppercase tracking-wider text-[#ebdec8]">
+              <span className="whitespace-nowrap text-[clamp(9px,2.8vw,12px)] font-black uppercase tracking-tight text-[#ebdec8] sm:tracking-wider">
                 {daysLeft === 1 ? "Giorno mancante" : "Giorni mancanti"}
               </span>
               <span className="text-[10px] text-[#ebdec8]/80 font-medium">
@@ -121,7 +121,7 @@ export default function NextEventCard({
             </div>
           </div>
 
-          <div className="bg-[#ebdec8] text-[#1b2b25] px-3.5 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider shadow-md">
+          <div className="whitespace-nowrap bg-[#ebdec8] text-[#1b2b25] px-3.5 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider shadow-md">
             Vedi →
           </div>
         </div>

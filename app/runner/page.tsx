@@ -494,10 +494,13 @@ export default function RunnerPage() {
               height: `${ent.height}px` 
             }}
           >
+            {ent.isCollectible && (
+              <div className="absolute -inset-2 rounded-full bg-amber-300/60 blur-md animate-pulse" />
+            )}
             <img 
               src={ent.icon} 
               alt="Item" 
-              className={`w-full h-full object-contain ${ent.isCollectible ? 'drop-shadow-[0_0_15px_rgba(245,158,11,1)] animate-pulse' : 'drop-shadow-[0_6px_6px_rgba(0,0,0,0.8)]'}`} 
+              className={`relative z-10 w-full h-full object-contain opacity-100 ${ent.isCollectible ? 'drop-shadow-[0_0_18px_rgba(251,191,36,1)]' : 'drop-shadow-[0_6px_6px_rgba(0,0,0,0.8)]'}`}
               onError={(e) => { (e.target as HTMLImageElement).src = '/icons/warning.png'; }} 
             />
           </div>

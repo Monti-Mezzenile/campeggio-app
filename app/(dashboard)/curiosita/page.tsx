@@ -406,8 +406,8 @@ export default function CuriositaPage() {
                 Finale
               </span>
             </div>
-            {/* ICONA INGRANDITA IN MANIERA PROPORZIONALE ALLE ALTRE SCHEDE */}
-            <div className="absolute top-1 right-1 w-24 h-24 flex items-center justify-center pointer-events-none opacity-90 group-hover:scale-110 transition-transform text-5xl sm:text-6xl drop-shadow-md">
+            {/* ICONA ASTA IN EVIDENZA */}
+            <div className="absolute -top-5 -right-3 w-40 h-40 flex items-center justify-center pointer-events-none opacity-100 group-hover:scale-110 transition-transform text-8xl sm:text-9xl drop-shadow-md">
               🃏
             </div>
             <div className="relative z-10 w-full pt-6">

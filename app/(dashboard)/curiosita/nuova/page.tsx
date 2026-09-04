@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { compressImageForUpload } from "@/lib/compress-image";
 import BackButton from "@/components/ui/BackButton";
 
 // --- SVG Icons con dimensioni rigide forzate (w-4 h-4 shrink-0) ---
@@ -89,11 +90,12 @@ export default function NuovaCuriositaPage() {
   }
 
   async function uploadFile(file: File, folder: string) {
-    const filename = `${folder}/${Date.now()}-${file.name}`;
+    const fileToUpload = await compressImageForUpload(file);
+    const filename = `${folder}/${Date.now()}-${fileToUpload.name}`;
 
     const { error } = await supabase.storage
       .from("curiosities")
-      .upload(filename, file);
+      .upload(filename, fileToUpload);
 
     if (error) {
       console.log("ERRORE UPLOAD FILE:", error);

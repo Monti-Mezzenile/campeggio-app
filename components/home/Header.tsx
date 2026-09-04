@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import CustomIcon from "@/components/ui/CustomIcon";
+import { RADIO_MONTI_MESSAGES } from "@/components/home/radioMontiMessages";
 
 // 📻 Palinsesto di Radio MONTI: Citazioni memorabili + Curiosità
 const PALINSESTO = [
@@ -17,6 +18,10 @@ const PALINSESTO = [
   { text: "Il caffè fatto in campeggio ha provatamente il +50% di gusto in più. ☕", category: "💡 Curiosità di Campo" },
   { text: "Se perdi un picchetto, riapparirà magicamente solo l'ultimo giorno mentre smonti la tenda. 🔨", category: "💡 Curiosità di Campo" },
   { text: "Guardare il fuoco del falò di notte abbassa la pressione e azzera lo stress. 🔥", category: "💡 Curiosità di Campo" },
+  ...RADIO_MONTI_MESSAGES.map((text) => ({
+    text,
+    category: "📻 Radio Monti",
+  })),
 ];
 
 interface HeaderProps {
@@ -38,12 +43,12 @@ export default function Header({ name }: HeaderProps) {
     <header className="w-full px-4 py-3 flex items-center justify-between rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 shadow-sm sticky top-4 z-40 mx-auto mt-2">
       
       {/* 🚀 SINISTRA: Logo MONTI + Saluto */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
+      <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
         {/* Logo MONTI */}
         <img
           src="/monti/logo.png"
           alt="MONTI"
-          className="h-8 md:h-10 w-auto object-contain drop-shadow-md"
+          className="h-7 w-auto shrink-0 object-contain drop-shadow-md sm:h-8 md:h-10"
         />
 
         {/* Separatore orizzontale ammorbidito */}
@@ -51,10 +56,10 @@ export default function Header({ name }: HeaderProps) {
 
         {/* Saluto (MODIFICATO: dimensione ridotta a text-xs sm:text-sm) */}
         <div
-          className="flex items-center gap-1 text-[#ebdec8] text-xs sm:text-sm font-medium leading-none tracking-wide drop-shadow-sm opacity-90"
+          className="flex min-w-0 items-center gap-0.5 text-[#ebdec8] text-[clamp(9px,2.7vw,14px)] font-medium leading-none tracking-tight sm:gap-1 sm:tracking-wide drop-shadow-sm opacity-90"
           style={{ fontFamily: "var(--font-caveat)" }}
         >
-          <span>Ciao coniglietto/a</span>
+          <span className="whitespace-nowrap">Ciao coniglietto/a</span>
           <div className="flex items-center drop-shadow-md shrink-0">
             <CustomIcon name="coniglio" size={18} />
           </div>
@@ -62,14 +67,14 @@ export default function Header({ name }: HeaderProps) {
       </div>
 
       {/* 📻 DESTRA: Radio MONTI Pop-over */}
-      <div className="relative">
+      <div className="relative shrink-0">
         <button
           onClick={tuneInToRadio}
           type="button"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/30 text-xs text-[#ebdec8] font-medium transition-all active:scale-95 shadow-sm backdrop-blur-sm"
+          className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/30 text-[10px] sm:text-xs text-[#ebdec8] font-medium transition-all active:scale-95 shadow-sm backdrop-blur-sm sm:gap-1.5 sm:px-3"
         >
           <span className="animate-pulse drop-shadow-sm">📻</span>
-          <span className="font-semibold drop-shadow-sm">Radio MONTI</span>
+          <span className="whitespace-nowrap font-semibold drop-shadow-sm">Radio MONTI</span>
         </button>
 
         {/* Pop-up trasmissioni */}

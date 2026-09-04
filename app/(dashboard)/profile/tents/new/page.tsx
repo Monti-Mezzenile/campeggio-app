@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { compressImageForUpload } from "@/lib/compress-image";
 import BackButton from "@/components/ui/BackButton";
 import CustomIcon from "@/components/ui/CustomIcon";
 
@@ -61,12 +62,13 @@ export default function NewProfileTentPage() {
       let fotoUrl = "";
 
       if (file) {
-        const fileExt = file.name.split(".").pop();
+        const fileToUpload = await compressImageForUpload(file);
+        const fileExt = fileToUpload.name.split(".").pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from("tents")
-          .upload(fileName, file);
+          .upload(fileName, fileToUpload);
 
         if (uploadError) {
           console.error("Errore upload:", uploadError);

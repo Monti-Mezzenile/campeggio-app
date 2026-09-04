@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LogoutButton from "@/components/ui/LogoutButton";
 import { supabase } from "@/lib/supabase";
+import { compressImageForUpload } from "@/lib/compress-image";
 import CustomIcon from "@/components/ui/CustomIcon";
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
@@ -15,7 +16,7 @@ const EVOLUTION_STAGES: Record<number, { name: string; image: string }> = {
   2: { name: 'Coniglio Medio', image: '/tamagotchi/fase2_coniglio_medio.png' },
   3: { name: 'Lepre', image: '/tamagotchi/fase3_lepre.png' },
   4: { name: 'Lepre Muscolosa', image: '/tamagotchi/fase4_lepre_muscolosa.png' },
-  5: { name: 'Lepre Centauro', image: '/tamagotchi/fase5_lepre_centauro.png.png' }, 
+  5: { name: 'Lepre Centauro', image: '/tamagotchi/fase5_lepre_centauro.png' },
   6: { name: 'Pony', image: '/tamagotchi/fase6_pony.png' },
   7: { name: 'Cavallo Medio', image: '/tamagotchi/fase7_cavallo_medio.png' },
   8: { name: 'Cavallo Grande', image: '/tamagotchi/fase8_cavallo_grande.png' },
@@ -149,12 +150,13 @@ export default function ProfilePage() {
       if (!event.target.files || event.target.files.length === 0) return;
 
       const file = event.target.files[0];
-      const fileExt = file.name.split(".").pop();
+      const fileToUpload = await compressImageForUpload(file);
+      const fileExt = fileToUpload.name.split(".").pop();
       const filePath = `avatars/${Math.random()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, file);
+        .upload(filePath, fileToUpload);
 
       if (uploadError) throw uploadError;
 
@@ -283,8 +285,6 @@ export default function ProfilePage() {
   });
 
   const levelNumber = Math.max(1, validLevelBadges.length);
-  const matricola = profile?.id ? `#MNT-${profile.id.slice(0, 4).toUpperCase()}` : "#MNT-0000";
-
   // Dati Mascotte
   const mascotFase = mascot?.fase || 1;
   const mascotDef = EVOLUTION_STAGES[mascotFase] || EVOLUTION_STAGES[1];
@@ -293,7 +293,7 @@ export default function ProfilePage() {
   const isMascotCritical = mascot && (mascot.fame < 20 || mascot.sete < 20 || mascot.svago < 20);
 
   return (
-    <main className="min-h-dvh p-4 sm:p-6 pb-36 max-w-md mx-auto flex flex-col gap-6 select-none bg-transparent">
+    <main className="min-h-dvh p-4 sm:p-6 pb-4 sm:pb-6 max-w-md mx-auto flex flex-col gap-6 select-none bg-transparent">
       {/* 🚀 HEADER CON BADGE STATO E ICONA CUSTOM */}
       <header className="flex items-center justify-between pt-2">
         <button
@@ -318,20 +318,25 @@ export default function ProfilePage() {
           <CustomIcon name="tenda-grossa" size={18} />
         </div>
 
-        <button
-          onClick={() => setEditing(!editing)}
-          className="w-10 h-10 rounded-full bg-white/60 text-[#1b2b25] flex items-center justify-center text-sm shadow-sm backdrop-blur-md active:scale-95 transition border border-white"
-        >
-          {editing ? "❌" : "✏️"}
-        </button>
+        <div className="w-10 h-10" aria-hidden="true" />
       </header>
 
       {/* 🪪 1. CARD PROFILO (TESSERINO DA CAMPO) */}
       <section className="relative rounded-[2.5rem] bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-white text-center overflow-hidden">
         
-        <div className="absolute top-4 right-4 bg-[#1b2b25]/10 px-2.5 py-1 rounded-full text-[9px] font-mono font-bold text-[#1b2b25]/60 tracking-wider uppercase border border-black/5">
-          {matricola}
-        </div>
+        <button
+          type="button"
+          onClick={() => setEditing(!editing)}
+          className="absolute top-4 right-4 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-black/5 bg-[#1b2b25]/10 shadow-sm transition active:scale-95"
+          aria-label={editing ? "Chiudi modifica profilo" : "Modifica profilo"}
+          title={editing ? "Chiudi modifica profilo" : "Modifica profilo"}
+        >
+          <img
+            src="/icons/modifica.png"
+            alt=""
+            className="h-8 w-8 object-contain"
+          />
+        </button>
 
         <div className="relative mx-auto w-24 h-24 mb-3 mt-1">
           {avatarUrl ? (
@@ -550,9 +555,9 @@ export default function ProfilePage() {
           </div>
           <Link
             href="/mascotte"
-            className="px-3 py-1.5 rounded-xl bg-amber-500 text-zinc-950 font-black text-[10px] uppercase tracking-wider shadow-md hover:bg-amber-400 transition-colors active:scale-95"
+            className="whitespace-nowrap px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-500 text-zinc-950 font-black text-[9px] sm:text-[10px] uppercase tracking-tight sm:tracking-wider shadow-md hover:bg-amber-400 transition-colors active:scale-95"
           >
-            Vai in Stalla →
+            Vai nella stalla →
           </Link>
         </div>
 

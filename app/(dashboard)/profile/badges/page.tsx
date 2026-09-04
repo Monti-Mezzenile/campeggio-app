@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { compressImageForUpload } from "@/lib/compress-image";
 import BackButton from "@/components/ui/BackButton";
 
 interface Badge {
@@ -234,12 +235,13 @@ export default function BadgesPage() {
       let immagine_url = "";
 
       if (file) {
-        const fileExt = file.name.split(".").pop();
+        const fileToUpload = await compressImageForUpload(file);
+        const fileExt = fileToUpload.name.split(".").pop();
         const fileName = `${Date.now()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from("badges")
-          .upload(fileName, file);
+          .upload(fileName, fileToUpload);
 
         if (uploadError) {
           alert(uploadError.message);

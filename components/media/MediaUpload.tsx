@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import imageCompression from "browser-image-compression";
 import { supabase } from "@/lib/supabase";
+import { compressImageForUpload } from "@/lib/compress-image";
 
 export default function MediaUpload({
   eventId,
@@ -40,17 +40,7 @@ export default function MediaUpload({
         if (isImage) {
           setMessage(`🗜️ Compressione foto ${i + 1}/${fileList.length}...`);
 
-          const options = {
-            maxSizeMB: 0.4,          // Riduce il peso a massimo ~400 KB (risparmio fino al 90-95%)
-            maxWidthOrHeight: 1920,  // Risoluzione Full HD
-            useWebWorker: true,      // Non blocca l'interfaccia utente durante l'elaborazione
-          };
-
-          try {
-            fileToUpload = await imageCompression(file, options);
-          } catch (compressError) {
-            console.warn("Impossibile comprimere l'immagine, carico l'originale:", compressError);
-          }
+          fileToUpload = await compressImageForUpload(file);
         }
 
         setMessage(`🚀 Caricamento ${i + 1}/${fileList.length}...`);

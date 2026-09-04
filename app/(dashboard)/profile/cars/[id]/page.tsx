@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { compressImageForUpload } from "@/lib/compress-image";
 import BackButton from "@/components/ui/BackButton";
 
 // --- Utility SVG per icone di dettaglio e gestione ---
@@ -113,12 +114,13 @@ export default function CarDetailPage() {
       return car?.foto || null;
     }
 
-    const extension = foto.name.split(".").pop();
+    const fotoDaCaricare = await compressImageForUpload(foto);
+    const extension = fotoDaCaricare.name.split(".").pop();
     const fileName = `${crypto.randomUUID()}.${extension}`;
 
     const { error } = await supabase.storage
       .from("cars")
-      .upload(fileName, foto, { upsert: true });
+      .upload(fileName, fotoDaCaricare, { upsert: true });
 
     if (error) {
       console.error("Errore upload foto:", error);

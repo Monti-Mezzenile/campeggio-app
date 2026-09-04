@@ -183,6 +183,7 @@ export default function MascottePage() {
   const [speechBubble, setSpeechBubble] = useState<string | null>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [selectedRival, setSelectedRival] = useState<any | null>(null);
+  const [rivalActionPending, setRivalActionPending] = useState(false);
 
   const mascotRef = useRef<HTMLDivElement>(null);
   const mascotControls = useAnimation();
@@ -479,52 +480,64 @@ export default function MascottePage() {
   };
 
   const handleRivalAction = async (rival: any, actionType: 'pigna' | 'birra' | 'cibo' | 'troll' | 'gioca') => {
-    if (!rival?.id || !user) return;
-    const { data, error } = await supabase.rpc('apply_mascot_action', {
-      p_target_mascot_id: rival.id,
-      p_action_type: actionType,
-    });
-
-    if (error || !data) {
-      console.error("Errore azione mascotte:", error);
-      return;
-    }
-
-    const result = data as {
-      id: string;
-      fame: number;
-      sete: number;
-      svago: number;
-      last_updated_at: string | null;
-    };
-    otherMascotBaselinesRef.current = otherMascotBaselinesRef.current.map((m) =>
-      m.id === rival.id ? { ...m, ...result } : m
-    );
-
-    if (actionType === 'pigna' || actionType === 'troll') playAudioEffect('hurt');
-    else if (actionType === 'birra') playAudioEffect('pop');
-    else if (actionType === 'cibo') playAudioEffect('munch');
-    else playAudioEffect('level');
-
-    setOtherMascots((prev) =>
-      prev.map((m) => (m.id === rival.id ? { ...m, ...result } : m))
-    );
-
-    setToastMsg(`Azione eseguita su ${rival.nome_mascotte || 'Anonimo'}!`);
-    setTimeout(() => setToastMsg(null), 5000);
-    setSelectedRival(null);
+    if (!rival?.id || !user || rivalActionPending) return;
+    setRivalActionPending(true);
 
     try {
-      await fetch('/api/push-notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          targetMascotId: rival.id,
-          actionType
-        })
+      const { data, error } = await supabase.rpc('apply_mascot_action', {
+        p_target_mascot_id: rival.id,
+        p_action_type: actionType,
       });
+
+      if (error || !data) {
+        console.error("Errore azione mascotte:", error);
+        setToastMsg("Azione non riuscita. Riprova tra poco.");
+        setTimeout(() => setToastMsg(null), 5000);
+        return;
+      }
+
+      const result = data as {
+        id: string;
+        fame: number;
+        sete: number;
+        svago: number;
+        last_updated_at: string | null;
+      };
+      otherMascotBaselinesRef.current = otherMascotBaselinesRef.current.map((m) =>
+        m.id === rival.id ? { ...m, ...result } : m
+      );
+
+      if (actionType === 'pigna' || actionType === 'troll') playAudioEffect('hurt');
+      else if (actionType === 'birra') playAudioEffect('pop');
+      else if (actionType === 'cibo') playAudioEffect('munch');
+      else playAudioEffect('level');
+
+      setOtherMascots((prev) =>
+        prev.map((m) => (m.id === rival.id ? { ...m, ...result } : m))
+      );
+
+      setToastMsg(`Azione eseguita su ${rival.nome_mascotte || 'Anonimo'}!`);
+      setTimeout(() => setToastMsg(null), 5000);
+      setSelectedRival(null);
+
+      try {
+        await fetch('/api/push-notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetMascotId: rival.id,
+            actionType
+          })
+        });
+      } catch (pushError) {
+        console.error("Errore invio push:", pushError);
+      }
     } catch (e) {
-      console.error("Errore invio push:", e);
+      console.error("Errore azione mascotte:", e);
+      setToastMsg("Azione non riuscita. Riprova tra poco.");
+      setTimeout(() => setToastMsg(null), 5000);
+    } finally {
+      setRivalActionPending(false);
     }
   };
 
@@ -628,19 +641,19 @@ export default function MascottePage() {
             onClick={() => setActiveTab('mascotte')}
             className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${activeTab === 'mascotte' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-400 hover:text-white'}`}
           >
-            🐾 CAVIA
+            <span className="whitespace-nowrap">🐾 CAVIA</span>
           </button>
           <button 
             onClick={() => setActiveTab('rivali')}
             className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${activeTab === 'rivali' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-400 hover:text-white'}`}
           >
-            ⚔️ Feccia ({otherMascots.length})
+            <span className="whitespace-nowrap">⚔️ Feccia ({otherMascots.length})</span>
           </button>
           <button 
             onClick={() => setActiveTab('infamie')}
             className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${activeTab === 'infamie' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-400 hover:text-white'}`}
           >
-            📜 Infamie
+            <span className="whitespace-nowrap">📜 Infamie</span>
           </button>
         </div>
       </div>
@@ -842,20 +855,20 @@ export default function MascottePage() {
               <h3 className="text-lg font-black text-white">{selectedRival.nome_mascotte || 'Bestia Ignota'}</h3>
               
               <div className="grid grid-cols-2 gap-2 pt-2">
-                <button onClick={() => handleRivalAction(selectedRival, 'pigna')} className="p-3 bg-red-600/20 border border-red-500/40 rounded-2xl text-red-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95">
-                  <span className="text-lg">🎯</span><span>Tira Pigna</span><span className="text-[8px] text-red-400/80">-12% Svago</span>
+                <button disabled={rivalActionPending} onClick={() => handleRivalAction(selectedRival, 'pigna')} className="p-3 bg-red-600/20 border border-red-500/40 rounded-2xl text-red-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95 disabled:opacity-50">
+                  <span className="text-lg">🎯</span><span className="whitespace-nowrap">Tira Pigna</span><span className="whitespace-nowrap text-[8px] text-red-400/80">-12% Svago</span>
                 </button>
-                <button onClick={() => handleRivalAction(selectedRival, 'troll')} className="p-3 bg-purple-600/20 border border-purple-500/40 rounded-2xl text-purple-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95">
-                  <span className="text-lg">👻</span><span>Spaventa</span><span className="text-[8px] text-purple-400/80">-8% Fame/Svago</span>
+                <button disabled={rivalActionPending} onClick={() => handleRivalAction(selectedRival, 'troll')} className="p-3 bg-purple-600/20 border border-purple-500/40 rounded-2xl text-purple-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95 disabled:opacity-50">
+                  <span className="text-lg">👻</span><span className="whitespace-nowrap">Spaventa</span><span className="whitespace-nowrap text-[8px] text-purple-400/80">-8% Fame/Svago</span>
                 </button>
-                <button onClick={() => handleRivalAction(selectedRival, 'birra')} className="p-3 bg-sky-600/20 border border-sky-500/40 rounded-2xl text-sky-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95">
-                  <span className="text-lg">🍺</span><span>Offri Birra</span><span className="text-[8px] text-sky-400/80">+25% Sete</span>
+                <button disabled={rivalActionPending} onClick={() => handleRivalAction(selectedRival, 'birra')} className="p-3 bg-sky-600/20 border border-sky-500/40 rounded-2xl text-sky-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95 disabled:opacity-50">
+                  <span className="text-lg">🍺</span><span className="whitespace-nowrap">Offri Birra</span><span className="whitespace-nowrap text-[8px] text-sky-400/80">+25% Sete</span>
                 </button>
-                <button onClick={() => handleRivalAction(selectedRival, 'cibo')} className="p-3 bg-emerald-600/20 border border-emerald-500/40 rounded-2xl text-emerald-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95">
-                  <span className="text-lg">🥩</span><span>Lancia Cibo</span><span className="text-[8px] text-emerald-400/80">+25% Fame</span>
+                <button disabled={rivalActionPending} onClick={() => handleRivalAction(selectedRival, 'cibo')} className="p-3 bg-emerald-600/20 border border-emerald-500/40 rounded-2xl text-emerald-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95 disabled:opacity-50">
+                  <span className="text-lg">🥩</span><span className="whitespace-nowrap">Lancia Cibo</span><span className="whitespace-nowrap text-[8px] text-emerald-400/80">+25% Fame</span>
                 </button>
-                <button onClick={() => handleRivalAction(selectedRival, 'gioca')} className="col-span-2 p-3 bg-amber-600/20 border border-amber-500/40 rounded-2xl text-amber-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95">
-                  <span className="text-lg">🎾</span><span>Gioca Insieme</span><span className="text-[8px] text-amber-400/80">+25% Svago</span>
+                <button disabled={rivalActionPending} onClick={() => handleRivalAction(selectedRival, 'gioca')} className="col-span-2 p-3 bg-amber-600/20 border border-amber-500/40 rounded-2xl text-amber-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95 disabled:opacity-50">
+                  <span className="text-lg">🎾</span><span className="whitespace-nowrap">{rivalActionPending ? 'Invio...' : 'Gioca Insieme'}</span><span className="whitespace-nowrap text-[8px] text-amber-400/80">+25% Svago</span>
                 </button>
               </div>
             </motion.div>

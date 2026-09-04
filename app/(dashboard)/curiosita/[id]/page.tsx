@@ -12,6 +12,10 @@ export default function CuriositaDettaglioPage() {
 
   const [curiosita, setCuriosita] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [titolo, setTitolo] = useState("");
+  const [contenuto, setContenuto] = useState("");
 
   async function loadCuriosita() {
     const { data, error } = await supabase
@@ -27,6 +31,8 @@ export default function CuriositaDettaglioPage() {
     }
 
     setCuriosita(data);
+    setTitolo(data.titolo || "");
+    setContenuto(data.contenuto || "");
     setLoading(false);
   }
 
@@ -52,6 +58,46 @@ export default function CuriositaDettaglioPage() {
 
     // Usiamo window.location per invalidare la cache del client
     window.location.href = "/curiosita";
+  }
+
+  async function saveCuriosita() {
+    const cleanTitle = titolo.trim();
+    const cleanContent = contenuto.trim();
+
+    if (!cleanTitle || !cleanContent) {
+      alert("Inserisci titolo e contenuto");
+      return;
+    }
+
+    setSaving(true);
+    const { data, error } = await supabase
+      .from("curiosities")
+      .update({
+        titolo: cleanTitle,
+        contenuto: cleanContent,
+      })
+      .eq("id", id)
+      .eq("tipo", "community")
+      .select("*")
+      .single();
+
+    setSaving(false);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setCuriosita(data);
+    setEditing(false);
+  }
+
+  function toggleEditing() {
+    if (editing) {
+      setTitolo(curiosita.titolo || "");
+      setContenuto(curiosita.contenuto || "");
+    }
+    setEditing((current) => !current);
   }
 
   if (loading) {
@@ -96,10 +142,31 @@ export default function CuriositaDettaglioPage() {
         </div>
       )}
 
-      {/* Titolo */}
-      <h1 className="text-2xl sm:text-3xl font-black text-zinc-950 tracking-tight mb-4 leading-snug">
-        {curiosita.titolo}
-      </h1>
+      {/* Titolo e modifica collaborativa */}
+      <div className="mb-4 flex items-start justify-between gap-3">
+        {editing ? (
+          <input
+            type="text"
+            value={titolo}
+            onChange={(event) => setTitolo(event.target.value)}
+            className="min-w-0 flex-1 rounded-2xl border border-white/90 bg-white/80 px-4 py-3 text-xl font-black text-zinc-950 shadow-sm outline-none focus:ring-2 focus:ring-amber-500/30"
+          />
+        ) : (
+          <h1 className="min-w-0 flex-1 text-2xl sm:text-3xl font-black text-zinc-950 tracking-tight leading-snug">
+            {curiosita.titolo}
+          </h1>
+        )}
+
+        {curiosita.tipo === "community" && (
+          <button
+            type="button"
+            onClick={toggleEditing}
+            className="shrink-0 whitespace-nowrap rounded-xl border border-amber-500/30 bg-amber-500/15 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-950 active:scale-95"
+          >
+            {editing ? "Annulla" : "Modifica"}
+          </button>
+        )}
+      </div>
 
       {/* Sezione Audio */}
       {curiosita.audio_url && (
@@ -116,9 +183,28 @@ export default function CuriositaDettaglioPage() {
 
       {/* Contenuto Testuale */}
       <section className="bg-white/80 border border-white/90 rounded-3xl p-5 sm:p-6 shadow-sm backdrop-blur-md">
-        <p className="whitespace-pre-line leading-relaxed text-sm sm:text-base font-medium text-zinc-800">
-          {curiosita.contenuto}
-        </p>
+        {editing ? (
+          <div className="space-y-3">
+            <textarea
+              value={contenuto}
+              onChange={(event) => setContenuto(event.target.value)}
+              rows={12}
+              className="w-full resize-y rounded-2xl border border-zinc-200 bg-white/90 p-4 text-sm font-medium leading-relaxed text-zinc-800 outline-none focus:ring-2 focus:ring-amber-500/30"
+            />
+            <button
+              type="button"
+              onClick={saveCuriosita}
+              disabled={saving}
+              className="w-full whitespace-nowrap rounded-2xl bg-amber-500 px-4 py-3 text-xs font-black uppercase tracking-wider text-amber-950 shadow-sm active:scale-[0.98] disabled:opacity-50"
+            >
+              {saving ? "Salvataggio..." : "Salva modifiche"}
+            </button>
+          </div>
+        ) : (
+          <p className="whitespace-pre-line leading-relaxed text-sm sm:text-base font-medium text-zinc-800">
+            {curiosita.contenuto}
+          </p>
+        )}
       </section>
 
       {/* Tasto Elimina (se inserito dalla community) */}

@@ -123,7 +123,7 @@ export default function BottomNav() {
             }`}
           >
             <CustomIcon name="tenda-grossa" size={ICON_SIZE} />
-            <span className="text-[9px] font-black uppercase tracking-tight">Home</span>
+            <span className="whitespace-nowrap text-[9px] font-black uppercase tracking-tight">Home</span>
           </button>
 
           {/* 2. CAMPO */}
@@ -139,7 +139,7 @@ export default function BottomNav() {
             <div className="w-[42px] h-[42px] flex items-center justify-center relative">
               <img src="/icons/fuoco.png" alt="Campo Fuoco" className="w-full h-full object-contain drop-shadow-xs" />
             </div>
-            <span className="text-[9px] font-black uppercase tracking-tight">Campo</span>
+            <span className="whitespace-nowrap text-[9px] font-black uppercase tracking-tight">Campo</span>
             {activeEventId && (
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse border border-white" />
             )}
@@ -157,7 +157,7 @@ export default function BottomNav() {
             <div className="w-[42px] h-[42px] flex items-center justify-center">
               <img src="/icons/lacavia.png" alt="La cavia" className="w-full h-full object-contain drop-shadow-xs" />
             </div>
-            <span className="text-[9px] font-black uppercase tracking-tight">La cavia</span>
+            <span className="whitespace-nowrap text-[9px] font-black uppercase tracking-tight">La cavia</span>
           </button>
 
           {/* 4. STORICO */}
@@ -170,7 +170,7 @@ export default function BottomNav() {
             }`}
           >
             <CustomIcon name="libro" size={ICON_SIZE} />
-            <span className="text-[9px] font-black uppercase tracking-tight">Storico</span>
+            <span className="whitespace-nowrap text-[9px] font-black uppercase tracking-tight">Storico</span>
           </button>
 
           {/* 5. CURIOSITÀ */}
@@ -183,7 +183,7 @@ export default function BottomNav() {
             }`}
           >
             <CustomIcon name="lampadina" size={ICON_SIZE} />
-            <span className="text-[9px] font-black uppercase tracking-tight">Curiosità</span>
+            <span className="whitespace-nowrap text-[9px] font-black uppercase tracking-tight">Curiosità</span>
           </button>
 
           {/* 6. PROFILO */}
@@ -196,7 +196,7 @@ export default function BottomNav() {
             }`}
           >
             <CustomIcon name="profilo" size={ICON_SIZE} />
-            <span className="text-[9px] font-black uppercase tracking-tight">Io</span>
+            <span className="whitespace-nowrap text-[9px] font-black uppercase tracking-tight">Io</span>
           </button>
         </div>
       </div>
