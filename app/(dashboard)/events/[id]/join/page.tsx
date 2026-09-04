@@ -89,7 +89,7 @@ export default function JoinEventPage() {
     });
   }
 
-  // 🗓️ Helper per generare l'elenco dei giorni dell'evento o da Lunedì a Domenica
+  // 🗓️ Helper per generare esclusivamente i giorni compresi nell'evento
   function getDaysOptions() {
     const daysOfWeek = [
       "Domenica",
@@ -101,33 +101,43 @@ export default function JoinEventPage() {
       "Sabato",
     ];
 
-    const fallbackDays = [
-      { value: "Lunedì", label: "Lunedì" },
-      { value: "Martedì", label: "Martedì" },
-      { value: "Mercoledì", label: "Mercoledì" },
-      { value: "Giovedì", label: "Giovedì" },
-      { value: "Venerdì", label: "Venerdì" },
-      { value: "Sabato", label: "Sabato" },
-      { value: "Domenica", label: "Domenica" },
-    ];
-
     if (!event?.data_inizio && !event?.data_evento) {
-      return fallbackDays;
+      return [];
     }
 
-    const start = new Date(event.data_inizio || event.data_evento);
-    const end = event.data_fine ? new Date(event.data_fine) : new Date(start);
+    function parseLocalDate(value: string) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+      if (!match) return null;
 
-    if (isNaN(start.getTime())) {
-      return fallbackDays;
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      const date = new Date(year, month - 1, day);
+
+      if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== day
+      ) {
+        return null;
+      }
+
+      return date;
+    }
+
+    const startValue = event.data_inizio || event.data_evento;
+    const endValue = event.data_fine || startValue;
+    const start = parseLocalDate(startValue);
+    const end = parseLocalDate(endValue);
+
+    if (!start || !end || end < start) {
+      return [];
     }
 
     const options = [];
     const current = new Date(start);
 
-    // Genera i giorni dell'evento (almeno 3 giorni di default per permettere la scelta del rientro)
-    let count = 0;
-    while ((current <= end || options.length < 3) && count < 10) {
+    while (current <= end) {
       const yyyy = current.getFullYear();
       const mm = String(current.getMonth() + 1).padStart(2, "0");
       const dd = String(current.getDate()).padStart(2, "0");
@@ -138,7 +148,6 @@ export default function JoinEventPage() {
 
       options.push({ value: isoDate, label: formattedLabel });
       current.setDate(current.getDate() + 1);
-      count++;
     }
 
     return options;
@@ -149,6 +158,27 @@ export default function JoinEventPage() {
       alert("Scegli come parteciperai");
       return;
     }
+
+    if (scelta === RSVP_STATUS.PARTECIPO) {
+      const validDates = new Set(getDaysOptions().map((option) => option.value));
+      const hasInvalidDate =
+        (arrivoData !== "" && !validDates.has(arrivoData)) ||
+        (partenzaData !== "" && !validDates.has(partenzaData));
+      const arrivalAfterDeparture =
+        arrivoData !== "" &&
+        partenzaData !== "" &&
+        (arrivoData > partenzaData ||
+          (arrivoData === partenzaData &&
+            arrivoOra !== "" &&
+            partenzaOra !== "" &&
+            arrivoOra > partenzaOra));
+
+      if (hasInvalidDate || arrivalAfterDeparture) {
+        alert("Controlla le date di arrivo e partenza");
+        return;
+      }
+    }
+
     setSaving(true);
 
     const payload = {
@@ -271,6 +301,9 @@ export default function JoinEventPage() {
   ];
 
   const daysOptions = getDaysOptions();
+  const departureDaysOptions = arrivoData
+    ? daysOptions.filter((option) => option.value >= arrivoData)
+    : daysOptions;
 
   return (
     <main className="min-h-screen p-4 sm:p-6 pb-36 max-w-md mx-auto flex flex-col gap-4 select-none">
@@ -373,7 +406,17 @@ export default function JoinEventPage() {
               </label>
               <select
                 value={arrivoData}
-                onChange={(e) => setArrivoData(e.target.value)}
+                onChange={(e) => {
+                  const nextArrivalDate = e.target.value;
+                  setArrivoData(nextArrivalDate);
+                  if (
+                    nextArrivalDate &&
+                    partenzaData &&
+                    partenzaData < nextArrivalDate
+                  ) {
+                    setPartenzaData("");
+                  }
+                }}
                 className="w-full h-11 block min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-xl px-2.5 text-[11px] sm:text-xs font-extrabold text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
               >
                 <option value="">Seleziona giorno</option>
@@ -415,7 +458,7 @@ export default function JoinEventPage() {
                 className="w-full h-11 block min-w-0 bg-white/90 backdrop-blur-md border border-white rounded-xl px-2.5 text-[11px] sm:text-xs font-extrabold text-[#1b2b25] outline-none focus:ring-2 focus:ring-[#1b2b25]/20 shadow-2xs"
               >
                 <option value="">Seleziona giorno</option>
-                {daysOptions.map((opt) => (
+                {departureDaysOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>

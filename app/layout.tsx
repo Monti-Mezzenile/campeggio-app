@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     title: "MONTI",
   },
   icons: {
-    icon: "/icon.png",
+    icon: "/apple-touch-icon.png",
     apple: "/apple-touch-icon.png",
   },
 };
