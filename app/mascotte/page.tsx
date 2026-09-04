@@ -583,7 +583,7 @@ export default function MascottePage() {
             ) : (
               <button onClick={() => setIsEditingName(true)} className="flex items-center gap-2 text-sm font-black text-white hover:text-amber-400 justify-center mx-auto">
                 <span>{mascot.nome}</span>
-                <img src="/icons/modifica.png" alt="Modifica" className="w-5 h-5 opacity-90 drop-shadow-md" />
+                <img src="/icons/modifica.png" alt="Modifica" className="w-8 h-8 opacity-100 drop-shadow-md" />
               </button>
             )}
           </div>
