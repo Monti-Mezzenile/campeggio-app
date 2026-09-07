@@ -4,7 +4,6 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import {
   activateAndTestPush,
-  isPushDisabled,
   type PushSubscriptionStatus,
   syncPushSubscription,
 } from '@/lib/push-notifications';
@@ -23,36 +22,18 @@ export default function PushNotificationManager() {
 
     const syncForUser = async (currentUserId: string) => {
       try {
-        if (isPushDisabled(currentUserId)) {
-          if (!isMounted) return;
-          setUserId(currentUserId);
-          setPermissionStatus('permission-required');
-          setIsOpen(false);
-          return;
-        }
-
         const status = await syncPushSubscription(currentUserId);
         if (!isMounted) return;
 
         setUserId(currentUserId);
         setPermissionStatus(status);
-        if (
-          status !== 'subscribed' &&
-          status !== 'unsupported' &&
-          sessionStorage.getItem(`monti-push-dismissed-${currentUserId}`) !== '1'
-        ) {
-          setIsOpen(true);
-        }
+        setIsOpen(status !== 'subscribed');
       } catch (error) {
         console.error('Sincronizzazione notifiche push non riuscita', error);
         if (!isMounted) return;
         setUserId(currentUserId);
         setMessage('Le notifiche devono essere ricollegate a questo dispositivo.');
-        if (
-          sessionStorage.getItem(`monti-push-dismissed-${currentUserId}`) !== '1'
-        ) {
-          setIsOpen(true);
-        }
+        setIsOpen(true);
       }
     };
 
@@ -90,7 +71,6 @@ export default function PushNotificationManager() {
   }, []);
 
   const dismissPrompt = () => {
-    if (userId) sessionStorage.setItem(`monti-push-dismissed-${userId}`, '1');
     setIsOpen(false);
   };
 
@@ -104,7 +84,6 @@ export default function PushNotificationManager() {
       const status = await activateAndTestPush(userId);
 
       if (status === 'sent') {
-        sessionStorage.removeItem(`monti-push-dismissed-${userId}`);
         setMessage('Test inviato! Le notifiche sono attive su questo dispositivo.');
         setTimeout(() => setIsOpen(false), 1800);
       } else if (status === 'denied') {

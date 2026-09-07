@@ -83,8 +83,8 @@ export async function POST() {
     await webpush.sendNotification(
       data.subscription,
       JSON.stringify({
-        title: '🔔 Radio Monti è accesa!',
-        body: 'Le notifiche funzionano. Ti raggiungeranno anche quando l’app è chiusa.',
+        title: '🏕️ Non è una setta, certo',
+        body: 'Abbiamo solo ottenuto il permesso di richiamarti quando vogliamo.',
         icon: '/apple-touch-icon.png',
         badge: '/icons/wallace.png',
         tag: `push-test-${user.id}`,
