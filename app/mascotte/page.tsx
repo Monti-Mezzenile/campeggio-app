@@ -6,6 +6,7 @@ import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
+const EXP_DECAY_PER_HOUR_AT_ZERO = 2;
 
 // 📈 SOGLIE EXP RI-BILANCIATE
 const EXP_THRESHOLDS: Record<number, number> = {
@@ -39,13 +40,24 @@ const calculateLiveStats = (mascotData: any) => {
   let currentFame = mascotData.fame ?? 100;
   let currentSete = mascotData.sete ?? 100;
   let currentSvago = mascotData.svago ?? 100;
-  let currentExp = mascotData.exp ?? 0;
+  const startingExp = mascotData.exp ?? 0;
 
   if (hoursPassed > 0.05) {
     currentFame = Math.max(0, currentFame - hoursPassed * DECAY_RATES.fame);
     currentSete = Math.max(0, currentSete - hoursPassed * DECAY_RATES.sete);
     currentSvago = Math.max(0, currentSvago - hoursPassed * DECAY_RATES.svago);
   }
+
+  const hoursUntilFirstZero = Math.min(
+    (mascotData.fame ?? 100) / DECAY_RATES.fame,
+    (mascotData.sete ?? 100) / DECAY_RATES.sete,
+    (mascotData.svago ?? 100) / DECAY_RATES.svago
+  );
+  const hoursWithAStatAtZero = Math.max(0, hoursPassed - hoursUntilFirstZero);
+  const expPenalty = Math.floor(
+    hoursWithAStatAtZero * EXP_DECAY_PER_HOUR_AT_ZERO
+  );
+  const currentExp = Math.max(0, startingExp - expPenalty);
 
   return {
     ...mascotData,
@@ -61,7 +73,7 @@ const EVOLUTION_STAGES: Record<number, { name: string; image: string }> = {
   2: { name: 'Coniglio Medio', image: '/tamagotchi/fase2_coniglio_medio.png' },
   3: { name: 'Lepre', image: '/tamagotchi/fase3_lepre.png' },
   4: { name: 'Lepre Muscolosa', image: '/tamagotchi/fase4_lepre_muscolosa.png' },
-  5: { name: 'Lepre Centauro', image: '/tamagotchi/fase5_lepre_centauro.png.png' }, 
+  5: { name: 'Lepre Centauro', image: '/tamagotchi/fase5_lepre_centauro.png' },
   6: { name: 'Pony', image: '/tamagotchi/fase6_pony.png' },
   7: { name: 'Cavallo Medio', image: '/tamagotchi/fase7_cavallo_medio.png' },
   8: { name: 'Cavallo Grande', image: '/tamagotchi/fase8_cavallo_grande.png' },
@@ -232,12 +244,12 @@ export default function MascottePage() {
         const updatedMyMascot = calculateLiveStats(myMascot);
 
         const persistedAt = new Date().toISOString();
-        await supabase.from('mascots').update({ 
-          fame: updatedMyMascot.fame, 
-          sete: updatedMyMascot.sete, 
-          svago: updatedMyMascot.svago, 
-          exp: updatedMyMascot.exp, 
-          fase: updatedMyMascot.fase, 
+        await supabase.from('mascots').update({
+          fame: updatedMyMascot.fame,
+          sete: updatedMyMascot.sete,
+          svago: updatedMyMascot.svago,
+          exp: updatedMyMascot.exp,
+          fase: updatedMyMascot.fase,
           owner_name: ownerName,
           last_updated_at: persistedAt
         }).eq('id', myMascot.id);
@@ -343,7 +355,14 @@ export default function MascottePage() {
       setMascot(prev => {
         if (!prev.id || !mascotBaselineRef.current) return prev;
         const updated = calculateLiveStats(mascotBaselineRef.current);
-        return { ...prev, fame: updated.fame, sete: updated.sete, svago: updated.svago };
+        return {
+          ...prev,
+          fame: updated.fame,
+          sete: updated.sete,
+          svago: updated.svago,
+          exp: updated.exp,
+          fase: updated.fase,
+        };
       });
     }, 15000);
 
@@ -532,56 +551,97 @@ export default function MascottePage() {
   return (
     <div className="flex flex-col items-center min-h-dvh bg-zinc-950 text-white select-none pb-24">
       
-      {/* 📌 STICKY HUD SUPERIORE CON PADDING ANTI-NOTCH (pt-12) */}
-      <div className="sticky top-0 left-0 right-0 w-full max-w-md bg-zinc-950/95 backdrop-blur-md pt-12 pb-3 px-3 border-b border-white/10 z-40 shadow-2xl space-y-2">
-        <div className="flex justify-between items-center">
-          <Link href="/" className="bg-zinc-900 border border-white/20 text-[10px] font-black px-3 py-1.5 rounded-xl text-zinc-300">
-            ← HOME
-          </Link>
+      {/* TESSERINO DI SOPRAVVIVENZA */}
+      <div className="w-full max-w-md px-3 pb-2 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+        <div className="relative overflow-hidden rounded-[1.75rem] border border-amber-400/20 bg-zinc-950/90 p-3 shadow-2xl shadow-black/50 backdrop-blur-xl">
+          <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-amber-500/10 blur-2xl" />
 
-          <div className="text-center">
-            <span className="text-[9px] uppercase tracking-widest text-amber-500 font-black">
-              Fase {mascot.fase} • {currentDef.name}
-            </span>
-            {isEditingName ? (
-              <div className="flex items-center gap-1 justify-center">
-                <input type="text" value={tempName} onChange={(e) => setTempName(e.target.value)} maxLength={20} className="bg-zinc-900 border border-amber-500/50 text-white text-xs font-black text-center rounded-lg px-2 py-0.5 outline-none w-36" autoFocus />
-                <button onClick={handleSaveName} className="bg-amber-500 text-black font-black text-[10px] px-2 py-0.5 rounded-lg">OK</button>
+          <div className="relative flex items-center gap-3">
+            <Link
+              href="/"
+              aria-label="Torna alla home"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-xl text-zinc-200 transition active:scale-90"
+            >
+              ←
+            </Link>
+
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 flex items-center gap-2">
+                <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.16em] text-amber-300">
+                  Fase {mascot.fase}
+                </span>
+                <span className="truncate text-[9px] font-bold uppercase tracking-wider text-zinc-500">
+                  {currentDef.name}
+                </span>
               </div>
-            ) : (
-              <button onClick={() => setIsEditingName(true)} className="flex items-center gap-2 text-sm font-black text-white hover:text-amber-400 justify-center mx-auto">
-                <span>{mascot.nome}</span>
-                <img src="/icons/modifica.png" alt="Modifica" className="w-8 h-8 opacity-100 drop-shadow-md" />
-              </button>
-            )}
+
+              {isEditingName ? (
+                <form
+                  className="flex items-center gap-1.5"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void handleSaveName();
+                  }}
+                >
+                  <input
+                    type="text"
+                    value={tempName}
+                    onChange={(event) => setTempName(event.target.value)}
+                    maxLength={20}
+                    aria-label="Nome della mascotte"
+                    className="min-w-0 flex-1 rounded-xl border border-amber-500/40 bg-black/40 px-2.5 py-1.5 text-sm font-black text-white outline-none focus:border-amber-400"
+                    autoFocus
+                  />
+                  <button type="submit" className="rounded-xl bg-amber-400 px-2.5 py-1.5 text-[10px] font-black text-zinc-950">
+                    SALVA
+                  </button>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsEditingName(true)}
+                  className="group flex max-w-full items-center gap-2 text-left"
+                  aria-label={`Modifica il nome ${mascot.nome}`}
+                >
+                  <span className="truncate text-base font-black tracking-tight text-white group-active:text-amber-300">
+                    {mascot.nome}
+                  </span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/5 text-[11px] text-zinc-400" aria-hidden="true">
+                    ✎
+                  </span>
+                </button>
+              )}
+            </div>
+
+            <div className="shrink-0 text-right">
+              <span className="block text-[8px] font-black uppercase tracking-widest text-zinc-500">Potenza</span>
+              <span className="text-sm font-black tabular-nums text-amber-300">⚡ {Math.floor(mascot.exp)}</span>
+            </div>
           </div>
 
-          <div className="w-14" aria-hidden="true" />
-        </div>
-
-        {/* BARRA ESPERIENZA COMPATTA CON VALORE XP A DESTRA */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1 bg-white/10 rounded-full h-2 overflow-hidden border border-white/5">
-            <div className="bg-amber-400 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
+          <div className="relative mt-3 h-1.5 overflow-hidden rounded-full bg-white/5" aria-label={`Progresso fase ${Math.round(progressPercent)}%`}>
+            <div className="h-full rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-200 transition-all duration-500" style={{ width: `${progressPercent}%` }} />
           </div>
-          <span className="text-[10px] font-black text-amber-400 shrink-0 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-lg">
-            ⚡ {mascot.exp} XP
-          </span>
-        </div>
 
-        {/* BARRE FAME / SETE / SVAGO COMPATTE SULLO STICKY HUD */}
-        <div className="grid grid-cols-3 gap-2 pt-0.5">
+          <div className="relative mt-3 grid grid-cols-3 gap-2">
           {(['fame', 'sete', 'svago'] as const).map((key) => (
-            <div key={key} className="space-y-0.5">
-              <div className="flex justify-between items-center text-[8px] font-black uppercase text-zinc-400">
-                <span>{key}</span>
-                <span className={mascot[key] < 20 ? 'text-red-500 font-black' : 'text-zinc-200'}>{Math.round(mascot[key])}%</span>
+            <div key={key} className={`rounded-xl border px-2 py-1.5 ${mascot[key] <= 0 ? 'border-red-500/50 bg-red-500/10' : 'border-white/5 bg-white/[0.03]'}`}>
+              <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-zinc-400">
+                <span>{key === 'fame' ? '🥕 Fame' : key === 'sete' ? '💧 Sete' : '🎮 Svago'}</span>
+                <span className={mascot[key] < 20 ? 'text-red-400' : 'text-zinc-200'}>{Math.round(mascot[key])}%</span>
               </div>
-              <div className="w-full h-2 bg-black/60 rounded-full overflow-hidden border border-white/5">
-                <div className={`h-full transition-all duration-300 ${mascot[key] < 20 ? 'bg-red-600 animate-pulse' : key === 'fame' ? 'bg-rose-500' : key === 'sete' ? 'bg-sky-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, Math.max(0, mascot[key]))}%` }} />
+              <div className="mt-1 h-1 overflow-hidden rounded-full bg-black/50">
+                <div className={`h-full rounded-full transition-all duration-300 ${mascot[key] < 20 ? 'bg-red-500 animate-pulse' : key === 'fame' ? 'bg-rose-500' : key === 'sete' ? 'bg-sky-400' : 'bg-emerald-400'}`} style={{ width: `${Math.min(100, Math.max(0, mascot[key]))}%` }} />
               </div>
             </div>
           ))}
+          </div>
+
+          {(mascot.fame <= 0 || mascot.sete <= 0 || mascot.svago <= 0) && (
+            <p className="relative mt-2 text-center text-[9px] font-black uppercase tracking-wider text-red-400">
+              Stato d&apos;abbandono · −{EXP_DECAY_PER_HOUR_AT_ZERO} XP ogni ora
+            </p>
+          )}
         </div>
       </div>
 

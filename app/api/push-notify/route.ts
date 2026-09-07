@@ -152,14 +152,14 @@ export async function POST(request: Request) {
         .from('push_subscriptions')
         .select('subscription')
         .eq('user_id', targetMascot.user_id)
-        .maybeSingle(),
+        .eq('general_enabled', true),
     ]);
 
     if (
       ownerResult.error ||
       !ownerResult.data.user ||
       subscriptionResult.error ||
-      !isPushSubscription(subscriptionResult.data?.subscription)
+      !subscriptionResult.data?.some((item) => isPushSubscription(item.subscription))
     ) {
       return unavailableResponse();
     }
@@ -199,10 +199,24 @@ export async function POST(request: Request) {
       vapidPublicKey,
       vapidPrivateKey
     );
-    await webpush.sendNotification(
-      subscriptionResult.data.subscription,
-      payload
-    );
+    let delivered = 0;
+    for (const item of subscriptionResult.data || []) {
+      if (!isPushSubscription(item.subscription)) continue;
+      try {
+        await webpush.sendNotification(item.subscription, payload);
+        delivered++;
+      } catch (error: unknown) {
+        const statusCode = typeof error === 'object' && error !== null && 'statusCode' in error
+          ? error.statusCode
+          : null;
+        if (statusCode === 404 || statusCode === 410) {
+          await supabaseAdmin.from('push_subscriptions').delete()
+            .eq('subscription', item.subscription);
+        }
+      }
+    }
+
+    if (delivered === 0) return unavailableResponse();
 
     return NextResponse.json({ success: true });
   } catch {

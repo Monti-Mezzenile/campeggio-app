@@ -263,7 +263,16 @@ export default function CuriositaPage() {
           
           <div className="flex items-center gap-4 relative z-10">
             <div className="w-14 h-14 shrink-0 bg-[#f4efe6]/10 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner group-hover:rotate-[360deg] transition-transform duration-1000">
-              <img src="/icons/lampadina.png" alt="Insolenza" className="w-8 h-8 object-contain" />
+              <div className="relative flex h-10 w-10 items-center justify-center" aria-label="Ruota dell'Insolenza" role="img">
+                <span className="absolute -top-0.5 left-1/2 z-10 h-0 w-0 -translate-x-1/2 border-l-[4px] border-r-[4px] border-t-[7px] border-l-transparent border-r-transparent border-t-white drop-shadow" />
+                <span
+                  className="h-9 w-9 rounded-full border-2 border-zinc-800 shadow-lg"
+                  style={{
+                    background: 'conic-gradient(#dc2626 0deg 60deg, #fbbf24 60deg 120deg, #9f1239 120deg 180deg, #ea580c 180deg 240deg, #10b981 240deg 300deg, #7f1d1d 300deg 360deg)',
+                  }}
+                />
+                <span className="absolute flex h-3.5 w-3.5 items-center justify-center rounded-full border border-zinc-700 bg-zinc-950 text-[7px] shadow-inner">💀</span>
+              </div>
             </div>
 
             <div className="flex-1">
@@ -297,7 +306,7 @@ export default function CuriositaPage() {
 
         <div className="grid grid-cols-2 gap-3.5 sm:gap-4">
           
-          {/* Tool 1: I Pezzi */}
+          {/* Tool 1: Le Hit */}
           <button
             onClick={() => router.push("/suoni")}
             className="group relative h-40 rounded-2xl bg-[#507c6c] text-white p-4 text-left shadow-md overflow-hidden transition-all hover:-translate-y-1 active:scale-95 border border-[#42695c] flex flex-col justify-between"
@@ -312,7 +321,7 @@ export default function CuriositaPage() {
               </div>
             </div>
             <div className="relative z-10 w-full">
-              <h3 className="font-black text-white text-base leading-none tracking-tight">I Pezzi</h3>
+              <h3 className="font-black text-white text-base leading-none tracking-tight">Le Hit</h3>
               <p className="text-[10px] font-medium text-white/80 mt-1.5 leading-tight">Hit, Urla & Audio Cult da sparare a cassa</p>
             </div>
           </button>

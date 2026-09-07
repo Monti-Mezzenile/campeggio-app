@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { timingSafeEqual } from 'node:crypto';
 import webpush from 'web-push';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { GODO_MESSAGES, NEWS_712_MESSAGES } from '@/lib/notification-content';
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
 const NEED_NOTIFICATION_COOLDOWN_SECONDS = 20 * 60 * 60;
@@ -85,6 +86,30 @@ function getRomeCalendarDay(date: Date) {
   );
 }
 
+function getRomeNow(date: Date) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Rome',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return {
+    date: `${values.year}-${values.month}-${values.day}`,
+    hour: Number(values.hour),
+    minute: Number(values.minute),
+  };
+}
+
+function stableOffset(value: string, length: number) {
+  let hash = 0;
+  for (const character of value) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  return hash % length;
+}
+
 function parseEventCalendarDay(value: string | null) {
   if (!value) return null;
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
@@ -158,6 +183,8 @@ export async function GET(request: Request) {
     let sentCount = 0;
     let mascotNotificationsSent = 0;
     let eventNotificationsSent = 0;
+    let godoNotificationsSent = 0;
+    let news712NotificationsSent = 0;
 
     for (const mascot of mascots || []) {
       const lastUpdate = mascot.last_updated_at ? new Date(mascot.last_updated_at) : new Date();
@@ -178,7 +205,8 @@ export async function GET(request: Request) {
         const { data: subs, error: subscriptionsError } = await supabase
           .from('push_subscriptions')
           .select('subscription')
-          .eq('user_id', mascot.user_id);
+          .eq('user_id', mascot.user_id)
+          .eq('general_enabled', true);
 
         if (subscriptionsError || !subs?.length) continue;
 
@@ -246,7 +274,8 @@ export async function GET(request: Request) {
       const { data: subscriptions, error: eventSubscriptionsError } =
         await supabase
           .from('push_subscriptions')
-          .select('user_id, subscription');
+          .select('user_id, subscription')
+          .eq('general_enabled', true);
       if (eventSubscriptionsError) throw eventSubscriptionsError;
 
       for (const { event, reminder } of dueEvents) {
@@ -261,27 +290,108 @@ export async function GET(request: Request) {
           url: `/events/${event.id}`,
         });
 
+        const subscriptionsByUser = new Map<string, typeof subscriptions>();
         for (const subscription of subscriptions || []) {
+          const userSubscriptions = subscriptionsByUser.get(subscription.user_id) || [];
+          userSubscriptions.push(subscription);
+          subscriptionsByUser.set(subscription.user_id, userSubscriptions);
+        }
+
+        for (const [userId, userSubscriptions] of subscriptionsByUser) {
           const { data: notificationClaimed, error: claimError } =
             await supabase.rpc('claim_event_push_notification', {
               p_event_id: event.id,
-              p_user_id: subscription.user_id,
+              p_user_id: userId,
               p_reminder_key: reminder.key,
             });
 
           if (claimError || notificationClaimed !== true) continue;
 
+          for (const subscription of userSubscriptions || []) {
+            try {
+              await webpush.sendNotification(subscription.subscription, payload);
+              sentCount++;
+              eventNotificationsSent++;
+            } catch (error: unknown) {
+              const statusCode = getStatusCode(error);
+              if (statusCode === 410 || statusCode === 404) {
+                await supabase
+                  .from('push_subscriptions')
+                  .delete()
+                  .eq('subscription', subscription.subscription);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    const romeNow = getRomeNow(now);
+    const scheduleStart = Date.UTC(2026, 8, 8);
+    const daysSinceStart = Math.floor((getRomeCalendarDay(now) - scheduleStart) / MILLISECONDS_PER_DAY);
+    const godoDue = daysSinceStart >= 0 && daysSinceStart % 2 === 0 && romeNow.hour === 8 && romeNow.minute >= 45;
+    const newsDue = daysSinceStart >= 0 && daysSinceStart % 3 === 0 && romeNow.hour === 19 && romeNow.minute < 15;
+
+    if (godoDue || newsDue) {
+      const { data: channelSubscriptions, error: channelError } = await supabase
+        .from('push_subscriptions')
+        .select('user_id, device_id, subscription, godo_enabled, news_712_enabled, godo_next_index, news_712_next_index, godo_last_sent_on, news_712_last_sent_on')
+        .eq('general_enabled', true);
+      if (channelError) throw channelError;
+
+      for (const channel of channelSubscriptions || []) {
+        const jobs = [
+          godoDue && channel.godo_enabled && channel.godo_last_sent_on !== romeNow.date ? {
+            kind: 'godo' as const,
+            messages: GODO_MESSAGES,
+            index: channel.godo_next_index || 0,
+            title: 'Con affetto, GODO',
+            icon: '/icons/godo.png',
+            tag: `godo-${romeNow.date}`,
+            indexColumn: 'godo_next_index',
+            dateColumn: 'godo_last_sent_on',
+          } : null,
+          newsDue && channel.news_712_enabled && channel.news_712_last_sent_on !== romeNow.date ? {
+            kind: 'news' as const,
+            messages: NEWS_712_MESSAGES,
+            index: channel.news_712_next_index || 0,
+            title: 'ULTIMA ORA! Da Terra 712',
+            icon: '/icons/712.png',
+            tag: `news-712-${romeNow.date}`,
+            indexColumn: 'news_712_next_index',
+            dateColumn: 'news_712_last_sent_on',
+          } : null,
+        ].filter((job): job is NonNullable<typeof job> => job !== null);
+
+        for (const job of jobs) {
+          const messageIndex = (job.index + stableOffset(channel.user_id, job.messages.length)) % job.messages.length;
           try {
-            await webpush.sendNotification(subscription.subscription, payload);
+            await webpush.sendNotification(channel.subscription, JSON.stringify({
+              title: job.title,
+              body: job.messages[messageIndex],
+              icon: job.icon,
+              badge: job.icon,
+              tag: job.tag,
+              url: '/profile',
+            }));
+
+            await supabase
+              .from('push_subscriptions')
+              .update({
+                [job.indexColumn]: (job.index + 1) % job.messages.length,
+                [job.dateColumn]: romeNow.date,
+              })
+              .eq('user_id', channel.user_id)
+              .eq('device_id', channel.device_id);
             sentCount++;
-            eventNotificationsSent++;
+            if (job.kind === 'godo') godoNotificationsSent++;
+            else news712NotificationsSent++;
           } catch (error: unknown) {
             const statusCode = getStatusCode(error);
             if (statusCode === 410 || statusCode === 404) {
-              await supabase
-                .from('push_subscriptions')
-                .delete()
-                .eq('subscription', subscription.subscription);
+              await supabase.from('push_subscriptions').delete()
+                .eq('user_id', channel.user_id)
+                .eq('device_id', channel.device_id);
             }
           }
         }
@@ -294,6 +404,8 @@ export async function GET(request: Request) {
         notificationsSent: sentCount,
         mascotNotificationsSent,
         eventNotificationsSent,
+        godoNotificationsSent,
+        news712NotificationsSent,
       },
       { headers: { 'Cache-Control': 'no-store' } }
     );

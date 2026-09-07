@@ -9,9 +9,11 @@ import { compressImageForUpload } from "@/lib/compress-image";
 import {
   activateAndTestPush,
   deactivatePush,
+  getPushDeviceId,
   isPushDisabled,
 } from "@/lib/push-notifications";
 import CustomIcon from "@/components/ui/CustomIcon";
+import NotificationChannelControls from "@/components/notifications/NotificationChannelControls";
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
 
@@ -118,10 +120,17 @@ export default function ProfilePage() {
     ) {
       const registration = await navigator.serviceWorker.getRegistration();
       const subscription = await registration?.pushManager.getSubscription();
+      const { data: pushPreferences } = await supabase
+        .from('push_subscriptions')
+        .select('general_enabled')
+        .eq('user_id', user.id)
+        .eq('device_id', getPushDeviceId())
+        .maybeSingle();
       setPushEnabled(
         !isPushDisabled(user.id) &&
           Notification.permission === 'granted' &&
-          Boolean(subscription)
+          Boolean(subscription) &&
+          pushPreferences?.general_enabled === true
       );
     }
 
@@ -361,49 +370,54 @@ export default function ProfilePage() {
   return (
     <main className="min-h-dvh p-4 sm:p-6 pb-4 sm:pb-6 max-w-md mx-auto flex flex-col gap-6 select-none bg-transparent">
       {/* 🚀 HEADER CON BADGE STATO E ICONA CUSTOM */}
-      <header className="flex items-center justify-between pt-2">
+      <header className="flex items-center gap-2 pt-2">
         <button
           onClick={() => router.back()}
-          className="w-10 h-10 rounded-full bg-white/60 text-[#1b2b25] flex items-center justify-center font-black text-lg shadow-sm backdrop-blur-md active:scale-90 transition border border-white"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white bg-white/60 text-lg font-black text-[#1b2b25] shadow-sm backdrop-blur-md transition active:scale-90"
+          aria-label="Torna indietro"
         >
           ←
         </button>
 
         {/* Badge Creativo */}
-        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/60 backdrop-blur-md border border-white shadow-sm">
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-white bg-white/60 px-2 py-1.5 shadow-sm backdrop-blur-md">
           <span className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
           </span>
           <span
-            className="text-lg font-bold text-[#1b2b25] tracking-wide"
+            className="truncate text-base font-bold tracking-wide text-[#1b2b25]"
             style={{ fontFamily: "var(--font-caveat)" }}
           >
             Diario di Campo
           </span>
-          <CustomIcon name="tenda-grossa" size={18} />
+          <CustomIcon name="tenda-grossa" size={16} className="shrink-0" />
         </div>
 
-        <button
-          type="button"
-          onClick={handlePushNotifications}
-          disabled={pushTestPending}
-          className={`relative flex h-10 w-10 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition active:scale-90 disabled:opacity-60 ${
-            pushEnabled
-              ? 'border-emerald-500/40 bg-emerald-500/20'
-              : 'border-white bg-amber-400/80 animate-pulse'
-          }`}
-          aria-pressed={pushEnabled}
-          aria-label={pushEnabled ? 'Disattiva notifiche' : 'Attiva notifiche'}
-          title={pushEnabled ? 'Disattiva notifiche' : 'Attiva notifiche'}
-        >
-          <span className="text-xl" aria-hidden="true">
-            {pushTestPending ? '⏳' : '🔔'}
-          </span>
-          {!pushEnabled && !pushTestPending && (
-            <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
-          )}
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          <NotificationChannelControls userId={authUserId} generalEnabled={pushEnabled} />
+          <button
+            type="button"
+            onClick={handlePushNotifications}
+            disabled={pushTestPending}
+            className={`relative flex h-10 w-10 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition active:scale-90 disabled:opacity-60 ${
+              pushEnabled
+                ? 'border-emerald-500/50 bg-emerald-500/25'
+                : 'border-red-500/40 bg-white/65'
+            }`}
+            aria-pressed={pushEnabled}
+            aria-label={pushEnabled ? 'Disattiva notifiche' : 'Attiva notifiche'}
+            title={pushEnabled ? 'Disattiva notifiche' : 'Attiva notifiche'}
+          >
+            <img src="/icons/campana.png" alt="" className="h-7 w-7 object-contain" />
+            {pushTestPending && (
+              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/35 text-sm" aria-hidden="true">⏳</span>
+            )}
+            {!pushEnabled && !pushTestPending && (
+              <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+            )}
+          </button>
+        </div>
       </header>
 
       {/* 🪪 1. CARD PROFILO (TESSERINO DA CAMPO) */}

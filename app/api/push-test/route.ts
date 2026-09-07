@@ -30,7 +30,7 @@ function getStatusCode(error: unknown) {
   return typeof error.statusCode === 'number' ? error.statusCode : null;
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -39,6 +39,19 @@ export async function POST() {
 
   if (authError || !user) {
     return NextResponse.json({ success: false, reason: 'auth' }, { status: 401 });
+  }
+
+  const requestBody = await request.json().catch(() => null) as {
+    deviceId?: unknown;
+  } | null;
+  const deviceId = typeof requestBody?.deviceId === 'string'
+    ? requestBody.deviceId
+    : '';
+  if (!deviceId || deviceId.length > 100) {
+    return NextResponse.json(
+      { success: false, reason: 'subscription' },
+      { status: 400 }
+    );
   }
 
   const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -64,6 +77,7 @@ export async function POST() {
     .from('push_subscriptions')
     .select('subscription')
     .eq('user_id', user.id)
+    .eq('device_id', deviceId)
     .maybeSingle();
 
   if (error || !isPushSubscription(data?.subscription)) {
@@ -105,7 +119,8 @@ export async function POST() {
       await supabaseAdmin
         .from('push_subscriptions')
         .delete()
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('device_id', deviceId);
 
       return NextResponse.json(
         { success: false, reason: 'expired' },

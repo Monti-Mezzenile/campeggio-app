@@ -18,6 +18,16 @@ export type PushActivationStatus =
   | 'delivery';
 
 const pushDisabledKey = (userId: string) => `monti-push-disabled-${userId}`;
+const PUSH_DEVICE_ID_KEY = 'monti-push-device-id';
+
+export function getPushDeviceId() {
+  let deviceId = localStorage.getItem(PUSH_DEVICE_ID_KEY);
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem(PUSH_DEVICE_ID_KEY, deviceId);
+  }
+  return deviceId;
+}
 
 export function isPushDisabled(userId: string) {
   return localStorage.getItem(pushDisabledKey(userId)) === '1';
@@ -97,16 +107,28 @@ export async function syncPushSubscription(
     throw new Error('Il dispositivo non è riuscito a creare la subscription push.');
   }
 
+  const serializedSubscription = subscription.toJSON();
+  const { data: existingDevice } = await supabase
+    .from('push_subscriptions')
+    .select('device_id')
+    .eq('user_id', userId)
+    .contains('subscription', { endpoint: serializedSubscription.endpoint })
+    .maybeSingle();
+  const deviceId = existingDevice?.device_id || getPushDeviceId();
+  localStorage.setItem(PUSH_DEVICE_ID_KEY, deviceId);
+
   const { error } = await supabase.from('push_subscriptions').upsert({
     user_id: userId,
-    subscription: subscription.toJSON(),
-  }, { onConflict: 'user_id' });
+    device_id: deviceId,
+    subscription: serializedSubscription,
+  }, { onConflict: 'user_id,device_id' });
 
   if (error) {
     console.error('Salvataggio subscription push non riuscito', error);
     throw new Error('La subscription non è stata salvata sul server.');
   }
 
+  localStorage.removeItem(pushDisabledKey(userId));
   return 'subscribed';
 }
 
@@ -119,18 +141,15 @@ async function removeBrowserPushSubscription() {
 }
 
 export async function deactivatePush(userId: string) {
-  if (
-    typeof window !== 'undefined' &&
-    'serviceWorker' in navigator &&
-    'PushManager' in window
-  ) {
-    await removeBrowserPushSubscription();
-  }
-
   const { error } = await supabase
     .from('push_subscriptions')
-    .delete()
-    .eq('user_id', userId);
+    .update({
+      general_enabled: false,
+      godo_enabled: false,
+      news_712_enabled: false,
+    })
+    .eq('user_id', userId)
+    .eq('device_id', getPushDeviceId());
 
   if (error) {
     console.error('Rimozione subscription push non riuscita', error);
@@ -141,7 +160,11 @@ export async function deactivatePush(userId: string) {
 }
 
 async function requestPushTest() {
-  const response = await fetch('/api/push-test', { method: 'POST' });
+  const response = await fetch('/api/push-test', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deviceId: getPushDeviceId() }),
+  });
   const result = await response.json().catch(() => null) as {
     success?: boolean;
     reason?: PushActivationStatus | 'expired';
@@ -158,6 +181,13 @@ export async function activateAndTestPush(
 ): Promise<PushActivationStatus> {
   const subscriptionStatus = await syncPushSubscription(userId, true);
   if (subscriptionStatus !== 'subscribed') return subscriptionStatus;
+
+  const { error } = await supabase
+    .from('push_subscriptions')
+    .update({ general_enabled: true })
+    .eq('user_id', userId)
+    .eq('device_id', getPushDeviceId());
+  if (error) throw new Error('Le notifiche generali non sono state attivate.');
 
   localStorage.removeItem(pushDisabledKey(userId));
 

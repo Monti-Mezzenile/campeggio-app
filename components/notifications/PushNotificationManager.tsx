@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import {
   activateAndTestPush,
+  getPushDeviceId,
   type PushSubscriptionStatus,
   syncPushSubscription,
 } from '@/lib/push-notifications';
@@ -25,9 +26,20 @@ export default function PushNotificationManager() {
         const status = await syncPushSubscription(currentUserId);
         if (!isMounted) return;
 
+        let generalEnabled = false;
+        if (status === 'subscribed') {
+          const { data } = await supabase
+            .from('push_subscriptions')
+            .select('general_enabled')
+            .eq('user_id', currentUserId)
+            .eq('device_id', getPushDeviceId())
+            .maybeSingle();
+          generalEnabled = data?.general_enabled === true;
+        }
+
         setUserId(currentUserId);
         setPermissionStatus(status);
-        setIsOpen(status !== 'subscribed');
+        setIsOpen(status !== 'subscribed' || !generalEnabled);
       } catch (error) {
         console.error('Sincronizzazione notifiche push non riuscita', error);
         if (!isMounted) return;

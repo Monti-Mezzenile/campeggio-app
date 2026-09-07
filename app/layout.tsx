@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import PushNotificationManager from "@/components/notifications/PushNotificationManager";
+import NotificationChannelReminder from "@/components/notifications/NotificationChannelReminder";
+import LaunchGate from "@/components/launch/LaunchGate";
 import InstallPrompt from "@/components/pwa/InstallPrompt";
 import "./globals.css";
 
@@ -36,6 +38,8 @@ export default function RootLayout({
     <html lang="it">
       <body className="w-full bg-[#0d1b1e] text-[#1F2041] antialiased selection:bg-[#121816] selection:text-[#ebdec8]">
         <PushNotificationManager />
+        <NotificationChannelReminder />
+        <LaunchGate />
         <InstallPrompt />
         {children}
       </body>
