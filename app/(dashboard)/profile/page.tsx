@@ -6,7 +6,11 @@ import Link from "next/link";
 import LogoutButton from "@/components/ui/LogoutButton";
 import { supabase } from "@/lib/supabase";
 import { compressImageForUpload } from "@/lib/compress-image";
-import { activateAndTestPush } from "@/lib/push-notifications";
+import {
+  activateAndTestPush,
+  deactivatePush,
+  isPushDisabled,
+} from "@/lib/push-notifications";
 import CustomIcon from "@/components/ui/CustomIcon";
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
@@ -115,7 +119,9 @@ export default function ProfilePage() {
       const registration = await navigator.serviceWorker.getRegistration();
       const subscription = await registration?.pushManager.getSubscription();
       setPushEnabled(
-        Notification.permission === 'granted' && Boolean(subscription)
+        !isPushDisabled(user.id) &&
+          Notification.permission === 'granted' &&
+          Boolean(subscription)
       );
     }
 
@@ -194,6 +200,13 @@ export default function ProfilePage() {
 
     setPushTestPending(true);
     try {
+      if (pushEnabled) {
+        await deactivatePush(authUserId);
+        setPushEnabled(false);
+        alert('Notifiche disattivate su questo dispositivo.');
+        return;
+      }
+
       const status = await activateAndTestPush(authUserId);
 
       if (status === 'sent') {
@@ -380,8 +393,9 @@ export default function ProfilePage() {
               ? 'border-emerald-500/40 bg-emerald-500/20'
               : 'border-white bg-amber-400/80 animate-pulse'
           }`}
-          aria-label={pushEnabled ? 'Prova notifiche' : 'Attiva notifiche'}
-          title={pushEnabled ? 'Prova notifiche' : 'Attiva notifiche'}
+          aria-pressed={pushEnabled}
+          aria-label={pushEnabled ? 'Disattiva notifiche' : 'Attiva notifiche'}
+          title={pushEnabled ? 'Disattiva notifiche' : 'Attiva notifiche'}
         >
           <span className="text-xl" aria-hidden="true">
             {pushTestPending ? '⏳' : '🔔'}

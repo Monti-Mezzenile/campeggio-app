@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import {
   activateAndTestPush,
+  isPushDisabled,
   type PushSubscriptionStatus,
   syncPushSubscription,
 } from '@/lib/push-notifications';
@@ -22,6 +23,14 @@ export default function PushNotificationManager() {
 
     const syncForUser = async (currentUserId: string) => {
       try {
+        if (isPushDisabled(currentUserId)) {
+          if (!isMounted) return;
+          setUserId(currentUserId);
+          setPermissionStatus('permission-required');
+          setIsOpen(false);
+          return;
+        }
+
         const status = await syncPushSubscription(currentUserId);
         if (!isMounted) return;
 

@@ -17,6 +17,12 @@ export type PushActivationStatus =
   | 'subscription'
   | 'delivery';
 
+const pushDisabledKey = (userId: string) => `monti-push-disabled-${userId}`;
+
+export function isPushDisabled(userId: string) {
+  return localStorage.getItem(pushDisabledKey(userId)) === '1';
+}
+
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding)
@@ -43,6 +49,10 @@ export async function syncPushSubscription(
     !('Notification' in window)
   ) {
     return 'unsupported';
+  }
+
+  if (!requestPermission && isPushDisabled(userId)) {
+    return 'permission-required';
   }
 
   let permission = Notification.permission;
@@ -101,9 +111,33 @@ export async function syncPushSubscription(
 }
 
 async function removeBrowserPushSubscription() {
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await navigator.serviceWorker.getRegistration();
+  if (!registration) return;
+
   const subscription = await registration.pushManager.getSubscription();
   await subscription?.unsubscribe();
+}
+
+export async function deactivatePush(userId: string) {
+  if (
+    typeof window !== 'undefined' &&
+    'serviceWorker' in navigator &&
+    'PushManager' in window
+  ) {
+    await removeBrowserPushSubscription();
+  }
+
+  const { error } = await supabase
+    .from('push_subscriptions')
+    .delete()
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('Rimozione subscription push non riuscita', error);
+    throw new Error('Non sono riuscito a disattivare le notifiche sul server.');
+  }
+
+  localStorage.setItem(pushDisabledKey(userId), '1');
 }
 
 async function requestPushTest() {
@@ -124,6 +158,8 @@ export async function activateAndTestPush(
 ): Promise<PushActivationStatus> {
   const subscriptionStatus = await syncPushSubscription(userId, true);
   if (subscriptionStatus !== 'subscribed') return subscriptionStatus;
+
+  localStorage.removeItem(pushDisabledKey(userId));
 
   let testResult = await requestPushTest();
   if (testResult.ok) return 'sent';
