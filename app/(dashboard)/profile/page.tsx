@@ -13,6 +13,7 @@ import {
   isPushDisabled,
 } from "@/lib/push-notifications";
 import CustomIcon from "@/components/ui/CustomIcon";
+import AdminLaunchControl from "@/components/launch/AdminLaunchControl";
 import NotificationChannelControls from "@/components/notifications/NotificationChannelControls";
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
@@ -380,18 +381,17 @@ export default function ProfilePage() {
         </button>
 
         {/* Badge Creativo */}
-        <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-white bg-white/60 px-2 py-1.5 shadow-sm backdrop-blur-md">
-          <span className="relative flex h-2.5 w-2.5">
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full border border-white bg-white/60 px-2 py-1.5 shadow-sm backdrop-blur-md">
+          <span className="relative flex h-2.5 w-2.5 shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
           </span>
           <span
-            className="truncate text-base font-bold tracking-wide text-[#1b2b25]"
+            className="min-w-0 text-center text-[clamp(0.875rem,4vw,1.125rem)] font-bold leading-tight text-[#1b2b25]"
             style={{ fontFamily: "var(--font-caveat)" }}
           >
             Diario di Campo
           </span>
-          <CustomIcon name="tenda-grossa" size={16} className="shrink-0" />
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
@@ -437,7 +437,9 @@ export default function ProfilePage() {
           />
         </button>
 
-        <div className="relative mx-auto w-24 h-24 mb-3 mt-1">
+        {profile?.ruolo === "admin" && <AdminLaunchControl userId={authUserId} />}
+
+        <div className={`relative mx-auto w-24 h-24 mb-3 ${profile?.ruolo === "admin" ? "mt-12" : "mt-1"}`}>
           {avatarUrl ? (
             <img
               src={avatarUrl}
