@@ -1,0 +1,149 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: #000;
+  color: #fff;
+  overflow: hidden;
+}
+.overlay::backdrop { background: #000; }
+.content {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: max(72px, env(safe-area-inset-top)) 24px max(32px, env(safe-area-inset-bottom));
+  text-align: center;
+}
+.skip {
+  position: absolute;
+  z-index: 5;
+  top: max(24px, env(safe-area-inset-top));
+  right: max(24px, env(safe-area-inset-right));
+  min-height: 44px;
+  padding: 8px 12px;
+  color: #a1a1aa;
+  background: transparent;
+  border: 1px solid #27272a;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.skip:focus-visible { outline: 2px solid #fde68a; outline-offset: 4px; }
+.eyebrow { color: #a1a1aa; font-size: 10px; letter-spacing: .26em; text-transform: uppercase; }
+.stage { position: relative; width: min(76vw, 380px); height: min(76vw, 380px); margin: 24px 0; isolation: isolate; }
+.oldForm, .newForm { position: absolute; inset: 10%; display: grid; place-items: center; }
+.sprite { width: 100%; height: 100%; object-fit: contain; }
+.oldForm { animation: old-form 14s linear both; }
+.oldForm .sprite { animation: whiten 1.8s ease-in-out both, pulse 1.6s ease-in-out 1.8s infinite; }
+.newForm { animation: new-form 14s linear both; }
+.newForm .sprite { animation: reveal-color 15.3s linear both; }
+.aura { position: absolute; inset: -12%; border-radius: 50%; background: radial-gradient(circle, #e0e7ff90, #a5b4fc25 30%, transparent 65%); animation: aura 17s ease-in-out both; }
+.orbits { position: absolute; inset: 0; z-index: 2; perspective: 700px; animation: orbit-energy 14s ease-in-out both; }
+.orbitPlane { position: absolute; inset: 4%; transform: rotateZ(var(--tilt)) rotateX(65deg); transform-style: preserve-3d; }
+.orbitTrack { position: absolute; inset: 0; border: 1px solid #a5f3fc26; border-radius: 50%; box-shadow: 0 0 14px #a5f3fc0a; }
+.orbitMover { position: absolute; inset: 0; transform-style: preserve-3d; animation: orbit var(--orbit-duration) linear var(--lag) infinite; }
+.geometry { position: absolute; top: 50%; left: 0; width: var(--size); height: var(--size); margin: calc(var(--size) / -2); opacity: var(--trail-opacity); border: 1.5px solid #a5f3fc; background: #67e8f955; box-shadow: 0 0 10px #67e8f9, 0 0 22px #67e8f966; transform: rotateX(-65deg) rotate(45deg); }
+.geometry[data-shape="1"] { border-color: #c4b5fd; background: #a78bfa66; clip-path: polygon(50% 0, 100% 100%, 0 100%); box-shadow: 0 0 15px #c4b5fd; }
+.geometry[data-shape="2"] { border-radius: 50%; border-color: #fde68a; background: #fde68a55; box-shadow: 0 0 12px #fde68a, 0 0 22px #fde68a66; }
+.ring, .ringTwo { position: absolute; inset: 12%; border-radius: 50%; border: 1px solid #e0e7ff80; opacity: 0; animation: ring 2s ease-out 6s 4; }
+.ringTwo { animation-delay: 6.6s; }
+.particle { position: absolute; top: 50%; left: 50%; width: 3px; height: 3px; border-radius: 50%; background: #e0e7ff; box-shadow: 0 0 10px #c7d2fe; opacity: 0; animation: gather 1.6s ease-in calc(6s + var(--delay)) 4; }
+.burst { position: absolute; z-index: 3; inset: -45%; pointer-events: none; border-radius: 50%; background: radial-gradient(circle, #fff 0%, #e0e7ffbb 18%, #e0e7ff33 38%, transparent 65%); opacity: 0; animation: burst 1.5s ease-out 14s forwards; }
+.caption { min-height: 110px; }
+.label { color: #fde68a; font-size: 10px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; }
+.title { margin: 12px 0 8px; font-size: clamp(24px, 6vw, 36px); line-height: 1.1; font-weight: 900; }
+.description { color: #a1a1aa; font-size: 13px; }
+.overlay[data-revealed="true"] .caption { animation: caption-reveal .7s ease-out both; }
+/* All CSS timelines wait for the soundtrack to be ready. */
+.overlay[data-running="false"] *, .overlay[data-running="false"] *::before { animation-play-state: paused !important; }
+@keyframes old-form {
+  0.0000% { opacity: 1; transform: scale(1.000); }
+  42.8571% { opacity: 1; transform: scale(1.051); }
+  50.0000% { opacity: 0; transform: scale(0.960); }
+  57.1429% { opacity: 1; transform: scale(1.069); }
+  63.5714% { opacity: 0; transform: scale(0.960); }
+  69.2857% { opacity: 1; transform: scale(1.083); }
+  74.2857% { opacity: 0; transform: scale(0.960); }
+  78.9286% { opacity: 1; transform: scale(1.095); }
+  83.2143% { opacity: 0; transform: scale(0.960); }
+  87.1429% { opacity: 1; transform: scale(1.105); }
+  90.7143% { opacity: 0; transform: scale(0.960); }
+  93.9286% { opacity: 1; transform: scale(1.113); }
+  96.7857% { opacity: 0; transform: scale(0.960); }
+  98.9286% { opacity: 1; transform: scale(1.119); }
+  100.0000% { opacity: 0; transform: scale(0.960); }
+}
+@keyframes new-form {
+  0.0000% { opacity: 0; transform: scale(0.960); }
+  42.8571% { opacity: 0; transform: scale(0.960); }
+  50.0000% { opacity: 1; transform: scale(1.060); }
+  57.1429% { opacity: 0; transform: scale(0.960); }
+  63.5714% { opacity: 1; transform: scale(1.076); }
+  69.2857% { opacity: 0; transform: scale(0.960); }
+  74.2857% { opacity: 1; transform: scale(1.089); }
+  78.9286% { opacity: 0; transform: scale(0.960); }
+  83.2143% { opacity: 1; transform: scale(1.100); }
+  87.1429% { opacity: 0; transform: scale(0.960); }
+  90.7143% { opacity: 1; transform: scale(1.109); }
+  93.9286% { opacity: 0; transform: scale(0.960); }
+  96.7857% { opacity: 1; transform: scale(1.116); }
+  98.9286% { opacity: 0; transform: scale(0.960); }
+  100.0000% { opacity: 1; transform: scale(1.120); }
+}
+@keyframes whiten { 0%, 25% { filter: brightness(1); } 100% { filter: brightness(0) invert(1) drop-shadow(0 0 16px #dbeafe); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.055); } }
+@keyframes reveal-color { 0%, 91.5033% { filter: brightness(0) invert(1) drop-shadow(0 0 24px #fff); } 100% { filter: brightness(1) invert(0) drop-shadow(0 0 16px #fde68a66); } }
+@keyframes orbit { to { transform: rotateZ(360deg); } }
+@keyframes orbit-energy { 0% { opacity: 0; transform: scale(1.2); } 10% { opacity: .85; } 36%, 60% { opacity: 1; transform: scale(1); } 90% { opacity: .9; transform: scale(.85); } 100% { opacity: 0; transform: scale(.35); } }
+@keyframes aura { 0% { opacity: 0; transform: scale(.5); } 30% { opacity: .3; transform: scale(.85); } 70% { opacity: .65; } 82.35% { opacity: 1; transform: scale(1.2); } 100% { opacity: .25; transform: scale(1); } }
+@keyframes ring { 0% { opacity: 0; transform: scale(.7); } 25% { opacity: .6; } 100% { opacity: 0; transform: scale(1.8); } }
+@keyframes gather { 0% { opacity: 0; transform: rotate(var(--angle)) translateX(min(43vw, 195px)) scale(.5); } 25% { opacity: .8; } 100% { opacity: 0; transform: rotate(calc(var(--angle) + 45deg)) translateX(20px) scale(1.5); } }
+@keyframes burst { 0% { opacity: .9; transform: scale(.7); } 12% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0; transform: scale(1.4); } }
+@keyframes caption-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .overlay * { animation: none !important; }
+  .aura, .orbits, .ring, .ringTwo, .particle, .burst { display: none; }
+  .oldForm { opacity: 1; }
+  .newForm { opacity: 0; }
+  .overlay[data-revealed="true"] .oldForm { opacity: 0; }
+  .overlay[data-revealed="true"] .newForm { opacity: 1; }
+}
+@media (max-height: 580px) {
+  .content { padding-top: 64px; padding-bottom: 16px; }
+  .stage { width: 42vh; height: 42vh; margin: 8px 0; }
+  .caption { min-height: 85px; }
+  .eyebrow { font-size: 8px; }
+}
+
+/* Keep a still, readable result until the player explicitly continues. */
+.overlay[data-finished="true"] .stage * { animation: none !important; }
+.overlay[data-finished="true"] .oldForm,
+.overlay[data-finished="true"] .orbits,
+.overlay[data-finished="true"] .ring,
+.overlay[data-finished="true"] .ringTwo,
+.overlay[data-finished="true"] .particle,
+.overlay[data-finished="true"] .burst { display: none; }
+.overlay[data-finished="true"] .newForm { opacity: 1; transform: scale(1.12); }
+.overlay[data-finished="true"] .newForm .sprite { filter: drop-shadow(0 0 16px #fde68a66); }
+.overlay[data-finished="true"] .aura { opacity: .25; }
+.continueButton {
+  min-height: 48px;
+  min-width: 200px;
+  padding: 14px 28px;
+  border: 0;
+  border-radius: 999px;
+  background: #fde68a;
+  color: #171717;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.continueButton:focus-visible { outline: 2px solid white; outline-offset: 5px; }

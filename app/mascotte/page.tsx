@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
+import EvolutionSequence, { prepareEvolutionAudio } from '@/components/mascot/EvolutionSequence';
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
 const EXP_DECAY_PER_HOUR_AT_ZERO = 2;
@@ -178,6 +179,10 @@ export default function MascottePage() {
     nome: 'Vittima del Campeggio',
     last_updated_at: new Date().toISOString()
   });
+  const [evolution, setEvolution] = useState<{ from: number; to: number; audioContext: AudioContext | null } | null>(null);
+  const previousPhaseRef = useRef<number | null>(null);
+  const feedingRef = useRef(false);
+  const evolutionAudioRef = useRef<AudioContext | null>(null);
   const [otherMascots, setOtherMascots] = useState<any[]>([]);
   const [infamieLogs, setInfamieLogs] = useState<any[]>([]);
   
@@ -375,6 +380,30 @@ export default function MascottePage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (loading || !mascot.id) return;
+    const previous = previousPhaseRef.current;
+    previousPhaseRef.current = mascot.fase;
+    if (previous !== null && mascot.fase > previous) {
+      setEvolution({ from: previous, to: mascot.fase, audioContext: evolutionAudioRef.current });
+      setSpeechBubble(null);
+      setToastMsg(null);
+    }
+    const nextForm = EVOLUTION_STAGES[mascot.fase + 1];
+    if (nextForm) {
+      const image = new window.Image();
+      image.src = nextForm.image;
+    }
+  }, [loading, mascot.id, mascot.fase]);
+
+  useEffect(() => () => { void evolutionAudioRef.current?.close().catch(() => {}); }, []);
+
+  const finishEvolution = () => {
+    void evolutionAudioRef.current?.close().catch(() => {});
+    evolutionAudioRef.current = null;
+    setEvolution(null);
+  };
+
   const handleSaveName = async () => {
     if (!tempName.trim() || !mascot.id) return;
     const cleanName = tempName.trim();
@@ -384,7 +413,7 @@ export default function MascottePage() {
   };
 
   const applyItemToMascot = async (item: typeof ITEMS[0]) => {
-    if (!mascot.id) return;
+    if (!mascot.id || evolution || feedingRef.current) return;
     const statKey = item.type as 'fame' | 'sete' | 'svago';
 
     // 🚨 Indigestione/Sbronza scatta solo se la stat è già al 100% pieno
@@ -416,17 +445,6 @@ export default function MascottePage() {
     const newFase = getStageFromExp(newExp);
     const nowIso = new Date().toISOString();
 
-    if (newFase > mascot.fase) {
-      playAudioEffect('level');
-      setToastMsg(`🧬 EVOLUZIONE! Si è evoluto in: ${EVOLUTION_STAGES[newFase].name}!`);
-      spawnParticle(`🎉 EVOLUZIONE!`, 'text-amber-300');
-    } else {
-      playAudioEffect('munch');
-      setToastMsg(`+${item.val}% ${statKey.toUpperCase()}${expGained > 0 ? ` e +${expGained} XP` : ''}!`);
-      spawnParticle(`+${item.val}% ${statKey.toUpperCase()}`, 'text-emerald-400');
-    }
-    setTimeout(() => setToastMsg(null), 5000);
-
     const updatedMascot = {
       ...mascot,
       [statKey]: newStatValue,
@@ -434,15 +452,38 @@ export default function MascottePage() {
       fase: newFase,
       last_updated_at: nowIso
     };
+
+    feedingRef.current = true;
+    if (newFase > mascot.fase) {
+      void evolutionAudioRef.current?.close().catch(() => {});
+      evolutionAudioRef.current = prepareEvolutionAudio();
+    }
+    try {
+      const { error } = await supabase.from('mascots').update({
+        [statKey]: newStatValue,
+        exp: newExp,
+        fase: newFase,
+        last_updated_at: nowIso,
+      }).eq('id', mascot.id);
+      if (error) throw error;
+    } catch {
+      void evolutionAudioRef.current?.close().catch(() => {});
+      evolutionAudioRef.current = null;
+      setToastMsg('Non riesco a salvare la cavia. Riprova tra un momento.');
+      return;
+    } finally {
+      feedingRef.current = false;
+    }
+
     mascotBaselineRef.current = updatedMascot;
     setMascot(updatedMascot);
 
-    await supabase.from('mascots').update({
-      [statKey]: newStatValue,
-      exp: newExp,
-      fase: newFase,
-      last_updated_at: nowIso,
-    }).eq('id', mascot.id);
+    if (newFase <= mascot.fase) {
+      playAudioEffect('munch');
+      setToastMsg(`+${item.val}% ${statKey.toUpperCase()}${expGained > 0 ? ` e +${expGained} XP` : ''}!`);
+      spawnParticle(`+${item.val}% ${statKey.toUpperCase()}`, 'text-emerald-400');
+      setTimeout(() => setToastMsg(null), 5000);
+    }
 
     mascotControls.start({ scale: [1, 1.25, 0.9, 1], rotate: [0, -10, 10, 0], transition: { duration: 0.35 } });
   };
@@ -550,6 +591,14 @@ export default function MascottePage() {
 
   return (
     <div className="flex flex-col items-center min-h-dvh bg-zinc-950 text-white select-none pb-24">
+      {evolution && (
+        <EvolutionSequence
+          from={EVOLUTION_STAGES[evolution.from]}
+          to={EVOLUTION_STAGES[evolution.to]}
+          audioContext={evolution.audioContext}
+          onComplete={finishEvolution}
+        />
+      )}
       
       {/* TESSERINO DI SOPRAVVIVENZA */}
       <div className="w-full max-w-md px-3 pb-2 pt-[calc(0.75rem+env(safe-area-inset-top))]">
