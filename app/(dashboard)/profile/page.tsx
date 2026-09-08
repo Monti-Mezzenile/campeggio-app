@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LogoutButton from "@/components/ui/LogoutButton";
 import { supabase } from "@/lib/supabase";
+import { getBadgeImage } from "@/lib/badge-image";
 import { compressImageForUpload } from "@/lib/compress-image";
 import {
   activateAndTestPush,
@@ -559,9 +560,9 @@ export default function ProfilePage() {
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-3">
               {myBadges.map((item: any, index: number) => (
                 <div key={item.badge?.id || index} className="shrink-0 group">
-                  {item.badge?.immagine_url ? (
+                  {getBadgeImage(item.badge) ? (
                     <img
-                      src={item.badge.immagine_url}
+                      src={getBadgeImage(item.badge)}
                       alt={item.badge?.titolo || "Badge"}
                       className="w-14 h-14 rounded-[1rem] object-cover border-2 border-white shadow-sm group-hover:scale-110 transition-transform"
                     />

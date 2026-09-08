@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getBadgeImage } from "@/lib/badge-image";
 import { compressImageForUpload } from "@/lib/compress-image";
 import BackButton from "@/components/ui/BackButton";
 
@@ -313,9 +314,9 @@ export default function BadgesPage() {
                 }`}
               >
                 <div className="w-12 h-12 rounded-xl overflow-hidden bg-white p-1 border border-zinc-200 flex items-center justify-center mb-1.5 shadow-2xs">
-                  {badge.immagine_url ? (
+                  {getBadgeImage(badge) ? (
                     <img
-                      src={badge.immagine_url}
+                      src={getBadgeImage(badge)}
                       alt={badge.titolo}
                       className={`w-full h-full object-cover rounded-lg ${
                         !owned ? "grayscale opacity-50" : ""
@@ -524,9 +525,9 @@ export default function BadgesPage() {
                       title={badge.titolo}
                     >
                       <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden bg-white/20 p-1 border-2 border-amber-300 shadow-md group-hover:border-white transition-all flex items-center justify-center backdrop-blur-xs">
-                        {badge.immagine_url ? (
+                        {getBadgeImage(badge) ? (
                           <img
-                            src={badge.immagine_url}
+                            src={getBadgeImage(badge)}
                             alt={badge.titolo}
                             className="w-full h-full object-cover rounded-xl"
                           />
@@ -578,9 +579,9 @@ export default function BadgesPage() {
             </span>
 
             <div className="w-20 h-20 mx-auto mb-2 rounded-2xl overflow-hidden bg-[#639885] p-1 border-2 border-amber-300 shadow-md flex items-center justify-center">
-              {selectedBadge.immagine_url ? (
+              {getBadgeImage(selectedBadge) ? (
                 <img
-                  src={selectedBadge.immagine_url}
+                  src={getBadgeImage(selectedBadge)}
                   alt={selectedBadge.titolo}
                   className="w-full h-full object-cover rounded-xl"
                 />
