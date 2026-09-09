@@ -8,14 +8,11 @@ export default function DashboardLayout({
 }) {
   return (
     <BackgroundManager>
-      {/* 
-        STRUTTURA APP SHELL NATIVA (Risolve tutti i bug di Safari iOS)
-        Blocca l'intera vista a 100dvh esatti e gestisce lo scroll internamente.
-      */}
+      {/* One viewport-sized shell; the content flex item can shrink above BottomNav. */}
       <div className="fixed inset-0 z-10 flex flex-col h-[100dvh] w-full overflow-hidden pt-[calc(env(safe-area-inset-top)+0.2rem)]">
         
         {/* Area dei contenuti (Scrollabile Indipendente) */}
-        <main className="flex-1 w-full overflow-y-auto overscroll-y-contain">
+        <main data-dashboard-scroll className="flex-1 min-h-0 w-full overflow-y-auto overscroll-y-contain">
           <div className="w-full max-w-md mx-auto min-h-full flex flex-col">
             {children}
             

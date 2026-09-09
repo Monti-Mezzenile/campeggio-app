@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import styles from "./CommunitySection.module.css";
 import { supabase } from "@/lib/supabase";
 
 interface FriendProfile {
@@ -22,6 +23,25 @@ export default function CommunitySection() {
   const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<FriendProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const detailsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!selectedFriend || !dialog) return;
+    // The native top layer keeps the profile above the navigation and out of
+    // Safari's nested scrolling/compositing layers. Preserve the home position.
+    const home = document.querySelector<HTMLElement>('[data-dashboard-scroll]');
+    const previousOverflow = home?.style.overflowY ?? '';
+    if (home) home.style.overflowY = 'hidden';
+    dialog.showModal();
+    if (detailsRef.current) detailsRef.current.scrollTop = 0;
+    return () => {
+      dialog.close();
+      if (home) home.style.overflowY = previousOverflow;
+    };
+  }, [selectedFriend]);
+
 
   useEffect(() => {
     async function loadCommunity() {
@@ -150,7 +170,9 @@ export default function CommunitySection() {
           const totalCars = friend.cars?.length || 0;
 
           return (
-            <motion.div
+            <motion.button
+              type="button"
+              aria-haspopup="dialog"
               key={friend.id}
               whileTap={{ scale: 0.95 }}
               onClick={() => setSelectedFriend(friend)}
@@ -207,25 +229,21 @@ export default function CommunitySection() {
                   <span>{totalCars}</span>
                 </div>
               </div>
-            </motion.div>
+            </motion.button>
           );
         })}
       </div>
 
-      {/* MODAL DETTAGLIATO */}
-      <AnimatePresence>
-        {selectedFriend && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overscroll-contain">
-            <motion.div
-              initial={{ scale: 0.92, opacity: 0, y: 15 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.92, opacity: 0, y: 15 }}
-              className="bg-[#EFE8DB] border-2 border-[#D8CEBC] rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl relative flex flex-col max-h-[85dvh] my-auto text-[#15241D]"
-            >
+      {/* Native modal has one scroll area and cannot sit beneath BottomNav. */}
+      {selectedFriend && (
+        <dialog ref={dialogRef} className={styles.dialog} aria-labelledby="community-profile-title"
+          onCancel={event => { event.preventDefault(); setSelectedFriend(null); }}>
               {/* TASTO CHIUSURA IN ALTO A DESTRA */}
               <button
+                autoFocus
+                aria-label="Chiudi profilo"
                 onClick={() => setSelectedFriend(null)}
-                className="absolute right-3.5 top-3.5 z-20 w-7 h-7 rounded-full bg-[#15241D] text-[#EFE8DB] font-black text-xs flex items-center justify-center hover:bg-[#20362C] transition shadow-md border border-white/10"
+                className="absolute right-2 top-2 z-20 w-11 h-11 rounded-full bg-[#15241D] text-[#EFE8DB] font-black text-xs flex items-center justify-center hover:bg-[#20362C] transition shadow-md border border-white/10"
               >
                 ✕
               </button>
@@ -263,7 +281,7 @@ export default function CommunitySection() {
                 {/* INFO UTENTE A DESTRA */}
                 <div className="flex-1 min-w-0 space-y-1">
                   {/* NOME COMPLETO */}
-                  <h2 className="text-base font-black text-[#15241D] leading-tight truncate">
+                  <h2 id="community-profile-title" className="text-base font-black text-[#15241D] leading-tight break-words">
                     {selectedFriend.full_name || selectedFriend.nome}
                   </h2>
 
@@ -287,18 +305,14 @@ export default function CommunitySection() {
                     </span>
                   </div>
 
-                  {/* MOTTO COMPATTO */}
-                  {selectedFriend.motto && (
-                    <p className="text-[10px] italic text-[#15241D]/80 truncate pt-0.5">
-                      “{selectedFriend.motto}”
-                    </p>
-                  )}
+
                 </div>
 
               </div>
 
               {/* CORPO TESSERINO */}
-              <div className="p-4 space-y-5 overflow-y-auto custom-scrollbar flex-1 min-h-0 touch-auto pb-6 bg-[#15241D] text-white">
+              <div ref={detailsRef} className={`${styles.details} space-y-5 bg-[#15241D] text-white`}>
+                {selectedFriend.motto && <p className="text-sm italic text-[#EFE8DB] leading-relaxed break-words">“{selectedFriend.motto}”</p>}
                 
                 {/* 🎖️ SPILLE & ONOREFICENZE */}
                 <div className="space-y-2.5">
@@ -315,17 +329,17 @@ export default function CommunitySection() {
                         <div key={b.id || b.titolo} className="bg-[#22352B] border border-white/10 rounded-2xl p-2.5 flex flex-col items-center text-center shadow-md">
                           <div className="w-11 h-11 rounded-xl bg-[#15241D] border border-[#4A7261]/40 p-1 flex items-center justify-center shrink-0 shadow-sm relative overflow-hidden">
                             {b.immagine_url || b.foto ? (
-                              <img src={b.immagine_url || b.foto} alt={b.titolo} className="w-full h-full object-cover rounded-lg" />
+                              <img src={b.immagine_url || b.foto} loading="lazy" decoding="async" alt={b.titolo} className="w-full h-full object-cover rounded-lg" />
                             ) : (
                               <img src="/icons/medaglia.png" alt="Badge" className="w-6 h-6 object-contain" />
                             )}
                           </div>
                           
-                          <p className="text-[10px] font-black text-[#EFE8DB] mt-1.5 line-clamp-1 w-full">
+                          <p className="text-[10px] font-black text-[#EFE8DB] mt-1.5 break-words w-full">
                             {b.titolo}
                           </p>
                           {b.descrizione && (
-                            <p className="text-[8px] font-medium text-white/50 line-clamp-1 w-full">
+                            <p className="text-[8px] font-medium text-white/70 break-words w-full">
                               {b.descrizione}
                             </p>
                           )}
@@ -356,7 +370,7 @@ export default function CommunitySection() {
                           <div key={tent.id} className="bg-[#22352B] border border-white/10 rounded-2xl p-3.5 space-y-2.5 shadow-md">
                             {tentPhoto && (
                               <div className="w-full h-32 rounded-xl overflow-hidden border border-white/10">
-                                <img src={tentPhoto} alt={tent.nome || "Tenda"} className="w-full h-full object-cover" />
+                                <img src={tentPhoto} loading="lazy" decoding="async" alt={tent.nome || "Tenda"} className="w-full h-full object-cover" />
                               </div>
                             )}
 
@@ -378,7 +392,7 @@ export default function CommunitySection() {
 
                             {tent.note && (
                               <div className="bg-[#15241D]/80 border border-white/5 p-2.5 rounded-xl text-xs text-white/90 italic leading-relaxed break-words">
-                                📝 "{tent.note}"
+                                📝 “{tent.note}”
                               </div>
                             )}
                           </div>
@@ -409,7 +423,7 @@ export default function CommunitySection() {
                           <div key={car.id} className="bg-[#22352B] border border-white/10 rounded-2xl p-3.5 space-y-2.5 shadow-md">
                             {carPhoto && (
                               <div className="w-full h-32 rounded-xl overflow-hidden border border-white/10">
-                                <img src={carPhoto} alt={car.modello} className="w-full h-full object-cover" />
+                                <img src={carPhoto} loading="lazy" decoding="async" alt={car.modello} className="w-full h-full object-cover" />
                               </div>
                             )}
 
@@ -438,7 +452,7 @@ export default function CommunitySection() {
 
                             {car.note && (
                               <div className="bg-[#15241D]/80 border border-white/5 p-2.5 rounded-xl text-xs text-white/90 italic leading-relaxed break-words">
-                                📝 "{car.note}"
+                                📝 “{car.note}”
                               </div>
                             )}
                           </div>
@@ -453,10 +467,8 @@ export default function CommunitySection() {
                 </div>
 
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+        </dialog>
+      )}
     </section>
   );
 }
