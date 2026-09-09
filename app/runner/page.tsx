@@ -235,7 +235,6 @@ export default function RunnerPage() {
     };
     document.addEventListener('pointerdown', onPointerDown, { passive: false });
     return () => document.removeEventListener('pointerdown', onPointerDown);
-    // Jump uses the current physics refs; reinstall only when entering/leaving a run.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState]);
 
@@ -341,7 +340,9 @@ export default function RunnerPage() {
       }
 
       setMascotY(mascotYRef.current);
-      setMascotRotation(velocityRef.current > 0 ? -15 : mascotYRef.current > 0 ? 10 : Math.sin(timestamp / 60) * 4);
+      
+      // Animazione di rotazione: rallentata la frequenza e ampiezza quando corre a terra
+      setMascotRotation(velocityRef.current > 0 ? -15 : mascotYRef.current > 0 ? 10 : Math.sin(timestamp / 200) * 2.5);
 
       // Particelle di Polvere
       if (mascotYRef.current === 0 && Math.random() < 0.35) {

@@ -765,7 +765,7 @@ export default function MascottePage() {
           </div>
 
           <div className="relative border-t border-amber-500/20 bg-gradient-to-b from-zinc-900 to-zinc-950 p-3">
-            <h2 className="text-sm font-black text-amber-300 text-center">Vitto, vizi e zero gratitudine</h2>
+            <h2 className="text-sm font-black text-amber-300 text-center">Finanzia il parassita</h2>
             <p className="text-[10px] text-zinc-400 text-center mt-0.5 mb-3">Mangia a scrocco. Ti giudica pure.</p>
             <div className="grid grid-cols-3 gap-2">
               {([
@@ -786,32 +786,45 @@ export default function MascottePage() {
           </div>
           </section>
 
-          {/* MINIGIOCHI */}
-          <section aria-labelledby="minigiochi-title" className="bg-zinc-900/80 backdrop-blur-md border border-white/10 p-3.5 rounded-3xl">
-            <h2 id="minigiochi-title" className="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-3 text-center">
-              Aumenta gli XP con i minigiochi
-            </h2>
-            <div className="grid grid-cols-3 gap-2">
-              <Link href="/scorribanda" className="min-w-0 flex flex-col items-center justify-center gap-2 py-3 px-1 rounded-2xl border border-white/10 bg-zinc-800/80 hover:bg-zinc-700/80 active:scale-[0.98] transition-colors focus-visible:outline-2 focus-visible:outline-amber-400">
-                <span className="h-12 flex items-center justify-center" aria-hidden="true">
-                  <img src="/grigliata/bistecca_cotta.png" alt="" className="w-12 h-12 object-contain" />
-                </span>
-                <span className="text-[10px] font-black text-zinc-200">Grigliata</span>
+          {/* SALA GIOCHI */}
+          <section aria-labelledby="minigiochi-title" className="rounded-3xl border border-white/10 bg-zinc-900/90 p-3 space-y-3">
+            <header className="px-1 pt-1">
+              <p className="text-[9px] font-black uppercase tracking-widest text-amber-400">Aumenta gli XP con i minigiochi</p>
+              <h2 id="minigiochi-title" className="text-lg font-black text-white mt-1">Scegli il tuo disastro.</h2>
+            </header>
+            <Link href="/runner" className="group relative isolate flex items-center min-h-[176px] overflow-hidden rounded-2xl border border-sky-300/30 bg-gradient-to-br from-cyan-950 via-sky-950 to-zinc-950 p-4 active:scale-[0.98] transition-transform focus-visible:outline-2 focus-visible:outline-sky-300">
+              <div className="relative z-20 w-[48%]">
+                <span className="text-[8px] font-black uppercase tracking-widest text-sky-300">Riflessi o rimpianti</span>
+                <h3 className="text-2xl font-black text-white mt-1">Corsa</h3>
+                <p className="text-[11px] text-sky-100/75 mt-1 leading-snug">Scappa dai problemi.<br />Salta quelli grossi.</p>
+                <span className="inline-flex mt-3 rounded-full bg-sky-300 px-3 py-1.5 text-[10px] font-black text-sky-950">CORRI ↗</span>
+              </div>
+              <div className="absolute right-0 bottom-2 w-[58%] h-[156px] pointer-events-none" aria-hidden="true">
+                <span className="absolute bottom-3 inset-x-3 h-5 rounded-[50%] bg-black/40 blur-md" />
+                <img src="/icons/cavallo-run.png" alt="" className="absolute -top-2 -left-2 w-[154px] h-[140px] max-w-none object-contain -rotate-6 group-hover:-translate-y-1 transition-transform" />
+                <img src="/icons/coniglio-run.png" alt="" className="absolute -bottom-1 -right-3 z-10 w-[130px] h-[122px] max-w-none object-contain rotate-3 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+            <div className="grid grid-cols-2 gap-3">
+              <Link href="/scorribanda" className="group relative overflow-hidden rounded-2xl border border-orange-400/30 bg-gradient-to-b from-orange-950 to-zinc-950 p-3 active:scale-[0.98] transition-transform focus-visible:outline-2 focus-visible:outline-orange-300">
+                <span className="text-[8px] font-black uppercase tracking-widest text-orange-300">Cottura o panico</span>
+                <div className="relative h-24 flex items-center justify-center" aria-hidden="true">
+                  <span className="absolute w-16 h-12 rounded-full bg-orange-500/30 blur-xl" />
+                  <img src="/grigliata/bistecca_cotta.png" alt="" className="relative w-24 h-24 object-contain -rotate-12 group-hover:rotate-0 transition-transform" />
+                </div>
+                <h3 className="text-lg font-black text-white">Grigliata</h3>
+                <p className="text-[10px] text-orange-100/70 min-h-8">Salva la cena.<br />La dignità è già andata.</p>
+                <span className="flex justify-between items-center mt-3 border-t border-orange-400/20 pt-2 text-[10px] font-black text-orange-300">ACCENDI IL CAOS <span>↗</span></span>
               </Link>
-              <Link href="/allenamento" className="min-w-0 flex flex-col items-center justify-center gap-2 py-3 px-1 rounded-2xl border border-white/10 bg-zinc-800/80 hover:bg-zinc-700/80 active:scale-[0.98] transition-colors focus-visible:outline-2 focus-visible:outline-amber-400">
-                <span className="h-12 flex items-center justify-center" aria-hidden="true">
-                  <img src="/merge/merge_mela.png" alt="" className="w-12 h-12 object-contain" />
-                </span>
-                <span className="text-[10px] font-black text-zinc-200">Merge</span>
-              </Link>
-              <Link href="/runner" className="min-w-0 flex flex-col items-center justify-center gap-2 py-3 px-1 rounded-2xl border border-white/10 bg-zinc-800/80 hover:bg-zinc-700/80 active:scale-[0.98] transition-colors focus-visible:outline-2 focus-visible:outline-amber-400">
-                <span className="h-12 flex items-center justify-center" aria-hidden="true">
-                  <span className="relative block w-[62.4px] h-[41.6px] shrink-0">
-                    <img src="/icons/cavallo-run.png" alt="" className="absolute top-0 left-0 w-[41.6px] h-[36.4px] object-contain" />
-                    <img src="/icons/coniglio-run.png" alt="" className="absolute bottom-0 right-0 z-10 w-[36.4px] h-[31.2px] object-contain" />
-                  </span>
-                </span>
-                <span className="text-[10px] font-black text-zinc-200">Corsa</span>
+              <Link href="/allenamento" className="group relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-b from-violet-950 to-zinc-950 p-3 active:scale-[0.98] transition-transform focus-visible:outline-2 focus-visible:outline-violet-300">
+                <span className="text-[8px] font-black uppercase tracking-widest text-violet-300">Incastri e disastri</span>
+                <div className="relative h-24" aria-hidden="true">
+                  <img src="/merge/merge_carota.png" alt="" className="absolute w-14 h-14 top-3 left-0 -rotate-12 object-contain" />
+                  <img src="/merge/merge_mela.png" alt="" className="absolute w-20 h-20 top-3 right-0 rotate-12 object-contain group-hover:rotate-0 transition-transform" />
+                </div>
+                <h3 className="text-lg font-black text-white">Merge</h3>
+                <p className="text-[10px] text-violet-100/70 min-h-8">Fai spazio.<br />Al prossimo errore.</p>
+                <span className="flex justify-between items-center mt-3 border-t border-violet-400/20 pt-2 text-[10px] font-black text-violet-300">COMBINA GUAI <span>↗</span></span>
               </Link>
             </div>
           </section>
@@ -866,7 +879,7 @@ export default function MascottePage() {
                         </div>
                       </div>)}
                     </div>
-                    <button type="button" onClick={() => setSelectedRival(other)} className="min-h-11 w-full rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500 hover:text-black text-[9px] font-black uppercase active:scale-95 transition-colors">Pigne e carezze ↗</button>
+                    <button type="button" onClick={() => setSelectedRival(other)} className="min-h-11 w-full rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500 hover:text-black text-[9px] font-black uppercase active:scale-95 transition-colors">Gestisci il rancore ↗</button>
                   </div>
                 </article>;
               })}
@@ -898,27 +911,28 @@ export default function MascottePage() {
       <AnimatePresence>
         {selectedRival && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} className="bg-zinc-900 border-2 border-amber-500/50 rounded-3xl p-5 w-full max-w-sm text-center relative shadow-2xl space-y-4">
-              <button onClick={() => setSelectedRival(null)} className="absolute top-4 right-4 text-white font-bold text-sm">✕</button>
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} className="bg-zinc-900 border-2 border-amber-500/50 rounded-3xl p-5 w-full max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain text-center relative shadow-2xl space-y-4">
+              <button onClick={() => setSelectedRival(null)} aria-label="Chiudi interazioni" className="absolute top-2 right-2 w-11 h-11 text-white font-bold text-sm">✕</button>
 
-              <h3 className="text-lg font-black text-white">{selectedRival.nome_mascotte || 'Bestia Ignota'}</h3>
-              
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                <button disabled={rivalActionPending} onClick={() => handleRivalAction(selectedRival, 'pigna')} className="p-3 bg-red-600/20 border border-red-500/40 rounded-2xl text-red-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95 disabled:opacity-50">
-                  <span className="text-lg">🎯</span><span className="whitespace-nowrap">Tira Pigna</span><span className="whitespace-nowrap text-[8px] text-red-400/80">-12% Svago</span>
-                </button>
-                <button disabled={rivalActionPending} onClick={() => handleRivalAction(selectedRival, 'troll')} className="p-3 bg-purple-600/20 border border-purple-500/40 rounded-2xl text-purple-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95 disabled:opacity-50">
-                  <span className="text-lg">👻</span><span className="whitespace-nowrap">Spaventa</span><span className="whitespace-nowrap text-[8px] text-purple-400/80">-8% Fame/Svago</span>
-                </button>
-                <button disabled={rivalActionPending} onClick={() => handleRivalAction(selectedRival, 'birra')} className="p-3 bg-sky-600/20 border border-sky-500/40 rounded-2xl text-sky-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95 disabled:opacity-50">
-                  <span className="text-lg">🍺</span><span className="whitespace-nowrap">Offri Birra</span><span className="whitespace-nowrap text-[8px] text-sky-400/80">+25% Sete</span>
-                </button>
-                <button disabled={rivalActionPending} onClick={() => handleRivalAction(selectedRival, 'cibo')} className="p-3 bg-emerald-600/20 border border-emerald-500/40 rounded-2xl text-emerald-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95 disabled:opacity-50">
-                  <span className="text-lg">🥩</span><span className="whitespace-nowrap">Lancia Cibo</span><span className="whitespace-nowrap text-[8px] text-emerald-400/80">+25% Fame</span>
-                </button>
-                <button disabled={rivalActionPending} onClick={() => handleRivalAction(selectedRival, 'gioca')} className="col-span-2 p-3 bg-amber-600/20 border border-amber-500/40 rounded-2xl text-amber-300 font-black text-xs flex flex-col items-center gap-1 active:scale-95 disabled:opacity-50">
-                  <span className="text-lg">🎾</span><span className="whitespace-nowrap">{rivalActionPending ? 'Invio...' : 'Gioca Insieme'}</span><span className="whitespace-nowrap text-[8px] text-amber-400/80">+25% Svago</span>
-                </button>
+              <div className="pr-5 text-left">
+                <p className="text-[9px] uppercase tracking-widest text-amber-400 font-black">Relazioni tossiche</p>
+                <h3 className="text-lg font-black text-white mt-1">{selectedRival.nome_mascotte || 'Bestia Ignota'}</h3>
+                <p className="text-xs text-zinc-400 mt-1">Scegli il danno. O compra il perdono.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                {([
+                  { action: 'pigna', icon: '/icons/ceppo.png', label: 'Saluto dal bosco', hint: 'Una pigna. Zero affetto.', effect: '−12% Svago', tone: 'border-red-500/30 bg-red-950/40 text-red-300' },
+                  { action: 'troll', icon: '/icons/campana.png', label: 'Sveglia traumatica', hint: 'Il relax è sopravvalutato.', effect: '−8% Fame e Svago', tone: 'border-purple-500/30 bg-purple-950/40 text-purple-300' },
+                  { action: 'birra', icon: '/icons/birra.png', label: 'Corrompi il fegato', hint: 'Amicizia alla spina.', effect: '+25% Sete', tone: 'border-sky-500/30 bg-sky-950/40 text-sky-300' },
+                  { action: 'cibo', icon: '/icons/cosciotto.png', label: 'Compra la sua stima', hint: 'Tanto costa un cosciotto.', effect: '+25% Fame', tone: 'border-emerald-500/30 bg-emerald-950/40 text-emerald-300' },
+                  { action: 'gioca', icon: '/icons/drone.png', label: 'Distrai il fallimento', hint: 'Fagli dimenticare chi lo mantiene.', effect: '+25% Svago', tone: 'border-amber-500/30 bg-amber-950/40 text-amber-300' },
+                ] as const).map(item => <button key={item.action} disabled={rivalActionPending} onClick={() => handleRivalAction(selectedRival, item.action)}
+                  className={`${item.action === 'gioca' ? 'col-span-2' : ''} ${item.tone} p-3 rounded-2xl border flex flex-col items-center gap-1 active:scale-95 disabled:opacity-50 transition-transform`}>
+                  <img src={item.icon} alt="" width={44} height={44} className="w-11 h-11 object-contain" />
+                  <span className="text-[11px] font-black">{item.label}</span>
+                  <span className="text-[9px] text-zinc-400">{item.hint}</span>
+                  <span className="text-[9px] font-black mt-1">{rivalActionPending ? 'Un attimo, faccio danni…' : item.effect}</span>
+                </button>)}
               </div>
             </motion.div>
           </div>
