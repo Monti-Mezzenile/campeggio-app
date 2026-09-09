@@ -765,8 +765,8 @@ export default function MascottePage() {
           </div>
 
           <div className="relative border-t border-amber-500/20 bg-gradient-to-b from-zinc-900 to-zinc-950 p-3">
-            <h2 className="text-sm font-black text-amber-300 text-center">Aiutala a Sopravvivere</h2>
-            <p className="text-[10px] text-zinc-400 text-center mt-0.5 mb-3">Scegli una coccola: basta un tocco.</p>
+            <h2 className="text-sm font-black text-amber-300 text-center">Vitto, vizi e zero gratitudine</h2>
+            <p className="text-[10px] text-zinc-400 text-center mt-0.5 mb-3">Mangia a scrocco. Ti giudica pure.</p>
             <div className="grid grid-cols-3 gap-2">
               {([
                 { type: 'fame', label: 'Cibo', color: 'text-rose-300' },
@@ -821,80 +821,58 @@ export default function MascottePage() {
         </div>
       )}
 
-      {/* TAB 2: FECCIA DEL CAMPEGGIO (RIVALI) */}
+      {/* TAB 2: FECCIA DEL CAMPEGGIO */}
       {activeTab === 'rivali' && (
-        <div className="w-full max-w-md px-4 mt-3 space-y-3 z-10">
+        <section className="w-full max-w-md px-4 mt-3 space-y-3 z-10">
+          <header className="px-1 pt-1 pb-2">
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-500">Bestiario del campeggio</span>
+            <h2 className="text-xl font-black text-white mt-1">Il peggio, in bella mostra.</h2>
+            <p className="text-xs text-zinc-400 mt-1">Scegli chi viziare. O a chi rovinare la giornata.</p>
+          </header>
           {otherMascots.length === 0 ? (
-            <div className="text-center p-6 bg-zinc-900/50 rounded-2xl border border-white/5">
-              <p className="text-xs text-zinc-500 font-medium">Nessun rivale trovato al momento.</p>
-            </div>
+            <p className="text-center p-6 text-xs text-zinc-400 bg-zinc-900/50 rounded-2xl border border-white/5">Nessuna bestia in vista. Goditi la pace.</p>
           ) : (
-            otherMascots.map((other, idx) => {
-              const otherDef = EVOLUTION_STAGES[other.fase] || EVOLUTION_STAGES[1];
-              const oFame = Math.min(100, Math.max(0, other.fame ?? 50));
-              const oSete = Math.min(100, Math.max(0, other.sete ?? 50));
-              const oSvago = Math.min(100, Math.max(0, other.svago ?? 50));
-              
-              const displayOwner = (!other.owner_name || other.owner_name === 'Ignoto')
-                ? 'Allenatore Anonimo'
-                : other.owner_name;
-
-              return (
-                <div key={other.id || idx} className="bg-zinc-900/90 border border-white/10 rounded-3xl p-3.5 shadow-lg relative overflow-hidden flex flex-col">
-                  
-                  <div className="absolute top-0 right-0 bg-zinc-950 text-amber-500 border-b border-l border-white/10 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-bl-xl">
-                    👤 {displayOwner}
-                  </div>
-
-                  <div className="flex gap-3 items-center mt-1">
-                    <div className="w-16 h-16 bg-black/60 rounded-2xl p-1.5 border border-white/10 relative shrink-0">
-                      <img src={otherDef.image} alt={other.nome_mascotte} className="w-full h-full object-contain" />
-                      <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-zinc-800 text-zinc-300 border border-white/10 text-[8px] font-black px-2 py-0.2 rounded-full whitespace-nowrap">
-                        Fase {other.fase || 1}
-                      </span>
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-xs font-black text-white truncate">{other.nome_mascotte || 'Anonimo'}</h3>
-                      <p className="text-[8px] text-amber-500 font-bold mb-1.5">{other.exp || 0} XP Totali</p>
-                      
-                      <div className="space-y-1 w-full">
-                        <div className="flex items-center gap-1.5 text-[7px] font-black text-zinc-400">
-                          <span className="w-7">FAME</span>
-                          <div className="flex-1 bg-black/80 h-1.5 rounded-full overflow-hidden">
-                            <div className={`h-full ${oFame < 20 ? 'bg-red-500' : 'bg-rose-500'}`} style={{ width: `${Math.round(oFame)}%` }} />
-                          </div>
-                          <span className="text-[8px] font-bold text-zinc-300 w-6 text-right">{Math.round(oFame)}%</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-[7px] font-black text-zinc-400">
-                          <span className="w-7">SETE</span>
-                          <div className="flex-1 bg-black/80 h-1.5 rounded-full overflow-hidden">
-                            <div className={`h-full ${oSete < 20 ? 'bg-red-500' : 'bg-sky-500'}`} style={{ width: `${Math.round(oSete)}%` }} />
-                          </div>
-                          <span className="text-[8px] font-bold text-zinc-300 w-6 text-right">{Math.round(oSete)}%</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-[7px] font-black text-zinc-400">
-                          <span className="w-7">SVAGO</span>
-                          <div className="flex-1 bg-black/80 h-1.5 rounded-full overflow-hidden">
-                            <div className={`h-full ${oSvago < 20 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${Math.round(oSvago)}%` }} />
-                          </div>
-                          <span className="text-[8px] font-bold text-zinc-300 w-6 text-right">{Math.round(oSvago)}%</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button 
-                    onClick={() => setSelectedRival(other)}
-                    className="w-full mt-3 bg-zinc-950 hover:bg-amber-500 hover:text-black border border-amber-500/30 text-amber-400 text-[9px] font-black uppercase tracking-widest py-2 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
-                  >
-                    <span>⚔️</span><span>PIGNE E CAREZZE</span>
+            <div className="grid grid-cols-2 gap-3">
+              {otherMascots.map((other, idx) => {
+                const otherDef = EVOLUTION_STAGES[other.fase] || EVOLUTION_STAGES[1];
+                const owner = !other.owner_name || other.owner_name === 'Ignoto' ? 'Allenatore anonimo' : other.owner_name;
+                const needs = [
+                  { label: 'Fame', value: Math.min(100, Math.max(0, other.fame ?? 50)), color: 'bg-rose-400' },
+                  { label: 'Sete', value: Math.min(100, Math.max(0, other.sete ?? 50)), color: 'bg-sky-400' },
+                  { label: 'Svago', value: Math.min(100, Math.max(0, other.svago ?? 50)), color: 'bg-emerald-400' },
+                ];
+                return <article key={other.id || idx} className="min-w-0 rounded-3xl overflow-hidden bg-zinc-900 border border-white/10 shadow-lg flex flex-col">
+                  <button type="button" onClick={() => setSelectedRival(other)} aria-label={`Apri ${other.nome_mascotte || 'Bestia ignota'}, cavia di ${owner}`}
+                    className="relative w-full h-44 flex items-center justify-center isolate overflow-hidden focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-amber-400 active:bg-white/5"
+                    style={{ background: idx % 2 === 0 ? 'radial-gradient(ellipse at 50% 80%, #44403c, #18181b 75%)' : 'radial-gradient(ellipse at 50% 80%, #234138, #18181b 75%)' }}>
+                    <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(to top, transparent 0px, transparent 31px, #fff 32px, transparent 33px)' }} />
+                    <span className="absolute top-3 left-3 text-[9px] font-mono text-white/35">N° {String(idx + 1).padStart(2, '0')}</span>
+                    <span className="absolute top-3 right-3 text-[8px] font-black text-amber-200 bg-black/30 px-1.5 py-0.5 rounded-md">FASE {other.fase || 1}</span>
+                    <span className="absolute bottom-4 w-20 h-3 bg-black/50 rounded-full blur-md" aria-hidden="true" />
+                    <img src={otherDef.image} alt={otherDef.name} loading="lazy" decoding="async" draggable={false}
+                      className="relative z-10 w-full h-36 px-2 mt-5 object-contain drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)] pointer-events-none" />
                   </button>
-                </div>
-              );
-            })
+                  <div className="p-3 flex flex-col flex-1 gap-2.5">
+                    <div>
+                      <h3 className="text-sm font-black text-white leading-tight break-words">{other.nome_mascotte || 'Bestia ignota'}</h3>
+                      <p className="text-[9px] text-zinc-400 mt-1 break-words">Colpa di <span className="text-zinc-200">{owner}</span></p>
+                      <p className="text-[10px] font-black text-amber-400 mt-1">{other.exp || 0} XP</p>
+                    </div>
+                    <div className="space-y-1.5 mt-auto">
+                      {needs.map(need => <div key={need.label}>
+                        <div className="flex justify-between text-[9px] mb-0.5"><span className="text-zinc-400">{need.label}</span><span className={need.value < 20 ? 'text-red-400 font-black' : 'text-zinc-300'}>{Math.round(need.value)}%</span></div>
+                        <div role="progressbar" aria-label={need.label} aria-valuenow={Math.round(need.value)} aria-valuemin={0} aria-valuemax={100} className="h-1 rounded-full bg-black/50 overflow-hidden">
+                          <div className={`h-full rounded-full ${need.value < 20 ? 'bg-red-500' : need.color}`} style={{ width: `${need.value}%` }} />
+                        </div>
+                      </div>)}
+                    </div>
+                    <button type="button" onClick={() => setSelectedRival(other)} className="min-h-11 w-full rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500 hover:text-black text-[9px] font-black uppercase active:scale-95 transition-colors">Pigne e carezze ↗</button>
+                  </div>
+                </article>;
+              })}
+            </div>
           )}
-        </div>
+        </section>
       )}
 
       {/* TAB 3: REGISTRO DELLE INFAMIE */}
