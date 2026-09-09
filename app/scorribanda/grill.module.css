@@ -75,3 +75,10 @@
 .ranking li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #ffffff12; }
 .ranking li span { overflow-wrap: anywhere; }
 .ranking strong { color: #34d399; }
+
+.ruleGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; margin-top: 12px; }
+.ruleItem { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ruleIcon { width: 36px; height: 36px; flex: 0 0 36px; object-fit: contain; }
+.ruleItem strong { display: block; font-size: 11px; text-transform: capitalize; color: #fde68a; }
+.ruleItem p { font-size: 10px; line-height: 1.35; color: #d4d4d8; }
+@media (max-width: 359px) { .ruleGrid { grid-template-columns: 1fr; } }

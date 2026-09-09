@@ -531,24 +531,22 @@ export default function RunnerPage() {
       </section>
       <section className={styles.guidePanel}>
         <h2>2. EVITA</h2>
-        <div className={runnerStyles.guideIcons}>
-          {HAZARDS.map(item => <div key={item.id} className={runnerStyles.guideItem}>
-            <RunnerIcon icon={item.icon} label={item.id.replaceAll('_', ' ')} sprite={item.isSprite} className={runnerStyles.guideIcon} />
-            <span>{item.id.replaceAll('_', ' ')}</span>
+        <div className={styles.ruleGrid}>
+          {HAZARDS.map(item => <div key={item.id} className={styles.ruleItem}>
+            <RunnerIcon icon={item.icon} label={item.id.replaceAll('_', ' ')} sprite={item.isSprite} className={`${styles.ruleIcon} ${runnerStyles.ruleIcon}`} />
+            <div><strong>{item.id.replaceAll('_', ' ')}</strong><p>{item.isSprite ? 'Corre verso di te: saltalo!' : 'Saltalo: un urto ferma la corsa.'}</p></div>
           </div>)}
+          <div className={styles.ruleItem}><img src="/runner/notte.png" alt="" className={`${styles.ruleIcon} ${runnerStyles.ruleIcon}`} /><div><strong>Notte</strong><p>La pista si oscura: occhi aperti!</p></div></div>
         </div>
       </section>
       <section className={`${styles.guidePanel} ${styles.goldenPanel}`}>
         <h2>3. RACCOGLI</h2>
-        <div className={runnerStyles.guideIcons}>
-          {COLLECTIBLES.map(item => <div key={item.id} className={runnerStyles.guideItem}>
-            <RunnerIcon icon={item.icon} label={item.id} className={runnerStyles.guideIcon} />
-            <span>{item.id}</span>
+        <div className={styles.ruleGrid}>
+          {COLLECTIBLES.map(item => <div key={item.id} className={styles.ruleItem}>
+            <RunnerIcon icon={item.icon} label={item.id} className={`${styles.ruleIcon} ${runnerStyles.ruleIcon}`} />
+            <div><strong>{item.id}</strong><p>{item.type === 'shield' ? 'Ti salva da un urto.' : item.type === 'sprint' ? 'Invincibile e punti ×2 per 5s.' : item.type === 'magnet' ? 'Attira i bonus per 7s.' : `Raccoglila: +${item.points} punti.`}</p></div>
           </div>)}
         </div>
-        <p>
-          Scudo: 1 colpo · Sprint: invincibile e punti ×2 per 5s · Calamita: attira bonus per 7s.
-        </p>
       </section>
       <button className={styles.startButton} onClick={() => { setGuideOpen(false); startGame(); }}>HO CAPITO, SI CORRE!</button>
     </main>;

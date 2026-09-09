@@ -167,15 +167,25 @@ export default function GrigliataPage() {
           <h1>Grigliata del panico</h1>
           <p>Tre mosse. La griglia è tua.</p>
         </header>
-        <section className={styles.guidePanel} aria-label="1. Scegli">
-          <h2>1. SCEGLI</h2>
+        <section className={styles.guidePanel} aria-label="1. Guarda gli ordini e scegli il cibo">
+          <h2>1. GUARDA L’ORDINE</h2>
+          <p className="text-sm text-zinc-300 mt-1">Controlla i piatti, poi scegli lo stesso cibo dal vassoio.</p>
           <div className={styles.guideScene}>
-            <div className={styles.guideTray}>
-              <img src="/grigliata/griglia_vassoio.png" alt="Vassoio" />
-              <img src={getFoodImagePath('salsiccia', 'crudo')} alt="Salsiccia cruda" />
+            <div className="flex flex-col items-center gap-1">
+              <div className={styles.guideTray}>
+                <img src="/grigliata/griglia_piatto.png" alt="Piatto dell’ordine" />
+                <img src={getFoodImagePath('salsiccia', 'cotto')} alt="Salsiccia richiesta" />
+              </div>
+              <span className="text-xs text-amber-300 font-bold">Ordine: salsiccia</span>
             </div>
             <span className={styles.arrow} aria-hidden="true">→</span>
-            <img src="/grigliata/griglia_graticola.png" alt="Posa sulla griglia" className={styles.guideAsset} />
+            <div className="flex flex-col items-center gap-1">
+              <div className={styles.guideTray}>
+                <img src="/grigliata/griglia_vassoio.png" alt="Vassoio" />
+                <img src={getFoodImagePath('salsiccia', 'crudo')} alt="Scegli la salsiccia cruda" />
+              </div>
+              <span className="text-xs text-amber-300 font-bold">Tocca la salsiccia</span>
+            </div>
           </div>
         </section>
         <section className={`${styles.guidePanel} ${styles.goldenPanel}`} aria-label="2. Aspetta il dorato">

@@ -171,12 +171,19 @@ export default function MergePage() {
     <section className={styles.guidePanel}>
       <h2>3. OCCHIO ALLA PIOGGIA!</h2>
       <p className="text-sm text-zinc-300 mt-1">Da 45s arrivano ondate di oggetti automatici. La freccia anticipa dove cadranno.</p>
-      <div className="flex items-center justify-center gap-5 my-2">
-        <img src={itemIcon(BOMB)} alt="Bomba" width={38} height={38} />
-        <img src="/merge/merge_calamita.png" alt="Calamita" width={38} height={38} />
-        <img src={itemIcon(ICE)} alt="Ghiaccio" width={38} height={38} />
+      <div className={styles.ruleGrid}>
+        {[
+          { icon: itemIcon(BOMB), name: 'Bomba', rule: 'Esplode e libera spazio attorno a sé.' },
+          { icon: '/merge/merge_calamita.png', name: 'Calamita', rule: 'Tocca il pulsante: avvicina gli uguali.' },
+          { icon: itemIcon(ICE), name: 'Ghiaccio', rule: 'Blocca le fusioni del cibo toccato per 6s.' },
+          { icon: itemIcon(ROCK), name: 'Masso', rule: 'Occupa spazio e non si fonde.' },
+          { icon: '/merge/tornado.png', name: 'Vento', rule: 'Una raffica sposta la pila.' },
+          { icon: '/merge/merge_peperoncino.png', name: 'Frenesia', rule: 'Dopo 10 fusioni: punti ×2 per 8s.' },
+        ].map(item => <div key={item.name} className={styles.ruleItem}>
+          <img src={item.icon} alt="" className={styles.ruleIcon} />
+          <div><strong>{item.name}</strong><p>{item.rule}</p></div>
+        </div>)}
       </div>
-      <p className="text-xs text-zinc-400">Bomba: libera spazio. Calamita: avvicina gli uguali. Ghiaccio: blocca le fusioni per 6s. Attento a massi e vento!</p>
     </section>
     <button className={styles.startButton} onClick={start}>HO CAPITO, SI FONDE!</button>
   </main>;

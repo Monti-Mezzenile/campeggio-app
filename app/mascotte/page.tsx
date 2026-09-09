@@ -201,7 +201,6 @@ export default function MascottePage() {
   const [selectedRival, setSelectedRival] = useState<any | null>(null);
   const [rivalActionPending, setRivalActionPending] = useState(false);
 
-  const mascotRef = useRef<HTMLDivElement>(null);
   const mascotControls = useAnimation();
   const mascotBaselineRef = useRef<Parameters<typeof calculateLiveStats>[0]>(null);
   const otherMascotBaselinesRef = useRef<Array<Parameters<typeof calculateLiveStats>[0]>>([]);
@@ -499,13 +498,6 @@ export default function MascottePage() {
     mascotControls.start({ scale: [1, 1.25, 0.9, 1], rotate: [0, -10, 10, 0], transition: { duration: 0.35 } });
   };
 
-  const handleDragEnd = (event: any, info: any, item: typeof ITEMS[0]) => {
-    if (!mascotRef.current) return;
-    const rect = mascotRef.current.getBoundingClientRect();
-    const isOver = info.point.x >= rect.left && info.point.x <= rect.right && info.point.y >= rect.top && info.point.y <= rect.bottom;
-    if (isOver) applyItemToMascot(item);
-  };
-
   const handleMascotTap = () => {
     playAudioEffect('pop');
     if (typeof window !== 'undefined' && 'vibrate' in navigator) navigator.vibrate?.(35);
@@ -743,7 +735,8 @@ export default function MascottePage() {
         <div className="w-full max-w-md px-4 mt-3 space-y-4 z-10">
           
           {/* SCENA VISIVA CAVIA */}
-          <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 flex items-center justify-center min-h-[260px] shadow-2xl">
+          <section className="rounded-3xl overflow-hidden border border-amber-500/20 shadow-2xl bg-zinc-900">
+          <div className="relative w-full flex items-center justify-center min-h-[220px]">
             <img src="/Backgr.png" alt="Camping" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
             
             <AnimatePresence>
@@ -762,7 +755,7 @@ export default function MascottePage() {
               ))}
             </AnimatePresence>
 
-            <motion.div ref={mascotRef} animate={mascotControls} onClick={handleMascotTap} className="relative w-48 h-48 flex items-center justify-center cursor-pointer z-10">
+            <motion.div animate={mascotControls} onClick={handleMascotTap} className="relative w-48 h-48 flex items-center justify-center cursor-pointer z-10">
               <motion.img 
                 animate={{ y: isCriticalState ? [0, -2, 2, 0] : [0, -6, 0] }}
                 transition={{ repeat: Infinity, duration: isCriticalState ? 0.25 : 3 }}
@@ -770,6 +763,28 @@ export default function MascottePage() {
               />
             </motion.div>
           </div>
+
+          <div className="relative border-t border-amber-500/20 bg-gradient-to-b from-zinc-900 to-zinc-950 p-3">
+            <h2 className="text-sm font-black text-amber-300 text-center">Aiutala a Sopravvivere</h2>
+            <p className="text-[10px] text-zinc-400 text-center mt-0.5 mb-3">Scegli una coccola: basta un tocco.</p>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { type: 'fame', label: 'Cibo', color: 'text-rose-300' },
+                { type: 'sete', label: 'Da bere', color: 'text-sky-300' },
+                { type: 'svago', label: 'Svago', color: 'text-emerald-300' },
+              ] as const).map(group => <div key={group.type} className="space-y-1.5">
+                <h3 className={`text-[10px] font-black text-center ${group.color}`}>{group.label}</h3>
+                {ITEMS.filter(item => item.type === group.type).map(item => <button
+                  key={item.id} type="button" onClick={() => applyItemToMascot(item)} disabled={Boolean(evolution) || !mascot.id}
+                  aria-label={`${item.label}: +${item.val}% ${group.label}`}
+                  className="w-full min-h-14 flex items-center justify-center gap-1 p-1 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 active:scale-95 transition-transform disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-amber-300">
+                  <img src={item.icon} alt="" draggable={false} className="w-7 h-7 object-contain shrink-0 pointer-events-none" />
+                  <span className="min-w-0 text-left"><span className="block text-[9px] font-bold text-zinc-200">{item.label}</span><span className={`block text-[9px] font-black ${group.color}`}>+{item.val}%</span></span>
+                </button>)}
+              </div>)}
+            </div>
+          </div>
+          </section>
 
           {/* MINIGIOCHI */}
           <section aria-labelledby="minigiochi-title" className="bg-zinc-900/80 backdrop-blur-md border border-white/10 p-3.5 rounded-3xl">
@@ -801,22 +816,7 @@ export default function MascottePage() {
             </div>
           </section>
 
-          {/* INVENTARIO */}
-          <div className="bg-zinc-900/80 backdrop-blur-md border border-white/10 p-3.5 rounded-3xl">
-            <h2 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2.5 text-center">Spazzatura Utile (Trascina o Clicca)</h2>
-            <div className="grid grid-cols-3 gap-2.5">
-              {ITEMS.map((item) => (
-                <motion.div
-                  key={item.id} drag dragSnapToOrigin={true} onDragEnd={(e: any, info: any) => handleDragEnd(e, info, item)} onClick={() => applyItemToMascot(item)}
-                  className="flex flex-col items-center justify-center p-2.5 rounded-2xl border bg-zinc-800/80 border-white/10 cursor-pointer active:bg-zinc-700/80"
-                >
-                  <img src={item.icon} alt={item.label} className="w-7 h-7 pointer-events-none mb-1" />
-                  <span className="text-[9px] font-black text-zinc-300">{item.label}</span>
-                  <span className="text-[8px] text-amber-500 font-black">+{item.val}%</span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
+
 
         </div>
       )}
