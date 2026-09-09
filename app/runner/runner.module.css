@@ -1,0 +1,26 @@
+.icon { display: block; position: relative; width: 100%; height: 100%; overflow: hidden; flex-shrink: 0; }
+.singleIcon { display: block; width: 100%; height: 100%; object-fit: contain; }
+.spriteSheet { display: block; width: 400%; max-width: none; height: 100%; object-fit: fill; }
+.entityIcon { z-index: 1; filter: drop-shadow(0 2px 3px #000b) drop-shadow(0 0 2px #fff8); }
+.faceLeft { transform: scaleX(-1); }
+.guideIcons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px; margin: 12px 0; }
+.guideItem { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; font-size: 11px; text-transform: capitalize; }
+.guideIcon { width: 64px; height: 64px; }
+.nightTint { position: fixed; inset: 0; background: #020617; pointer-events: none; z-index: 50; }
+.timeOfDay { position: absolute; top: 12px; right: 12px; z-index: 25; padding: 4px 10px; border-radius: 999px; background: #09090bb3; color: #fde68a; font-size: 11px; font-weight: 800; pointer-events: none; }
+
+.compactGuide { gap: 8px; }
+.compactGuide h2 { font-size: 15px; }
+.compactGuide p { font-size: 12px; line-height: 1.5; }
+.compactGuide .guideIcons { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin: 8px 0; }
+.compactGuide .guideIcon { width: 38px; height: 38px; }
+.compactGuide .guideItem { font-size: 9px; line-height: 1.2; overflow-wrap: anywhere; }
+.powerBar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; height: 40px; }
+.powerSlot { display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; height: 40px; padding: 4px; border: 1px solid #ffffff1a; border-radius: 12px; background: #18181bdd; color: #a1a1aa; font-size: 10px; }
+.powerSlot img { width: 24px; height: 24px; flex-shrink: 0; object-fit: contain; }
+.powerSlot strong { min-width: 18px; font-variant-numeric: tabular-nums; }
+.powerActive { color: #fde68a; border-color: #fbbf24aa; background: #78350f99; }
+.touchZone { position: relative; z-index: 10; width: 100%; max-width: 576px; margin-top: 12px; padding: 14px; border: 1px dashed #fbbf2444; border-radius: 20px; background: linear-gradient(#18181b99, #09090b44); display: flex; flex-direction: column; align-items: center; gap: 3px; color: #a1a1aa; font-size: 11px; }
+.touchZone strong { color: #fde68a; font-size: 11px; letter-spacing: .08em; }
+.touchArrow { color: #fbbf24; font-size: 22px; font-weight: 900; }
+.impactFlash { position: absolute; inset: 0; z-index: 45; pointer-events: none; box-shadow: inset 0 0 36px #fb718599; border-radius: inherit; }

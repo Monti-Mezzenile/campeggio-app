@@ -1,0 +1,77 @@
+.guide { min-height: 100dvh; background: #09090b; color: white; padding: 16px max(16px, calc((100vw - 440px) / 2)) 28px; display: flex; flex-direction: column; gap: 12px; }
+.back { color: #d4d4d8; font-size: 14px; min-height: 32px; }
+.guideHeader { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
+.guideHeader h1 { font-size: 23px; font-weight: 900; color: #fbbf24; }
+.guideHeader p { color: #a1a1aa; font-size: 14px; }
+.guidePanel { border: 1px solid #3f3f46; border-radius: 22px; padding: 12px 16px; background: #18181b; }
+.guidePanel h2 { font-size: 18px; font-weight: 900; letter-spacing: .03em; }
+.goldenPanel { border-color: #fbbf24; background: radial-gradient(ellipse at 75% 65%, #78350f70, #18181b 75%); }
+.guideScene { display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 84px; }
+.guideAsset { width: 80px; height: 80px; object-fit: contain; }
+.guideTray { position: relative; width: 92px; height: 80px; }
+.guideTray > img:first-child { width: 100%; height: 100%; object-fit: contain; }
+.guideTray > img:nth-child(2) { position: absolute; inset: 8px 16px; width: 60px; height: 60px; object-fit: contain; }
+.arrow { color: #fbbf24; font-size: 32px; font-weight: 900; }
+.check { position: absolute; right: -4px; top: 0; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #34d399; color: #052e16; font-weight: 900; font-size: 20px; }
+.guideReady { filter: drop-shadow(0 0 13px #fbbf24); animation: readyHop 1.8s ease-in-out infinite; }
+.guideServing { animation: guideServe 2s ease-in-out infinite; }
+.startButton { width: 100%; min-height: 56px; padding: 16px 10px; border-radius: 18px; background: #fbbf24; color: #271500; font-weight: 900; font-size: 14px; }
+.startButton:focus-visible, .slot:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+.orders { background: #18181b; border: 1px solid #ffffff1a; border-radius: 16px; padding: 8px; }
+.orderHeading { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; color: #a1a1aa; margin-bottom: 6px; }
+.orderHeading h2 { font-size: 14px; font-weight: 900; color: #fbbf24; }
+.orderGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; min-height: 76px; }
+.orderCard { min-width: 0; border: 1px solid #fbbf2455; border-radius: 10px; display: flex; align-items: center; flex-direction: column; background: #09090b; padding: 5px 3px; }
+
+.orderCard > span { font-size: 10px; font-weight: 700; max-width: 100%; }
+.orderTime { height: 5px; margin-top: 5px; width: 100%; border-radius: 999px; background: #3f3f46; overflow: hidden; }
+.orderTime > div { height: 100%; transition: width .1s linear; }
+.waiting { grid-column: 1 / -1; align-self: center; text-align: center; color: #a1a1aa; font-size: 13px; }
+.plate { position: relative; width: 100%; max-width: 76px; height: 44px; flex-shrink: 0; }
+.plate > img:first-child { width: 100%; height: 100%; object-fit: contain; }
+.plate > .orderReference { position: absolute; right: -1px; top: -2px; width: 22px; height: 22px; object-fit: contain; border-radius: 6px; background: #27272a; border: 1px solid #fbbf2466; z-index: 1; }
+.plate > .platedFood { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 32px; height: 32px; object-fit: contain; }
+.servedLabel { color: #34d399; line-height: 10px; margin-top: 5px; }
+.orderServed { border-color: #34d399; animation: plateDepart 1s ease-in forwards; }
+@keyframes plateDepart { 0%, 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-8px); } }
+.grillSlots { position: absolute; inset: 16% 12%; z-index: 20; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 12px 8px; }
+.slot { position: relative; display: flex; align-items: center; justify-content: center; border-radius: 18px; min-width: 44px; min-height: 44px; border: 2px solid transparent; cursor: pointer; }
+.slot > img { width: 100%; height: 100%; max-height: 76px; object-fit: contain; filter: drop-shadow(0 4px 4px #000); }
+.emptySlot { border: 1px dashed #fde68a55; background: #0003; }
+.emptySlot > span { font-size: 22px; color: #fde68a99; }
+.crudo { background: #0003; }
+.cotto { border-color: #fbbf24; background: #fbbf2422; box-shadow: 0 0 16px #fbbf2488, inset 0 0 14px #fbbf2433; }
+.cotto > img { animation: readyHop .6s ease-out; filter: drop-shadow(0 0 8px #fbbf24aa); }
+.readyMark { position: absolute; right: -5px; top: -8px; display: grid; place-items: center; width: 24px; height: 24px; background: #fbbf24; color: #422006; border-radius: 50%; font-size: 18px; font-weight: 900; }
+.bruciato { border-color: #fb718588; background: #0008; }
+.bruciato > img { filter: brightness(.55) grayscale(.65); animation: burntShake .45s ease-out; }
+.burntMark { position: absolute; bottom: -8px; padding: 2px 5px; border-radius: 8px; color: #fff; background: #9f1239; white-space: nowrap; font-size: 10px; font-weight: 900; }
+.cookProgress { position: absolute; bottom: -3px; left: 10%; width: 80%; height: 4px; border-radius: 99px; background: #000a; overflow: hidden; }
+.cookProgress > div { height: 100%; background: #fbbf24; transition: width .1s; }
+.foodTray { position: sticky; bottom: 8px; z-index: 35; }
+.servingFlight { position: fixed; z-index: 70; width: 64px; height: 64px; object-fit: contain; pointer-events: none; animation: serve .65s cubic-bezier(.2,.7,.25,1) forwards; filter: drop-shadow(0 0 10px #fbbf24); }
+@keyframes serve { 0% { transform: translate(0,0) scale(1); opacity: 1; } 50% { transform: translate(calc(var(--dx) * .5), calc(var(--dy) * .5 - 32px)) scale(1.2) rotate(-12deg); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(.5); opacity: 1; } }
+@keyframes readyHop { 0%, 100% { transform: translateY(0) scale(1); } 40% { transform: translateY(-12px) scale(1.08); } 70% { transform: translateY(0) scale(.97); } }
+@keyframes burntShake { 0%, 100% { transform: translateX(0); } 20%,60% { transform: translateX(-4px) rotate(-4deg); } 40%,80% { transform: translateX(4px) rotate(4deg); } }
+@keyframes guideServe { 0%,100% { transform: translateX(0); } 55% { transform: translateX(12px) rotate(-8deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .guideReady, .guideServing, .cotto > img, .bruciato > img { animation: none; }
+  .servingFlight { animation: serve .01s linear forwards; }
+}
+@media (max-width: 359px) {
+  .guidePanel h2 { font-size: 16px; }
+  .guideScene { min-height: 72px; }
+  .guideAsset { width: 68px; height: 68px; }
+  .orderHeading { flex-wrap: wrap; }
+
+}
+
+.gameOverDialog { position: fixed; inset: 0; margin: auto; width: calc(100% - 24px); max-width: 420px; max-height: calc(100dvh - 32px); overflow-y: auto; color: white; background: #18181b; border: 1px solid #fbbf2466; border-radius: 24px; box-shadow: 0 24px 80px #0009; }
+.gameOverDialog::backdrop { background: #09090b99; }
+.ranking { text-align: left; font-size: 12px; }
+.ranking h3 { color: #fbbf24; font-weight: 900; margin-bottom: 8px; }
+.ranking p { color: #a1a1aa; }
+.ranking ol { max-height: 160px; overflow-y: auto; }
+.ranking li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #ffffff12; }
+.ranking li span { overflow-wrap: anywhere; }
+.ranking strong { color: #34d399; }

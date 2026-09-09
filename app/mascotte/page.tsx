@@ -771,44 +771,35 @@ export default function MascottePage() {
             </motion.div>
           </div>
 
-          {/* ⚡ AZIONI RAPIDE (MINI-GIOCHI INTEGRATI) */}
-          <div className="grid grid-cols-3 gap-2">
-            {/* Mini-Gioco Scorribanda */}
-            <Link 
-              href="/scorribanda"
-              className="p-2.5 rounded-2xl border border-purple-500/40 bg-gradient-to-br from-purple-900/80 to-indigo-900/80 hover:from-purple-800 hover:to-indigo-800 shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 text-center active:scale-[0.98]"
-            >
-              <span className="text-xl">🥷</span>
-              <span className="text-[9px] font-black text-white uppercase mt-0.5 truncate w-full">Scorribanda</span>
-              <span className="text-[7px] font-black px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/50 whitespace-nowrap">
-                MINIGIOCO 🎮
-              </span>
-            </Link>
-
-            {/* Mini-Gioco Allenamento */}
-            <Link 
-              href="/allenamento"
-              className="p-2.5 rounded-2xl border border-sky-500/40 bg-gradient-to-br from-sky-900/80 to-blue-900/80 hover:from-sky-800 hover:to-blue-800 shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 text-center active:scale-[0.98]"
-            >
-              <span className="text-xl">🏋️</span>
-              <span className="text-[9px] font-black text-white uppercase mt-0.5 truncate w-full">Allenamento</span>
-              <span className="text-[7px] font-black px-1.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/50 whitespace-nowrap">
-                MINIGIOCO 🎮
-              </span>
-            </Link>
-
-            {/* Mini-Gioco Corsa Clandestina */}
-            <Link 
-              href="/runner"
-              className="p-2.5 rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-600/90 to-amber-500/90 hover:from-amber-500 hover:to-amber-400 shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 text-center active:scale-[0.98]"
-            >
-              <span className="text-xl">🏃</span>
-              <span className="text-[9px] font-black text-black uppercase mt-0.5 truncate w-full">Corsa</span>
-              <span className="text-[7px] font-black px-1.5 py-0.5 rounded-full bg-black/20 text-black border border-black/10 whitespace-nowrap">
-                MINIGIOCO 🎮
-              </span>
-            </Link>
-          </div>
+          {/* MINIGIOCHI */}
+          <section aria-labelledby="minigiochi-title" className="bg-zinc-900/80 backdrop-blur-md border border-white/10 p-3.5 rounded-3xl">
+            <h2 id="minigiochi-title" className="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-3 text-center">
+              Aumenta gli XP con i minigiochi
+            </h2>
+            <div className="grid grid-cols-3 gap-2">
+              <Link href="/scorribanda" className="min-w-0 flex flex-col items-center justify-center gap-2 py-3 px-1 rounded-2xl border border-white/10 bg-zinc-800/80 hover:bg-zinc-700/80 active:scale-[0.98] transition-colors focus-visible:outline-2 focus-visible:outline-amber-400">
+                <span className="h-12 flex items-center justify-center" aria-hidden="true">
+                  <img src="/grigliata/bistecca_cotta.png" alt="" className="w-12 h-12 object-contain" />
+                </span>
+                <span className="text-[10px] font-black text-zinc-200">Grigliata</span>
+              </Link>
+              <Link href="/allenamento" className="min-w-0 flex flex-col items-center justify-center gap-2 py-3 px-1 rounded-2xl border border-white/10 bg-zinc-800/80 hover:bg-zinc-700/80 active:scale-[0.98] transition-colors focus-visible:outline-2 focus-visible:outline-amber-400">
+                <span className="h-12 flex items-center justify-center" aria-hidden="true">
+                  <img src="/merge/merge_mela.png" alt="" className="w-12 h-12 object-contain" />
+                </span>
+                <span className="text-[10px] font-black text-zinc-200">Merge</span>
+              </Link>
+              <Link href="/runner" className="min-w-0 flex flex-col items-center justify-center gap-2 py-3 px-1 rounded-2xl border border-white/10 bg-zinc-800/80 hover:bg-zinc-700/80 active:scale-[0.98] transition-colors focus-visible:outline-2 focus-visible:outline-amber-400">
+                <span className="h-12 flex items-center justify-center" aria-hidden="true">
+                  <span className="relative block w-[62.4px] h-[41.6px] shrink-0">
+                    <img src="/icons/cavallo-run.png" alt="" className="absolute top-0 left-0 w-[41.6px] h-[36.4px] object-contain" />
+                    <img src="/icons/coniglio-run.png" alt="" className="absolute bottom-0 right-0 z-10 w-[36.4px] h-[31.2px] object-contain" />
+                  </span>
+                </span>
+                <span className="text-[10px] font-black text-zinc-200">Corsa</span>
+              </Link>
+            </div>
+          </section>
 
           {/* INVENTARIO */}
           <div className="bg-zinc-900/80 backdrop-blur-md border border-white/10 p-3.5 rounded-3xl">
