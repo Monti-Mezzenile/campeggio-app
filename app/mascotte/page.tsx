@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
+import { persistedMascotNeeds } from '@/lib/mascot-needs';
 import EvolutionSequence, { prepareEvolutionAudio } from '@/components/mascot/EvolutionSequence';
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
@@ -246,7 +247,8 @@ export default function MascottePage() {
           myMascot = newMascot;
         }
 
-        const updatedMyMascot = calculateLiveStats(myMascot);
+        const liveMyMascot = calculateLiveStats(myMascot);
+        const updatedMyMascot = { ...liveMyMascot, ...persistedMascotNeeds(liveMyMascot) };
 
         const persistedAt = new Date().toISOString();
         await supabase.from('mascots').update({
@@ -418,21 +420,29 @@ export default function MascottePage() {
 
     // 🚨 Indigestione/Sbronza scatta solo se la stat è già al 100% pieno
     if (mascot[statKey] >= 100) {
-      playAudioEffect('hurt');
       const penalty = 15;
-      const newSvago = Math.max(0, mascot.svago - penalty);
+      const updatedNeeds = persistedMascotNeeds({ ...mascot, svago: mascot.svago - penalty });
       const nowIso = new Date().toISOString();
-      
+      feedingRef.current = true;
+      try {
+        const { error } = await supabase.from('mascots').update({
+          ...updatedNeeds, last_updated_at: nowIso,
+        }).eq('id', mascot.id);
+        if (error) throw error;
+      } catch (error) {
+        console.error('Errore salvataggio cavia:', error);
+        setToastMsg('Non riesco a salvare la cavia. Riprova tra un momento.');
+        return;
+      } finally {
+        feedingRef.current = false;
+      }
+      const next = { ...mascot, ...updatedNeeds, last_updated_at: nowIso };
+      mascotBaselineRef.current = next;
+      setMascot(next);
+      playAudioEffect('hurt');
       setToastMsg(item.type === 'sete' ? `🥴 Sbronza colossale! (-15% Svago)` : `🤮 Indigestione! (-15% Svago)`);
       spawnParticle(`🤮 TROPPO PIENO!`, 'text-lime-400');
       setTimeout(() => setToastMsg(null), 5000);
-      
-      setMascot(prev => {
-        const next = { ...prev, svago: newSvago, last_updated_at: nowIso };
-        mascotBaselineRef.current = next;
-        return next;
-      });
-      await supabase.from('mascots').update({ svago: newSvago, last_updated_at: nowIso }).eq('id', mascot.id);
       mascotControls.start({ x: [-15, 15, -10, 10, -5, 5, 0], scale: [1, 0.9, 1.05, 1], transition: { duration: 0.6 } });
       return;
     }
@@ -440,14 +450,14 @@ export default function MascottePage() {
     const isCritical = mascot.fame < 20 || mascot.sete < 20 || mascot.svago < 20;
     const expGained = isCritical ? 0 : item.exp;
 
-    const newStatValue = Math.min(100, mascot[statKey] + item.val);
+    const updatedNeeds = persistedMascotNeeds({ ...mascot, [statKey]: mascot[statKey] + item.val });
     const newExp = mascot.exp + expGained;
     const newFase = getStageFromExp(newExp);
     const nowIso = new Date().toISOString();
 
     const updatedMascot = {
       ...mascot,
-      [statKey]: newStatValue,
+      ...updatedNeeds,
       exp: newExp,
       fase: newFase,
       last_updated_at: nowIso
@@ -460,13 +470,14 @@ export default function MascottePage() {
     }
     try {
       const { error } = await supabase.from('mascots').update({
-        [statKey]: newStatValue,
+        ...updatedNeeds,
         exp: newExp,
         fase: newFase,
         last_updated_at: nowIso,
       }).eq('id', mascot.id);
       if (error) throw error;
-    } catch {
+    } catch (error) {
+      console.error('Errore salvataggio cavia:', error);
       void evolutionAudioRef.current?.close().catch(() => {});
       evolutionAudioRef.current = null;
       setToastMsg('Non riesco a salvare la cavia. Riprova tra un momento.');
