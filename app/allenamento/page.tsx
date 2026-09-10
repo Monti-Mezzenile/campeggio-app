@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import styles from '../scorribanda/grill.module.css';
+import layout from './merge.module.css';
 import {
   MERGE_ITEMS, BOMB, ROCK, ICE, WIDTH, HEIGHT, RED_LINE, STEP,
   itemIcon, itemName, itemRadius, createMergeGame, dropItem, activateMagnet, stepMerge, rainSchedule,
@@ -170,6 +171,7 @@ export default function MergePage() {
       const saved = localStorage.getItem('merge_game_stats');
       if (saved) {
         const parsed = JSON.parse(saved);
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Restore the browser record after hydration.
         if (['maxScore', 'totalMerges', 'totalGames'].every(key => Number.isFinite(parsed[key]) && parsed[key] >= 0)) setStats(parsed);
       }
     } catch { /* The game works without local storage. */ }
@@ -184,10 +186,21 @@ export default function MergePage() {
     else dialogRef.current?.close();
   }, [phase]);
 
+  const triggerDrop = () => {
+    const game = gameRef.current;
+    if (game && game.phase === 'PLAYING' && dropItem(game, game.aim)) {
+      const currentInterval = getDropInterval(game.elapsed);
+      nextAutoDropAtRef.current = game.elapsed + currentInterval;
+      setView({ ...game });
+    }
+  };
+
   // Gestione comandi da tastiera per PC/Tablet
   useEffect(() => {
     if (phase !== 'PLAYING') return;
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof Element && e.target.closest('button, a, input, textarea, select')) return;
+      if (['ArrowLeft', 'ArrowRight', 'ArrowDown', ' ', 'Enter'].includes(e.key)) e.preventDefault();
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') moveDirRef.current = -1;
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') moveDirRef.current = 1;
       if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'Enter') triggerDrop();
@@ -284,15 +297,6 @@ export default function MergePage() {
     })();
   }, [phase, stats, view]);
 
-  const triggerDrop = () => {
-    const game = gameRef.current;
-    if (game && game.phase === 'PLAYING' && dropItem(game, game.aim)) {
-      const currentInterval = getDropInterval(game.elapsed);
-      nextAutoDropAtRef.current = game.elapsed + currentInterval;
-      setView({ ...game });
-    }
-  };
-
   const start = () => {
     runRef.current++;
     moveDirRef.current = 0;
@@ -313,7 +317,7 @@ export default function MergePage() {
     <section className={styles.guidePanel}>
       <h2>1. MUOVI E FAI CADERE</h2>
       <p className="text-sm text-zinc-300">
-        Usa le frecce ◄ ► per posizionare l’oggetto. **Attenzione**: gli oggetti CADONO DA SOLI a velocità sempre maggiore! Usa ▼ GIÙ per farlo cadere subito.
+        Usa le frecce ◄ ► per posizionare l’oggetto. <strong>Attenzione:</strong> gli oggetti CADONO DA SOLI a velocità sempre maggiore! Usa ▼ GIÙ per farlo cadere subito.
       </p>
     </section>
     <section className={`${styles.guidePanel} ${styles.goldenPanel}`}>
@@ -345,8 +349,8 @@ export default function MergePage() {
     <button className={styles.startButton} onClick={start}>HO CAPITO, SI FONDE!</button>
   </main>;
 
-  return <main className="min-h-dvh bg-zinc-950 text-white px-3 pb-8 pt-14 sm:pt-8 pt-[calc(3.5rem+env(safe-area-inset-top))] select-none">
-    <div className="max-w-md mx-auto space-y-3">
+  return <main className={layout.gamePage}>
+    <div className={layout.gameLayout}>
       <header className="flex justify-between items-center bg-zinc-900 border border-white/10 rounded-2xl p-3 shadow-md">
         <Link href="/mascotte" className="text-xs font-black text-zinc-300 py-2">← CAVIA</Link>
         <h1 className="font-black text-amber-400">MERGE</h1>
@@ -369,18 +373,20 @@ export default function MergePage() {
       </div>
 
       {/* ARENA E CONTROLLI */}
-      <section className="relative rounded-3xl border-2 border-amber-500/40 bg-zinc-900 p-2">
+      <section className={`${layout.arena} relative rounded-3xl border-2 border-amber-500/40 bg-zinc-900 p-2`}>
         {view.overflow > 0 && <div className="absolute top-2 inset-x-8 z-10 rounded-full bg-rose-600 text-white text-center text-xs font-black p-1 pointer-events-none animate-bounce">PILA TROPPO ALTA! {Math.max(1, Math.ceil((2000 - view.overflow) / 1000))}s</div>}
         
-        <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} aria-label="Merge Game Arena"
-          className="block w-full h-auto max-w-[360px] aspect-[360/460] mx-auto rounded-2xl touch-none" />
+        <div className={layout.canvasViewport}>
+          <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} aria-label="Merge Game Arena" className={layout.canvas} />
+        </div>
 
         {/* FRECCE DI CONTROLLO E GIÙ */}
-        <div className="mt-2.5 grid grid-cols-3 gap-2">
+        <div className="mt-2 grid shrink-0 grid-cols-3 gap-2">
           <button
             onPointerDown={(e) => { e.preventDefault(); moveDirRef.current = -1; }}
             onPointerUp={() => { moveDirRef.current = 0; }}
             onPointerLeave={() => { moveDirRef.current = 0; }}
+            onPointerCancel={() => { moveDirRef.current = 0; }}
             className="h-12 bg-zinc-800 active:bg-amber-500 active:text-black border border-white/15 rounded-xl font-black text-lg flex items-center justify-center transition-colors shadow-md touch-none"
             aria-label="Sposta a sinistra"
           >
@@ -399,6 +405,7 @@ export default function MergePage() {
             onPointerDown={(e) => { e.preventDefault(); moveDirRef.current = 1; }}
             onPointerUp={() => { moveDirRef.current = 0; }}
             onPointerLeave={() => { moveDirRef.current = 0; }}
+            onPointerCancel={() => { moveDirRef.current = 0; }}
             className="h-12 bg-zinc-800 active:bg-amber-500 active:text-black border border-white/15 rounded-xl font-black text-lg flex items-center justify-center transition-colors shadow-md touch-none"
             aria-label="Sposta a destra"
           >
@@ -408,7 +415,7 @@ export default function MergePage() {
 
         {/* PULSANTE CALAMITA */}
         <button disabled={phase !== 'PLAYING' || cooldown > 0} onClick={() => { const game = gameRef.current; if (game && activateMagnet(game)) setView({ ...game }); }}
-          className="mt-2 w-full h-11 flex justify-center items-center gap-2 rounded-xl bg-amber-400 text-zinc-950 font-black text-xs disabled:bg-zinc-800 disabled:text-zinc-500 shadow-md">
+          className="mt-2 w-full h-11 shrink-0 flex justify-center items-center gap-2 rounded-xl bg-amber-400 text-zinc-950 font-black text-xs disabled:bg-zinc-800 disabled:text-zinc-500 shadow-md">
           <img src="/merge/merge_calamita.png" alt="" width={22} height={22} />{cooldown ? `CALAMITA · ${cooldown}s` : 'ATTIVA CALAMITA'}
         </button>
       </section>

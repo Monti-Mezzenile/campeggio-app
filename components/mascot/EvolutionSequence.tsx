@@ -42,8 +42,6 @@ export default function EvolutionSequence({ from, to, audioContext, onComplete }
     let cancelled = false;
     let settled = false;
     let source: AudioBufferSourceNode | undefined;
-    let revealTimer: number | undefined;
-    let completeTimer: number | undefined;
     // A slow or unavailable audio file must never trap the user on a black screen.
     const loadTimer = window.setTimeout(() => controller.abort(), 4000);
     const context = audioContext ?? prepareEvolutionAudio();
@@ -61,6 +59,10 @@ export default function EvolutionSequence({ from, to, audioContext, onComplete }
     };
     finishRef.current = finish;
 
+    // The visual timeline starts independently: blocked iOS audio must not stall it.
+    const visualFrame = requestAnimationFrame(() => setRunning(true));
+    const revealTimer = window.setTimeout(() => setRevealed(true), 14000);
+    const completeTimer = window.setTimeout(finish, 17000);
     const start = async () => {
       try {
         if (context) {
@@ -85,14 +87,12 @@ export default function EvolutionSequence({ from, to, audioContext, onComplete }
       }
       if (cancelled || settled) return;
       window.clearTimeout(loadTimer);
-      setRunning(true);
-      revealTimer = window.setTimeout(() => setRevealed(true), 14000);
-      completeTimer = window.setTimeout(finish, 17000);
     };
     void start();
 
     return () => {
       cancelled = true;
+      cancelAnimationFrame(visualFrame);
       finishRef.current = () => {};
       controller.abort();
       window.clearTimeout(loadTimer);

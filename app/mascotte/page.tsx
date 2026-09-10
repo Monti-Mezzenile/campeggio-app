@@ -182,6 +182,7 @@ export default function MascottePage() {
   });
   const [evolution, setEvolution] = useState<{ from: number; to: number; audioContext: AudioContext | null } | null>(null);
   const previousPhaseRef = useRef<number | null>(null);
+  const initialStoredPhaseRef = useRef<number | null>(null);
   const feedingRef = useRef(false);
   const evolutionAudioRef = useRef<AudioContext | null>(null);
   const [otherMascots, setOtherMascots] = useState<any[]>([]);
@@ -246,6 +247,7 @@ export default function MascottePage() {
           myMascot = newMascot;
         }
 
+        initialStoredPhaseRef.current = myMascot.fase || 1;
         const liveMyMascot = calculateLiveStats(myMascot);
         const updatedMyMascot = { ...liveMyMascot, ...persistedMascotNeeds(liveMyMascot) };
 
@@ -383,12 +385,22 @@ export default function MascottePage() {
 
   useEffect(() => {
     if (loading || !mascot.id) return;
-    const previous = previousPhaseRef.current;
+    const key = `mascot_seen_phase_${mascot.id}`;
+    let previous = previousPhaseRef.current;
+    if (previous === null) {
+      previous = initialStoredPhaseRef.current ?? mascot.fase;
+      try {
+        const saved = Number(localStorage.getItem(key));
+        if (Number.isInteger(saved) && saved >= 1 && saved <= 9) previous = saved;
+      } catch { /* Keep in-session evolution available without storage. */ }
+    }
     previousPhaseRef.current = mascot.fase;
     if (previous !== null && mascot.fase > previous) {
       setEvolution({ from: previous, to: mascot.fase, audioContext: evolutionAudioRef.current });
       setSpeechBubble(null);
       setToastMsg(null);
+    } else {
+      try { localStorage.setItem(key, String(mascot.fase)); } catch { /* Optional persistent history. */ }
     }
     const nextForm = EVOLUTION_STAGES[mascot.fase + 1];
     if (nextForm) {
@@ -400,6 +412,9 @@ export default function MascottePage() {
   useEffect(() => () => { void evolutionAudioRef.current?.close().catch(() => {}); }, []);
 
   const finishEvolution = () => {
+    if (mascot.id) {
+      try { localStorage.setItem(`mascot_seen_phase_${mascot.id}`, String(mascot.fase)); } catch { /* Optional history. */ }
+    }
     void evolutionAudioRef.current?.close().catch(() => {});
     evolutionAudioRef.current = null;
     setEvolution(null);
@@ -440,9 +455,7 @@ export default function MascottePage() {
       setMascot(next);
       playAudioEffect('hurt');
       setToastMsg(item.type === 'sete' ? `🥴 Sbronza colossale! (-15% Svago)` : `🤮 Indigestione! (-15% Svago)`);
-      spawnParticle(`🤮 TROPPO PIENO!`, 'text-lime-400');
       setTimeout(() => setToastMsg(null), 5000);
-      mascotControls.start({ x: [-15, 15, -10, 10, -5, 5, 0], scale: [1, 0.9, 1.05, 1], transition: { duration: 0.6 } });
       return;
     }
 
@@ -491,11 +504,9 @@ export default function MascottePage() {
     if (newFase <= mascot.fase) {
       playAudioEffect('munch');
       setToastMsg(`+${item.val}% ${statKey.toUpperCase()}${expGained > 0 ? ` e +${expGained} XP` : ''}!`);
-      spawnParticle(`+${item.val}% ${statKey.toUpperCase()}`, 'text-emerald-400');
       setTimeout(() => setToastMsg(null), 5000);
     }
 
-    mascotControls.start({ scale: [1, 1.25, 0.9, 1], rotate: [0, -10, 10, 0], transition: { duration: 0.35 } });
   };
 
   const handleMascotTap = () => {
@@ -627,6 +638,11 @@ export default function MascottePage() {
                 </span>
               </div>
 
+              {mascot.fase > 1 && <button type="button" onClick={() => {
+                evolutionAudioRef.current = prepareEvolutionAudio();
+                setEvolution({ from: mascot.fase - 1, to: mascot.fase, audioContext: evolutionAudioRef.current });
+              }} className="text-[10px] text-amber-300 underline underline-offset-2 min-h-8">Rivedi evoluzione</button>}
+
               {isEditingName ? (
                 <form
                   className="flex items-center gap-1.5"
@@ -697,14 +713,7 @@ export default function MascottePage() {
         </div>
       </div>
 
-      {/* TOAST MESSAGGI */}
-      {toastMsg && (
-        <div className="w-full max-w-md mt-2 px-4 z-30">
-          <div className="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-xs font-black text-center py-2 px-3 rounded-xl shadow-lg">
-            {toastMsg}
-          </div>
-        </div>
-      )}
+      {toastMsg && activeTab !== 'mascotte' && <div role="status" className="fixed bottom-5 left-4 right-4 z-[60] mx-auto max-w-sm rounded-2xl border border-amber-400/40 bg-zinc-950 px-4 py-3 text-center text-xs font-bold text-amber-300 shadow-xl">{toastMsg}</div>}
 
       {/* 🧭 SELETTORE TAB */}
       <div className="w-full max-w-md px-4 mt-3 z-10">
@@ -766,7 +775,9 @@ export default function MascottePage() {
 
           <div className="relative border-t border-amber-500/20 bg-gradient-to-b from-zinc-900 to-zinc-950 p-3">
             <h2 className="text-sm font-black text-amber-300 text-center">Finanzia il parassita</h2>
-            <p className="text-[10px] text-zinc-400 text-center mt-0.5 mb-3">Mangia a scrocco. Ti giudica pure.</p>
+            <div className="h-12 flex items-center justify-center px-1 mb-2 text-center" role="status" aria-live="polite">
+              <p className={`text-[10px] leading-snug ${toastMsg ? 'text-amber-300 font-bold' : 'text-zinc-400'}`}>{toastMsg || 'Mangia a scrocco. Ti giudica pure.'}</p>
+            </div>
             <div className="grid grid-cols-3 gap-2">
               {([
                 { type: 'fame', label: 'Cibo', color: 'text-rose-300' },
