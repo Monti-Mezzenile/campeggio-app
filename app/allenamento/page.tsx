@@ -41,7 +41,7 @@ interface FloatingText {
 const formatTime = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`;
 
 function getDropInterval(elapsedMs: number): number {
-  return Math.max(400, 2200 - Math.floor(elapsedMs / 1000) * 25);
+  return Math.max(1200, 3200 - Math.max(0, elapsedMs - 30000) / 150);
 }
 
 function spawnMergeEffects(particles: Particle[], floatingTexts: FloatingText[], x: number, y: number, points: number, isFever: boolean) {
@@ -347,7 +347,7 @@ export default function MergePage() {
   const savedRunRef = useRef(0);
 
   const moveDirRef = useRef<-1 | 0 | 1>(0);
-  const nextAutoDropAtRef = useRef<number>(2200);
+  const nextAutoDropAtRef = useRef<number>(3200);
 
   // Refs per FX visivi
   const prevScoreRef = useRef<number>(0);
@@ -497,7 +497,7 @@ export default function MergePage() {
     prevScoreRef.current = 0;
     particlesRef.current = [];
     floatingTextsRef.current = [];
-    nextAutoDropAtRef.current = 2200;
+    nextAutoDropAtRef.current = 3200;
     setView({ ...game }); setXp(0); setPhase('PLAYING');
   };
 

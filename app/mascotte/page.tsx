@@ -151,7 +151,7 @@ export default function MascottePage() {
     nome: 'Vittima del Campeggio',
     last_updated_at: new Date().toISOString()
   });
-  const [evolution, setEvolution] = useState<{ from: number; to: number; audioContext: AudioContext | null } | null>(null);
+  const [evolution, setEvolution] = useState<{ from: number; to: number; audioContext: AudioContext | null; soundtrack?: HTMLAudioElement; fullMotion?: boolean } | null>(null);
   const previousPhaseRef = useRef<number | null>(null);
   const initialStoredPhaseRef = useRef<number | null>(null);
   const feedingRef = useRef(false);
@@ -581,6 +581,8 @@ export default function MascottePage() {
           from={EVOLUTION_STAGES[evolution.from]}
           to={EVOLUTION_STAGES[evolution.to]}
           audioContext={evolution.audioContext}
+          soundtrack={evolution.soundtrack}
+          fullMotion={evolution.fullMotion}
           onComplete={finishEvolution}
         />
       )}
@@ -641,8 +643,10 @@ export default function MascottePage() {
               <div className="min-w-0 flex-1">
                 <FitText size={13} className="w-full font-bold text-zinc-200">{currentDef.name}</FitText>
                 {mascot.fase > 1 && <button type="button" onClick={() => {
-                  evolutionAudioRef.current = prepareEvolutionAudio();
-                  setEvolution({ from: mascot.fase - 1, to: mascot.fase, audioContext: evolutionAudioRef.current });
+                  const soundtrack = new Audio('/audio/trasformazione.mp3');
+                  soundtrack.volume = 0.8;
+                  void soundtrack.play().catch(() => {});
+                  setEvolution({ from: mascot.fase - 1, to: mascot.fase, audioContext: null, soundtrack, fullMotion: true });
                 }} className="inline-flex whitespace-nowrap min-h-8 items-center gap-1.5 text-[10px] font-medium text-amber-300/65 hover:text-amber-300"><span aria-hidden="true">↻</span> Rivedi evoluzione</button>}
               </div>
             </div>

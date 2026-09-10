@@ -9,6 +9,8 @@ type Props = {
   to: EvolutionForm;
   audioContext?: AudioContext | null;
   onComplete: () => void;
+  fullMotion?: boolean;
+  soundtrack?: HTMLAudioElement;
 };
 
 // Unlock audio during the feeding gesture; playback starts with the animation,
@@ -23,7 +25,7 @@ export function prepareEvolutionAudio(): AudioContext | null {
   }
 }
 
-export default function EvolutionSequence({ from, to, audioContext, onComplete }: Props) {
+export default function EvolutionSequence({ from, to, audioContext, onComplete, fullMotion = false, soundtrack }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const finishRef = useRef<() => void>(() => {});
   const continueRef = useRef<HTMLButtonElement>(null);
@@ -44,7 +46,7 @@ export default function EvolutionSequence({ from, to, audioContext, onComplete }
     let source: AudioBufferSourceNode | undefined;
     // A slow or unavailable audio file must never trap the user on a black screen.
     const loadTimer = window.setTimeout(() => controller.abort(), 4000);
-    const context = audioContext ?? prepareEvolutionAudio();
+    const context = soundtrack ? null : audioContext ?? prepareEvolutionAudio();
 
     const finish = () => {
       settled = true;
@@ -53,6 +55,7 @@ export default function EvolutionSequence({ from, to, audioContext, onComplete }
       window.clearTimeout(revealTimer);
       window.clearTimeout(completeTimer);
       source?.stop();
+      soundtrack?.pause();
       setRunning(true);
       setRevealed(true);
       setFinished(true);
@@ -88,6 +91,7 @@ export default function EvolutionSequence({ from, to, audioContext, onComplete }
       if (cancelled || settled) return;
       window.clearTimeout(loadTimer);
     };
+    if (soundtrack) void soundtrack.play().catch(() => {});
     void start();
 
     return () => {
@@ -100,17 +104,19 @@ export default function EvolutionSequence({ from, to, audioContext, onComplete }
       window.clearTimeout(completeTimer);
       source?.stop();
       source?.disconnect();
+      soundtrack?.pause();
       if (!audioContext) void context?.close().catch(() => {});
       dialog?.close();
       document.body.style.overflow = previousOverflow;
       if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
     };
-  }, [audioContext]);
+  }, [audioContext, soundtrack]);
 
   return (
     <dialog
       ref={dialogRef}
       className={styles.overlay}
+      data-full-motion={fullMotion}
       data-running={running}
       data-revealed={revealed}
       data-finished={finished}

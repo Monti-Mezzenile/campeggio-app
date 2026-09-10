@@ -86,7 +86,9 @@ export default function RunnerPage() {
   const floorRef = useRef(laneFloor(1));
   const [floor, setFloor] = useState(laneFloor(1));
   const roadRef = useRef(0);
-  const [roadOffset, setRoadOffset] = useState(0);
+  const playerNode = useRef<HTMLDivElement>(null);
+  const entityNodes = useRef(new Map<number, HTMLDivElement>());
+  const uiTickRef = useRef(0);
   const waveIndexRef = useRef(0);
   const nextWaveRef = useRef(40000);
   const [waveWarning, setWaveWarning] = useState('');
@@ -253,7 +255,7 @@ export default function RunnerPage() {
     playMusic(true);
     laneRef.current = 1; floorRef.current = laneFloor(1);
     setLane(1); setFloor(laneFloor(1));
-    roadRef.current = 0; setRoadOffset(0);
+    roadRef.current = 0; uiTickRef.current = 0;
     waveIndexRef.current = 0; nextWaveRef.current = 40000; setWaveWarning('');
     endingRef.current = false;
     scoreRef.current = 0;
@@ -348,23 +350,23 @@ export default function RunnerPage() {
       lastFrameTimeRef.current = timestamp;
 
       elapsedRef.current += frameScale * (1000 / 60);
-      setElapsedMs(elapsedRef.current);
+      const updateUi = timestamp - uiTickRef.current >= 100;
+      if (updateUi) { uiTickRef.current = timestamp; setElapsedMs(elapsedRef.current); }
 
       const now = Date.now();
       const isSprintActive = sprintEndTimeRef.current > now;
       const isMagnetActive = magnetEndTimeRef.current > now;
 
-      setSprintTimeLeft(isSprintActive ? Math.ceil((sprintEndTimeRef.current - now) / 1000) : 0);
-      setMagnetTimeLeft(isMagnetActive ? Math.ceil((magnetEndTimeRef.current - now) / 1000) : 0);
+      if (updateUi) setSprintTimeLeft(isSprintActive ? Math.ceil((sprintEndTimeRef.current - now) / 1000) : 0);
+      if (updateUi) setMagnetTimeLeft(isMagnetActive ? Math.ceil((magnetEndTimeRef.current - now) / 1000) : 0);
 
       // Velocità Progressiva + Moltiplicatore Peperoncino
       const pace = getRunnerPace(elapsedRef.current, isSprintActive);
       const currentSpeed = pace.speed;
       roadRef.current = roadRef.current + currentSpeed * frameScale;
-      setRoadOffset(roadRef.current);
       const targetFloor = laneFloor(laneRef.current);
       floorRef.current += Math.sign(targetFloor - floorRef.current) * Math.min(Math.abs(targetFloor - floorRef.current), 8 * frameScale);
-      setFloor(floorRef.current);
+      if (updateUi) setFloor(floorRef.current);
 
       // Fisica Mascotte
       // Do not integrate gravity while grounded: frame durations shorter than 1/60 s
@@ -380,12 +382,18 @@ export default function RunnerPage() {
         jumpCountRef.current = 0;
       }
 
-      setMascotY(mascotYRef.current);
+      if (updateUi) setMascotY(mascotYRef.current);
       
       // A gentle two-second sway on the ground; tilt gradually through a jump.
-      setMascotRotation(mascotYRef.current > 0
+      const rotation = mascotYRef.current > 0
         ? Math.max(-10, Math.min(8, -velocityRef.current * 0.8))
-        : Math.sin(elapsedRef.current / 320) * 1.2);
+        : Math.sin(elapsedRef.current / 320) * 1.2;
+      if (updateUi) setMascotRotation(rotation);
+      if (playerNode.current) {
+        const bottom = Math.min(mascotYRef.current + floorRef.current, (arenaRef.current?.clientHeight ?? 304) - 92);
+        playerNode.current.style.transform = `translate3d(0, ${-bottom}px, 0) rotate(${rotation}deg)`;
+        playerNode.current.style.zIndex = String(30 - Math.round(floorRef.current / 10));
+      }
 
       // Particelle di Polvere
       if (mascotYRef.current === 0 && Math.random() < 0.35) {
@@ -405,7 +413,7 @@ export default function RunnerPage() {
           size: d.size * Math.pow(0.92, frameScale),
         }))
         .filter((d) => d.size > 0.8);
-      setDustList([...dustRef.current]);
+      if (updateUi) setDustList([...dustRef.current]);
 
       // Gestione Testi Fluttuanti
       floatingTextsRef.current = floatingTextsRef.current
@@ -415,7 +423,7 @@ export default function RunnerPage() {
           opacity: ft.opacity - 0.02 * frameScale,
         }))
         .filter((ft) => ft.opacity > 0);
-      setFloatingTexts([...floatingTextsRef.current]);
+      if (updateUi) setFloatingTexts([...floatingTextsRef.current]);
 
       // Every grounded object shares the road's displacement. Only mobile hazards overtake it.
       const arenaWidth = arenaRef.current?.clientWidth ?? 530;
@@ -524,10 +532,17 @@ export default function RunnerPage() {
       }
 
       entitiesRef.current = nextEntities;
-      setEntities([...nextEntities]);
+      for (const entity of nextEntities) {
+        const node = entityNodes.current.get(entity.id);
+        if (node) {
+          node.style.transform = `translate3d(${entity.x}px, ${-entity.yOffset}px, 0)`;
+          node.style.zIndex = String(30 - Math.round(entity.yOffset / 10));
+        }
+      }
+      if (updateUi || nextEntities.length !== entityNodes.current.size) setEntities([...nextEntities]);
 
       scoreRef.current += frameScale * (isSprintActive ? 2 : 1);
-      setScore(Math.floor(scoreRef.current));
+      if (updateUi) setScore(Math.floor(scoreRef.current));
 
       requestRef.current = requestAnimationFrame(updateGame);
     };
@@ -638,8 +653,7 @@ export default function RunnerPage() {
       >
 
         {screenShake && <div className={runnerStyles.impactFlash} aria-hidden="true" />}
-        <RunnerLandscape distance={roadOffset} darkness={lighting.darkness} playing={gameState === 'PLAYING'} />
-        {[0, 1, 2].map(track => <div key={track} className={runnerStyles.lane} style={{ bottom: laneFloor(track) - 8, backgroundColor: lane === track ? '#fbbf2410' : 'transparent' }} />)}
+        <RunnerLandscape distanceRef={roadRef} darkness={lighting.darkness} playing={gameState === 'PLAYING'} />
         <span className={runnerStyles.timeOfDay}>{lighting.darkness >= 0.5 ? '☾' : '☀'} {lighting.label}</span>
         <div className={runnerStyles.waveWarning} role="status">{waveWarning}</div>
 
@@ -674,12 +688,12 @@ export default function RunnerPage() {
         ))}
 
         {/* 🐰 MASCOTTE SULLA STRADA */}
-        <div
+        <div ref={playerNode}
           className="absolute left-8 w-[91.2px] h-[91.2px] z-20 pointer-events-none flex items-center justify-center"
           style={{
-            bottom: `min(${mascotY + floor}px, calc(100% - 92px))`,
-            transform: `rotate(${mascotRotation}deg)`,
-            transition: 'transform 0.12s ease-out',
+            bottom: 0,
+            transform: `translate3d(0, -${mascotY + floor}px, 0) rotate(${mascotRotation}deg)`,
+            willChange: 'transform',
             zIndex: 30 - Math.round(floor / 10)
           }}
         >
@@ -702,10 +716,12 @@ export default function RunnerPage() {
           return (
             <div
               key={ent.id}
+              ref={node => { if (node) entityNodes.current.set(ent.id, node); else entityNodes.current.delete(ent.id); }}
               className="absolute flex items-end justify-center pointer-events-none z-20 transition-none"
               style={{
-                left: `${ent.x}px`,
-                bottom: `${ent.yOffset}px`,
+                left: 0, bottom: 0,
+                transform: `translate3d(${ent.x}px, ${-ent.yOffset}px, 0)`,
+                willChange: 'transform',
                 width: `${ent.width}px`,
                 height: `${ent.height}px`,
                 zIndex: 30 - Math.round(ent.yOffset / 10)

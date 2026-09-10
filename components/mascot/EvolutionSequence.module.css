@@ -62,7 +62,7 @@
 .title { margin: 12px 0 8px; font-size: clamp(24px, 6vw, 36px); line-height: 1.1; font-weight: 900; }
 .description { color: #a1a1aa; font-size: 13px; }
 .overlay[data-revealed="true"] .caption { animation: caption-reveal .7s ease-out both; }
-/* All CSS timelines wait for the soundtrack to be ready. */
+/* CSS timelines start when the dialog is visible, independently of audio. */
 .overlay[data-running="false"] *, .overlay[data-running="false"] *::before { animation-play-state: paused !important; }
 @keyframes old-form {
   0.0000% { opacity: 1; transform: scale(1.000); }
@@ -109,12 +109,12 @@
 @keyframes burst { 0% { opacity: .9; transform: scale(.7); } 12% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0; transform: scale(1.4); } }
 @keyframes caption-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) {
-  .overlay * { animation: none !important; }
-  .aura, .orbits, .ring, .ringTwo, .particle, .burst { display: none; }
-  .oldForm { opacity: 1; }
-  .newForm { opacity: 0; }
-  .overlay[data-revealed="true"] .oldForm { opacity: 0; }
-  .overlay[data-revealed="true"] .newForm { opacity: 1; }
+  .overlay:not([data-full-motion="true"]) * { animation: none !important; }
+  .overlay:not([data-full-motion="true"]) :is(.aura, .orbits, .ring, .ringTwo, .particle, .burst) { display: none; }
+  .overlay:not([data-full-motion="true"]) .oldForm { opacity: 1; }
+  .overlay:not([data-full-motion="true"]) .newForm { opacity: 0; }
+  .overlay:not([data-full-motion="true"])[data-revealed="true"] .oldForm { opacity: 0; }
+  .overlay:not([data-full-motion="true"])[data-revealed="true"] .newForm { opacity: 1; }
 }
 @media (max-height: 580px) {
   .content { padding-top: 64px; padding-bottom: 16px; }

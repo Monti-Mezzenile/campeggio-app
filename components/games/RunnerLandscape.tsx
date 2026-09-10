@@ -1,16 +1,16 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 
 export const RUNNER_ROAD_HEIGHT = 132;
 
 /** One decoded video per theme, repeated horizontally without gaps. */
-export default function RunnerLandscape({ distance, darkness, playing }: { distance: number; darkness: number; playing: boolean }) {
+export default function RunnerLandscape({ distanceRef, darkness, playing }: { distanceRef: RefObject<number>; darkness: number; playing: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dayRef = useRef<HTMLVideoElement>(null);
   const nightRef = useRef<HTMLVideoElement>(null);
-  const state = useRef({ distance, darkness, playing });
-  useEffect(() => { state.current = { distance, darkness, playing }; }, [distance, darkness, playing]);
+  const state = useRef({ darkness, playing });
+  useEffect(() => { state.current = { darkness, playing }; }, [darkness, playing]);
   const showDay = darkness < 1;
   const showNight = darkness > 0;
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function RunnerLandscape({ distance, darkness, playing }: { dista
     const getVideoFrame = (video: HTMLVideoElement) => {
       const previous = videoFrames.get(video);
       if (video.seeking || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return previous?.canvas;
-      if (previous?.time === video.currentTime) return previous.canvas;
+      if (previous && Math.abs(previous.time - video.currentTime) < 1 / 24) return previous.canvas;
       const cropHeight = Math.min(520, video.videoHeight);
       // Reject black frames if the decoder or clip emits them at a loop boundary.
       if (sampleCtx && (!previous || video.currentTime < 0.3 || (Number.isFinite(video.duration) && video.duration - video.currentTime < 0.3))) {
@@ -80,19 +80,45 @@ export default function RunnerLandscape({ distance, darkness, playing }: { dista
       // Trim border pixels and overlap neighbours so filtering cannot expose a dark seam.
       const trim = Math.min(2, sw / 10);
       const tileWidth = (sw - trim * 2) * targetHeight / sh;
-      const stride = Math.max(1, tileWidth - 2);
-      const start = -((offset % stride + stride) % stride);
+      const overlap = 10;
+      const stride = Math.max(1, tileWidth - overlap);
+      const start = -((offset % stride + stride) % stride) - stride;
       for (let x = start; x < width; x += stride) {
-        ctx.drawImage(source, trim, 0, sw - trim * 2, sh, x, top, tileWidth, targetHeight);
+        // Fade the first 10px over the preceding tile, instead of a hard edge.
+        const sourceScale = (sw - trim * 2) / tileWidth;
+        ctx.drawImage(source, trim + overlap * sourceScale, 0, sw - trim * 2 - overlap * sourceScale, sh, x + overlap, top, tileWidth - overlap, targetHeight);
+        const alpha = ctx.globalAlpha;
+        for (let strip = 0; strip < overlap; strip++) {
+          ctx.globalAlpha = alpha * (strip + 1) / overlap;
+          ctx.drawImage(source, trim + strip * sourceScale, 0, sourceScale, sh, x + strip, top, 1.1, targetHeight);
+        }
+        ctx.globalAlpha = alpha;
       }
+    };
+    const softenedRoads = new Map<HTMLImageElement, HTMLCanvasElement>();
+    const softenRoad = (road: HTMLImageElement) => {
+      const saved = softenedRoads.get(road);
+      if (saved) return saved;
+      const buffer = document.createElement('canvas');
+      buffer.height = RUNNER_ROAD_HEIGHT + 8;
+      buffer.width = Math.round(road.naturalWidth * buffer.height / road.naturalHeight);
+      const paint = buffer.getContext('2d')!;
+      paint.drawImage(road, 0, 0, buffer.width, buffer.height);
+      paint.globalCompositeOperation = 'destination-in';
+      const fade = paint.createLinearGradient(0, 0, 0, 8);
+      fade.addColorStop(0, 'transparent'); fade.addColorStop(1, '#000');
+      paint.fillStyle = fade; paint.fillRect(0, 0, buffer.width, buffer.height);
+      softenedRoads.set(road, buffer);
+      return buffer;
     };
     let lastDraw = -Infinity;
     const draw = (timestamp: number) => {
       frame = requestAnimationFrame(draw);
-      // Landscape only: game physics and input retain their full refresh rate.
-      if (document.hidden || timestamp - lastDraw < 1000 / 30) return;
+      // Scroll at display cadence; only video decoding is capped at 24 fps.
+      if (document.hidden || timestamp - lastDraw < 1000 / 60 - 1) return;
       lastDraw = timestamp;
-      const { distance, darkness } = state.current;
+      const { darkness } = state.current;
+      const distance = distanceRef.current ?? 0;
       const skyHeight = Math.max(1, height - RUNNER_ROAD_HEIGHT);
       ctx.globalAlpha = 1;
       ctx.fillStyle = '#18232b'; ctx.fillRect(0, 0, width, height);
@@ -112,13 +138,14 @@ export default function RunnerLandscape({ distance, darkness, playing }: { dista
       for (const [road, alpha] of [[dayRoad, 1], [nightRoad, darkness]] as const) {
         if (alpha <= 0 || (road === dayRoad && darkness === 1) || !road.complete || !road.naturalWidth) continue;
         ctx.globalAlpha = alpha;
-        tile(road, road.naturalWidth, road.naturalHeight, skyHeight, RUNNER_ROAD_HEIGHT, distance);
+        const softened = softenRoad(road);
+        tile(softened, softened.width, softened.height, skyHeight - 8, RUNNER_ROAD_HEIGHT + 8, distance);
       }
       ctx.globalAlpha = 1;
     };
     frame = requestAnimationFrame(draw);
     return () => { cancelAnimationFrame(frame); resize.disconnect(); };
-  }, []);
+  }, [distanceRef]);
   return <>
     <video ref={dayRef} loop muted playsInline preload="auto" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover pointer-events-none" src="/runner-bg.mp4" />
     <video ref={nightRef} loop muted playsInline preload="auto" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover pointer-events-none" src="/runner-bg-night.mp4" />
