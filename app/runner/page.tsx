@@ -8,7 +8,7 @@ import RunnerLandscape from '@/components/games/RunnerLandscape';
 import { supabase } from '@/lib/supabase';
 import styles from '../scorribanda/grill.module.css';
 import runnerStyles from './runner.module.css';
-import { HAZARDS, COLLECTIBLES, getRunnerLighting, getSpriteFrame, getRunnerPace, laneFloor, clampLane, runnerContact, runnerWave, getMascotRunSheet, getMascotRunFrame } from '@/lib/runner-visuals';
+import { HAZARDS, COLLECTIBLES, getRunnerLighting, getSpriteFrame, getRunnerPace, laneFloor, clampLane, runnerContact, runnerHorizontalContact, runnerWave, getMascotRunSheet, getMascotRunFrame } from '@/lib/runner-visuals';
 
 // ⚙️ FISICA E COSTANTI
 const GRAVITY = 0.65;
@@ -461,8 +461,6 @@ export default function RunnerPage() {
       const nextEntities: Entity[] = [];
       let gameOverTriggered = false;
 
-      const mascotLeft = 40;
-      const mascotRight = 95;
       for (const ent of entitiesRef.current) {
         const speedMultiplier = ent.speedMultiplier || 1;
         const magnetic = isMagnetActive && ent.isCollectible && Math.abs(ent.yOffset - floorRef.current) < 16 && mascotYRef.current <= 2 && ent.x < 320;
@@ -471,7 +469,7 @@ export default function RunnerPage() {
           const target = laneFloor(ent.targetLane);
           ent.yOffset += Math.sign(target - ent.yOffset) * Math.min(Math.abs(target - ent.yOffset), 1.5 * frameScale);
         }
-        const isColliding = ent.x < mascotRight && ent.x + ent.width > mascotLeft &&
+        const isColliding = runnerHorizontalContact(ent.x, ent.width, ent.isCollectible) &&
           runnerContact(floorRef.current, mascotYRef.current, ent.yOffset, ent.isCollectible, ent.height);
 
         if (isColliding) {
@@ -603,7 +601,7 @@ export default function RunnerPage() {
             ← MASCOTTE
           </Link>
 
-          {(gameState === 'PLAYING' || gameState === 'PAUSED') && <GamePause paused={gameState === 'PAUSED'} onPause={pauseGame} onResume={resumeGame} onFinish={() => { void endGame(true); }} score={score} xp={Math.floor(score / 15)} />}
+
           <div className="bg-amber-500/20 border border-amber-500/40 backdrop-blur-md px-3.5 py-1.5 rounded-2xl font-black text-amber-400 text-xs tracking-wider shadow-lg flex items-center gap-1.5">
             <span>🏆 RECORD:</span>
             <span className="text-sm font-black text-white">{personalRecord}</span>
@@ -757,7 +755,10 @@ export default function RunnerPage() {
             <button disabled={gameState !== 'PLAYING' || lane === 0} onClick={() => moveLane(-1)} aria-label="Corsia superiore"><span aria-hidden="true">▲</span><small>SU</small></button>
             <button disabled={gameState !== 'PLAYING' || lane === 2} onClick={() => moveLane(1)} aria-label="Corsia inferiore"><span aria-hidden="true">▼</span><small>GIÙ</small></button>
           </div>
+          <div className={runnerStyles.actionPad}>
           <button className={runnerStyles.jumpButton} disabled={gameState !== 'PLAYING'} onClick={handleJump}><span aria-hidden="true">↥</span><small>SALTA</small></button>
+            {(gameState === 'PLAYING' || gameState === 'PAUSED') && <GamePause buttonClassName={runnerStyles.pauseButton} paused={gameState === 'PAUSED'} onPause={pauseGame} onResume={resumeGame} onFinish={() => { void endGame(true); }} score={score} xp={Math.floor(score / 15)} />}
+          </div>
         </div>
       </div>
 

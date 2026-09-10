@@ -3,8 +3,8 @@
 import { useEffect, useRef } from 'react';
 import styles from '@/app/scorribanda/grill.module.css';
 
-export default function GamePause({ paused, onPause, onResume, onFinish, score, xp }: {
-  paused: boolean; onPause: () => void; onResume: () => void; onFinish: () => void; score: number; xp: number;
+export default function GamePause({ paused, onPause, onResume, onFinish, score, xp, buttonClassName = '' }: {
+  paused: boolean; onPause: () => void; onResume: () => void; onFinish: () => void; score: number; xp: number; buttonClassName?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -12,7 +12,7 @@ export default function GamePause({ paused, onPause, onResume, onFinish, score, 
     else dialog.current?.close();
   }, [paused]);
   return <>
-    <button type="button" onClick={onPause} className="rounded-xl border border-white/20 bg-zinc-800 px-3 py-2 text-xs font-black text-white">Ⅱ Pausa</button>
+    <button type="button" onClick={onPause} className={`rounded-xl border border-white/20 bg-zinc-800 px-3 py-2 text-xs font-black text-white ${buttonClassName}`}>Ⅱ Pausa</button>
     <dialog ref={dialog} className={styles.gameOverDialog} aria-label="Partita in pausa" onCancel={event => { event.preventDefault(); onResume(); }}>
       <div className="p-5 text-center space-y-4">
         <h2 className="text-xl font-black text-amber-300">Il disastro può aspettare.</h2>

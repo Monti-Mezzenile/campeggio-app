@@ -102,3 +102,13 @@ test('all evolved mascot run sheets contain four square frames with a gentle cyc
   assert.deepEqual([0, 179, 180, 360, 540, 720].map(time => getMascotRunFrame(time)), [0, 0, 1, 2, 3, 0]);
   assert.equal(getMascotRunFrame(540, true), 1);
 });
+
+test('hazard edges and near landings are forgiving while direct hits still collide', () => {
+  const { runnerHorizontalContact, runnerContact } = exported;
+  assert.equal(runnerHorizontalContact(80, 60, false), false);
+  assert.equal(runnerHorizontalContact(0, 60, false), false);
+  assert.equal(runnerHorizontalContact(40, 60, false), true);
+  assert.equal(runnerContact(52, 34, 52, false, 60), false);
+  assert.equal(runnerContact(52, 0, 52, false, 60), true);
+  assert.equal(runnerHorizontalContact(80, 60, true), true);
+});

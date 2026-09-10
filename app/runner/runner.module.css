@@ -35,13 +35,16 @@
 .controls { width: 100%; max-width: 576px; margin-top: 12px; z-index: 20; display: block; padding: 14px 16px 22px; border-radius: 22px 22px 30px 30px; border: 1px solid #71717a; border-bottom: 8px solid #09090b; background: repeating-linear-gradient(115deg,#ffffff03 0 2px,transparent 2px 5px), linear-gradient(155deg,#3f3f46,#18181b 70%); box-shadow: inset 0 2px 0 #ffffff25,0 8px 22px #0006; }
 .controlLabel { display: flex; justify-content: space-between; color: #a1a1aa; font-size: 9px; letter-spacing: .15em; font-weight: 900; margin-bottom: 14px; }
 .controlLabel span:last-child { color: #86efac; }
-.controlLayout { display: flex; align-items: center; justify-content: space-around; gap: 20px; }
-.directionPad { display: grid; gap: 12px; width: 42%; max-width: 160px; }
-.controls .directionPad button { width: 100%; min-height: 68px; border-radius: 16px; background: linear-gradient(#7dd3fc,#0284c7); border: 2px solid #bae6fd; color: #082f49; box-shadow: 0 6px 0 #075985,0 9px 10px #0006,inset 0 2px 2px #fffa; }
-.controls .jumpButton { flex-shrink: 0; width: clamp(108px,28vw,144px); height: clamp(108px,28vw,144px); min-height: 108px; border-radius: 50%; background: radial-gradient(circle at 35% 25%,#fde68a,#f59e0b 65%,#d97706); border: 4px solid #fef3c7; box-shadow: 0 9px 0 #92400e,0 14px 18px #0009,inset 0 3px 3px #fff9; color: #451a03; font-size: 40px; }
+.controlLayout { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; gap: 16px; }
+.directionPad { display: grid; grid-template-rows: 1fr 1fr; gap: 18px; min-width: 0; }
+.controls .directionPad button { width: 100%; min-height: 112px; border-radius: 16px; background: linear-gradient(#7dd3fc,#0284c7); border: 2px solid #bae6fd; color: #082f49; box-shadow: 0 6px 0 #075985,0 9px 10px #0006,inset 0 2px 2px #fffa; }
+.controls .jumpButton { flex-shrink: 0; width: 100%; height: auto; aspect-ratio: 1; min-height: 144px; border-radius: 50%; background: radial-gradient(circle at 35% 25%,#fde68a,#f59e0b 65%,#d97706); border: 4px solid #fef3c7; box-shadow: 0 9px 0 #92400e,0 14px 18px #0009,inset 0 3px 3px #fff9; color: #451a03; font-size: 40px; }
 .controls small { font-size: 11px; letter-spacing: .12em; }
-.controls button:focus-visible { outline: 3px solid white; outline-offset: 6px; }
-.controls button:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 2px 0 #09090b; }
-.controls button:disabled { opacity: .4; }
+:is(.directionPad button, .jumpButton, .pauseButton):focus-visible { outline: 3px solid white; outline-offset: 6px; }
+:is(.directionPad button, .jumpButton, .pauseButton):active:not(:disabled) { transform: translateY(5px); box-shadow: 0 2px 0 #09090b; }
+:is(.directionPad button, .jumpButton, .pauseButton):disabled { opacity: .4; }
 
-.controls button { font-weight: 900; font-size: 26px; touch-action: manipulation; }
+:is(.directionPad button, .jumpButton, .pauseButton) { font-weight: 900; font-size: 34px; touch-action: manipulation; }
+
+.actionPad { display: flex; flex-direction: column; justify-content: space-between; gap: 20px; min-width: 0; }
+.controls .pauseButton { width: 100%; min-height: 64px; font-size: 16px; border: 2px solid #a1a1aa; border-radius: 16px; box-shadow: 0 5px 0 #09090b; background: linear-gradient(#52525b,#27272a); }

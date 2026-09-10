@@ -37,7 +37,7 @@ export function getRunnerPace(elapsedMs: number, sprint = false) {
 export const laneFloor = (lane: number) => 12 + (2 - lane) * 40;
 export const clampLane = (lane: number) => Math.max(0, Math.min(2, lane));
 export function runnerContact(playerFloor: number, jump: number, entityFloor: number, collectible: boolean, height: number) {
-  return Math.abs(playerFloor - entityFloor) < 16 && (collectible ? jump <= 2 : jump < height - 10);
+  return Math.abs(playerFloor - entityFloor) < (collectible ? 16 : 12) && (collectible ? jump <= 2 : jump < height * 0.55);
 }
 
 // Alternating, announced waves. Full-width barriers arrive only after two minutes.
@@ -59,3 +59,11 @@ export function runnerWave(index: number, elapsed: number) {
 // Four 256px frames per phase. The baby rabbit keeps its original still image.
 export const getMascotRunSheet = (phase: number) => Number.isInteger(phase) && phase >= 2 && phase <= 9 ? `/runner/fase${phase}_run.png` : null;
 export const getMascotRunFrame = (elapsed: number, airborne = false) => airborne ? 1 : Math.floor(elapsed / 180) % 4;
+
+// Obstacles collide only at their core; bonus pickup keeps its generous full width.
+export function runnerHorizontalContact(x: number, width: number, collectible: boolean) {
+  const inset = collectible ? 0 : width * 0.25;
+  const playerLeft = collectible ? 40 : 54;
+  const playerRight = collectible ? 95 : 88;
+  return x + inset < playerRight && x + width - inset > playerLeft;
+}
