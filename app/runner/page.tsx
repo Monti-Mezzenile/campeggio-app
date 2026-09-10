@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import GamePause from '@/components/games/GamePause';
 import { useGameMusic } from '@/components/games/useGameMusic';
+import { EVOLUTION_STAGES, getStageFromExp } from '@/lib/mascot-evolution';
 import RunnerLandscape from '@/components/games/RunnerLandscape';
 import { supabase } from '@/lib/supabase';
 import styles from '../scorribanda/grill.module.css';
@@ -187,20 +188,9 @@ export default function RunnerPage() {
         if (data) {
           setMascotId(data.id);
           setCurrentExp(data.exp || 0);
-          const fase = data.fase || 1;
+          const fase = getStageFromExp(data.exp || 0);
           setMascotPhase(fase);
-          const stageImages: Record<number, string> = {
-            1: '/tamagotchi/fase1_coniglio_piccolo.png',
-            2: '/tamagotchi/fase2_coniglio_medio.png',
-            3: '/tamagotchi/fase3_lepre.png',
-            4: '/tamagotchi/fase4_lepre_muscolosa.png',
-            5: '/tamagotchi/fase5_lepre_centauro.png.png',
-            6: '/tamagotchi/fase6_pony.png',
-            7: '/tamagotchi/fase7_cavallo_medio.png',
-            8: '/tamagotchi/fase8_cavallo_grande.png',
-            9: '/tamagotchi/fase9_cavallo_supremo.png',
-          };
-          setMascotImg(stageImages[fase] || stageImages[1]);
+          setMascotImg((EVOLUTION_STAGES[fase] || EVOLUTION_STAGES[1]).image);
         }
 
         const savedScores = localStorage.getItem(`runner_top_scores_${user.id}`);
@@ -441,9 +431,16 @@ export default function RunnerPage() {
       setWaveWarning(elapsedRef.current >= nextWaveRef.current - 3000 ? wave.label : '');
       if (elapsedRef.current >= nextWaveRef.current) {
         wave.hazards.forEach(item => spawnHazard(item.hazard, item.lane, item.offset, item.targetLane));
+        wave.pickups?.forEach(pickup => {
+          const item = COLLECTIBLES[pickup.item];
+          entitiesRef.current.push({ ...item, id: Math.random(), x: arenaWidth + 24 + pickup.offset,
+            yOffset: laneFloor(pickup.lane), width: item.width * 0.96, height: item.height * 0.96, isCollectible: true });
+        });
         waveIndexRef.current++;
         nextWaveRef.current = elapsedRef.current + 30000;
-        nextSpawnAtRef.current = elapsedRef.current + 6000;
+        const waveLength = Math.max(0, ...wave.hazards.map(item => item.offset), ...(wave.pickups ?? []).map(item => item.offset));
+        // Give the entire formation time to pass before adding random traffic.
+        nextSpawnAtRef.current = elapsedRef.current + Math.max(6000, (arenaWidth + waveLength + 150) / (currentSpeed * 60) * 1000);
         setWaveWarning('');
       } else if (elapsedRef.current >= nextSpawnAtRef.current && elapsedRef.current < nextWaveRef.current - 6000) {
         const spawnLane = Math.floor(Math.random() * 3);

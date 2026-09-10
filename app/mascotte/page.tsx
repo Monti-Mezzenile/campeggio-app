@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { EVOLUTION_STAGES, EXP_THRESHOLDS, MAX_MASCOT_PHASE, getStageFromExp, getMascotPose } from '@/lib/mascot-evolution';
+import { usePoseClock } from '@/components/mascot/usePoseClock';
 import MiniGameArcade from '@/components/games/MiniGameArcade';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
@@ -10,28 +12,6 @@ import EvolutionSequence, { prepareEvolutionAudio } from '@/components/mascot/Ev
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
 const EXP_DECAY_PER_HOUR_AT_ZERO = 2;
-
-// 📈 SOGLIE EXP RI-BILANCIATE
-const EXP_THRESHOLDS: Record<number, number> = {
-  1: 0,
-  2: 800,
-  3: 2500,
-  4: 6000,
-  5: 12000,
-  6: 22000,
-  7: 38000,
-  8: 60000,
-  9: 100000,
-};
-
-const getStageFromExp = (exp: number): number => {
-  for (let stage = 9; stage >= 1; stage--) {
-    if (exp >= EXP_THRESHOLDS[stage]) {
-      return stage;
-    }
-  }
-  return 1;
-};
 
 // ⏱️ Calcola i valori reali attuali considerando il tempo trascorso
 const calculateLiveStats = (mascotData: any) => {
@@ -69,18 +49,6 @@ const calculateLiveStats = (mascotData: any) => {
     svago: currentSvago,
     fase: getStageFromExp(currentExp)
   };
-};
-
-const EVOLUTION_STAGES: Record<number, { name: string; image: string }> = {
-  1: { name: 'Coniglio Piccolo', image: '/tamagotchi/fase1_coniglio_piccolo.png' },
-  2: { name: 'Coniglio Medio', image: '/tamagotchi/fase2_coniglio_medio.png' },
-  3: { name: 'Lepre', image: '/tamagotchi/fase3_lepre.png' },
-  4: { name: 'Lepre Muscolosa', image: '/tamagotchi/fase4_lepre_muscolosa.png' },
-  5: { name: 'Lepre Centauro', image: '/tamagotchi/fase5_lepre_centauro.png' },
-  6: { name: 'Pony', image: '/tamagotchi/fase6_pony.png' },
-  7: { name: 'Cavallo Medio', image: '/tamagotchi/fase7_cavallo_medio.png' },
-  8: { name: 'Cavallo Grande', image: '/tamagotchi/fase8_cavallo_grande.png' },
-  9: { name: 'Cavallo Supremo', image: '/tamagotchi/fase9_cavallo_supremo.png' },
 };
 
 const ITEMS = [
@@ -170,6 +138,7 @@ interface Particle {
 }
 
 export default function MascottePage() {
+  const poseTime = usePoseClock();
   const [user, setUser] = useState<any>(null);
   const [mascot, setMascot] = useState({
     id: null as string | null,
@@ -392,7 +361,7 @@ export default function MascottePage() {
       previous = initialStoredPhaseRef.current ?? mascot.fase;
       try {
         const saved = Number(localStorage.getItem(key));
-        if (Number.isInteger(saved) && saved >= 1 && saved <= 9) previous = saved;
+        if (Number.isInteger(saved) && saved >= 1 && saved <= MAX_MASCOT_PHASE) previous = saved;
       } catch { /* Keep in-session evolution available without storage. */ }
     }
     previousPhaseRef.current = mascot.fase;
@@ -598,10 +567,10 @@ export default function MascottePage() {
 
   const currentDef = EVOLUTION_STAGES[mascot.fase] || EVOLUTION_STAGES[1];
   const currentStageThreshold = EXP_THRESHOLDS[mascot.fase] || 0;
-  const nextStageThreshold = mascot.fase < 9 ? EXP_THRESHOLDS[mascot.fase + 1] : currentStageThreshold;
+  const nextStageThreshold = mascot.fase < MAX_MASCOT_PHASE ? EXP_THRESHOLDS[mascot.fase + 1] : currentStageThreshold;
   const expInCurrentStage = mascot.exp - currentStageThreshold;
   const expNeededForNextStage = nextStageThreshold - currentStageThreshold;
-  const progressPercent = mascot.fase < 9 && expNeededForNextStage > 0 ? Math.min(100, Math.max(0, (expInCurrentStage / expNeededForNextStage) * 100)) : 100;
+  const progressPercent = mascot.fase < MAX_MASCOT_PHASE && expNeededForNextStage > 0 ? Math.min(100, Math.max(0, (expInCurrentStage / expNeededForNextStage) * 100)) : 100;
   const isCriticalState = mascot.fame < 20 || mascot.sete < 20 || mascot.svago < 20;
 
   return (
@@ -769,7 +738,7 @@ export default function MascottePage() {
               <motion.img 
                 animate={{ y: isCriticalState ? [0, -2, 2, 0] : [0, -6, 0] }}
                 transition={{ repeat: Infinity, duration: isCriticalState ? 0.25 : 3 }}
-                src={currentDef.image} alt={currentDef.name} className={`w-full h-full object-contain pointer-events-none ${isCriticalState ? 'grayscale opacity-70' : ''}`} 
+                src={getMascotPose(mascot.fase, poseTime, mascot.id || '')} alt={currentDef.name} className={`w-full h-full object-contain pointer-events-none ${isCriticalState ? 'grayscale opacity-70' : ''}`}
               />
             </motion.div>
           </div>
@@ -833,7 +802,7 @@ export default function MascottePage() {
                     <span className="absolute top-3 left-3 text-[9px] font-mono text-white/35">N° {String(idx + 1).padStart(2, '0')}</span>
                     <span className="absolute top-3 right-3 text-[8px] font-black text-amber-200 bg-black/30 px-1.5 py-0.5 rounded-md">FASE {other.fase || 1}</span>
                     <span className="absolute bottom-4 w-20 h-3 bg-black/50 rounded-full blur-md" aria-hidden="true" />
-                    <img src={otherDef.image} alt={otherDef.name} loading="lazy" decoding="async" draggable={false}
+                    <img src={getMascotPose(other.fase, poseTime, other.id || '')} alt={otherDef.name} loading="lazy" decoding="async" draggable={false}
                       className="relative z-10 w-full h-36 px-2 mt-5 object-contain drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)] pointer-events-none" />
                   </button>
                   <div className="p-3 flex flex-col flex-1 gap-2.5">

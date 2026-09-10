@@ -41,7 +41,33 @@ export function runnerContact(playerFloor: number, jump: number, entityFloor: nu
 }
 
 // Alternating, announced waves. Full-width barriers arrive only after two minutes.
-export function runnerWave(index: number, elapsed: number) {
+interface RunnerWave {
+  label: string;
+  hazards: { lane: number; offset: number; hazard: number; targetLane: number }[];
+  pickups?: { lane: number; offset: number; item: number }[];
+}
+export function runnerWave(index: number, elapsed: number): RunnerWave {
+  const kind = index % 8;
+  if (kind === 3) return {
+    label: 'GIRO OFFERTO · SEGUI LE BIRRE!',
+    hazards: [],
+    pickups: Array.from({ length: 12 }, (_, i) => ({ lane: [1, 0, 1, 2][Math.floor(i / 3)], offset: i * 90, item: 1 })),
+  };
+  if (kind === 4) return {
+    label: 'GRIGLIATA IN AUTOSTRADA · SEGUI IL VARCO!',
+    hazards: [0, 1, 2].flatMap(row => [0, 1, 2].filter(lane => lane !== row).map(lane => ({ lane, offset: row * 280, hazard: 0, targetLane: lane }))),
+    pickups: [0, 1, 2].map(lane => ({ lane, offset: lane * 280, item: 0 })),
+  };
+  if (kind === 6) return {
+    label: 'RADUNO DEI SUINI · SI STRINGONO AL CENTRO!',
+    hazards: [0, 1].flatMap(row => [0, 2].map(lane => ({ lane, offset: row * 300, hazard: 4, targetLane: 1 }))),
+    pickups: [{ lane: 0, offset: 520, item: 3 }, { lane: 2, offset: 520, item: 1 }],
+  };
+  if (kind === 7) return {
+    label: 'IL CONTO È ARRIVATO · SASSI IN FILA!',
+    hazards: [0, 1, 2, 1].map((lane, i) => ({ lane, offset: i * 240, hazard: 3, targetLane: lane })),
+    pickups: [{ lane: 2, offset: 160, item: 1 }, { lane: 0, offset: 640, item: 1 }],
+  };
   if (elapsed >= 120000 && index % 3 === 2) return {
     label: 'DOGANA DEL DISAGIO · SALTA!',
     hazards: [0, 1, 2].map(lane => ({ lane, offset: 0, hazard: 1, targetLane: lane })),
@@ -57,7 +83,7 @@ export function runnerWave(index: number, elapsed: number) {
 }
 
 // Four 256px frames per phase. The baby rabbit keeps its original still image.
-export const getMascotRunSheet = (phase: number) => Number.isInteger(phase) && phase >= 2 && phase <= 9 ? `/runner/fase${phase}_run.png` : null;
+export const getMascotRunSheet = (phase: number) => Number.isInteger(phase) && phase >= 2 && phase <= 10 ? `/runner/fase${phase}_run.png` : null;
 export const getMascotRunFrame = (elapsed: number, airborne = false) => airborne ? 1 : Math.floor(elapsed / 180) % 4;
 
 // Obstacles collide only at their core; bonus pickup keeps its generous full width.

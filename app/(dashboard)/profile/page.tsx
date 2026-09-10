@@ -17,42 +17,10 @@ import CustomIcon from "@/components/ui/CustomIcon";
 import AdminLaunchControl from "@/components/launch/AdminLaunchControl";
 import NotificationChannelControls from "@/components/notifications/NotificationChannelControls";
 
+import { EVOLUTION_STAGES, EXP_THRESHOLDS, MAX_MASCOT_PHASE, getStageFromExp, getMascotPose } from '@/lib/mascot-evolution';
+import { usePoseClock } from '@/components/mascot/usePoseClock';
+
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
-
-// 🖼️ MAPPA EVOLUZIONI PER PROFILO
-const EVOLUTION_STAGES: Record<number, { name: string; image: string }> = {
-  1: { name: 'Coniglio Piccolo', image: '/tamagotchi/fase1_coniglio_piccolo.png' },
-  2: { name: 'Coniglio Medio', image: '/tamagotchi/fase2_coniglio_medio.png' },
-  3: { name: 'Lepre', image: '/tamagotchi/fase3_lepre.png' },
-  4: { name: 'Lepre Muscolosa', image: '/tamagotchi/fase4_lepre_muscolosa.png' },
-  5: { name: 'Lepre Centauro', image: '/tamagotchi/fase5_lepre_centauro.png' },
-  6: { name: 'Pony', image: '/tamagotchi/fase6_pony.png' },
-  7: { name: 'Cavallo Medio', image: '/tamagotchi/fase7_cavallo_medio.png' },
-  8: { name: 'Cavallo Grande', image: '/tamagotchi/fase8_cavallo_grande.png' },
-  9: { name: 'Cavallo Supremo', image: '/tamagotchi/fase9_cavallo_supremo.png' },
-};
-
-// 📈 SOGLIE EXP RI-BILANCIATE
-const EXP_THRESHOLDS: Record<number, number> = {
-  1: 0,
-  2: 800,
-  3: 2500,
-  4: 6000,
-  5: 12000,
-  6: 22000,
-  7: 38000,
-  8: 60000,
-  9: 100000,
-};
-
-const getStageFromExp = (exp: number): number => {
-  for (let stage = 9; stage >= 1; stage--) {
-    if (exp >= EXP_THRESHOLDS[stage]) {
-      return stage;
-    }
-  }
-  return 1;
-};
 
 // ⏱️ Calcola le statistiche reali correnti in base al tempo trascorso
 const calculateLiveStats = (mascotData: any) => {
@@ -82,6 +50,7 @@ const calculateLiveStats = (mascotData: any) => {
 };
 
 export default function ProfilePage() {
+  const poseTime = usePoseClock();
   const router = useRouter();
 
   const [profile, setProfile] = useState<any>(null);
@@ -365,8 +334,8 @@ export default function ProfilePage() {
   // Dati Mascotte
   const mascotFase = mascot?.fase || 1;
   const mascotDef = EVOLUTION_STAGES[mascotFase] || EVOLUTION_STAGES[1];
-  const mascotNextExp = mascotFase < 9 ? EXP_THRESHOLDS[mascotFase + 1] : (mascot?.exp || 0);
-  const mascotExpPercent = mascotFase < 9 && mascotNextExp > 0 ? Math.min(100, ((mascot?.exp || 0) / mascotNextExp) * 100) : 100;
+  const mascotNextExp = mascotFase < MAX_MASCOT_PHASE ? EXP_THRESHOLDS[mascotFase + 1] : (mascot?.exp || 0);
+  const mascotExpPercent = mascotFase < MAX_MASCOT_PHASE && mascotNextExp > 0 ? Math.min(100, ((mascot?.exp || 0) / mascotNextExp) * 100) : 100;
   const isMascotCritical = mascot && (mascot.fame < 20 || mascot.sete < 20 || mascot.svago < 20);
 
   return (
@@ -668,7 +637,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-4">
               <div className="relative w-20 h-20 bg-black/60 rounded-2xl border border-white/10 flex items-center justify-center p-1.5 shrink-0 shadow-inner">
                 <img
-                  src={mascotDef.image}
+                  src={getMascotPose(mascotFase, poseTime, mascot?.id || '')}
                   alt={mascotDef.name}
                   className={`w-full h-full object-contain ${
                     isMascotCritical ? "grayscale opacity-75" : "drop-shadow-[0_4px_10px_rgba(245,158,11,0.3)]"

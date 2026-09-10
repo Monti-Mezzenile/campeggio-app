@@ -93,8 +93,8 @@ test('day/night roads match dimensions and both background videos are present', 
 test('all evolved mascot run sheets contain four square frames with a gentle cycle', () => {
   const { getMascotRunSheet, getMascotRunFrame } = exported;
   assert.equal(getMascotRunSheet(1), null);
-  assert.equal(getMascotRunSheet(10), null);
-  for (let phase = 2; phase <= 9; phase++) {
+  assert.equal(getMascotRunSheet(11), null);
+  for (let phase = 2; phase <= 10; phase++) {
     const png = fs.readFileSync(path.join(__dirname, '../public', getMascotRunSheet(phase)));
     assert.equal(png.readUInt32BE(16), 1024);
     assert.equal(png.readUInt32BE(20), 256);
@@ -111,4 +111,24 @@ test('hazard edges and near landings are forgiving while direct hits still colli
   assert.equal(runnerContact(52, 34, 52, false, 60), false);
   assert.equal(runnerContact(52, 0, 52, false, 60), true);
   assert.equal(runnerHorizontalContact(80, 60, true), true);
+});
+
+test('new waves provide a bonus break and clear slalom corridors without overlapping rewards', () => {
+  const { runnerWave } = exported;
+  const breakWave = runnerWave(3, 130000);
+  assert.equal(breakWave.hazards.length, 0);
+  assert.equal(breakWave.pickups.length, 12);
+  const slalom = runnerWave(4, 160000);
+  for (const pickup of slalom.pickups) {
+    const row = slalom.hazards.filter(item => item.offset === pickup.offset);
+    assert.equal(row.length, 2);
+    assert.ok(row.every(item => item.lane !== pickup.lane));
+  }
+  for (let index = 0; index < 32; index++) {
+    const wave = runnerWave(index, 40000 + index * 30000);
+    for (const item of [...wave.hazards, ...(wave.pickups ?? [])]) {
+      assert.ok(item.lane >= 0 && item.lane <= 2);
+      assert.ok(item.offset >= 0 && item.offset <= 1100);
+    }
+  }
 });
