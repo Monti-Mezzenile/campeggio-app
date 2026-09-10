@@ -330,8 +330,12 @@ export default function RunnerPage() {
       const currentSpeed = pace.speed;
 
       // Fisica Mascotte
-      mascotYRef.current += velocityRef.current * frameScale - (GRAVITY * frameScale * (frameScale - 1)) / 2;
-      velocityRef.current -= GRAVITY * frameScale;
+      // Do not integrate gravity while grounded: frame durations shorter than 1/60 s
+      // otherwise produce tiny upward offsets and alternate the landing pose.
+      if (mascotYRef.current > 0 || velocityRef.current > 0) {
+        mascotYRef.current += velocityRef.current * frameScale - (GRAVITY * frameScale * (frameScale - 1)) / 2;
+        velocityRef.current -= GRAVITY * frameScale;
+      }
 
       if (mascotYRef.current <= 0) {
         mascotYRef.current = 0;
@@ -341,8 +345,10 @@ export default function RunnerPage() {
 
       setMascotY(mascotYRef.current);
       
-      // Animazione di rotazione: rallentata la frequenza e ampiezza quando corre a terra
-      setMascotRotation(velocityRef.current > 0 ? -15 : mascotYRef.current > 0 ? 10 : Math.sin(timestamp / 200) * 2.5);
+      // A gentle two-second sway on the ground; tilt gradually through a jump.
+      setMascotRotation(mascotYRef.current > 0
+        ? Math.max(-10, Math.min(8, -velocityRef.current * 0.8))
+        : Math.sin(elapsedRef.current / 320) * 1.2);
 
       // Particelle di Polvere
       if (mascotYRef.current === 0 && Math.random() < 0.35) {
@@ -663,7 +669,7 @@ export default function RunnerPage() {
           style={{
             bottom: `${mascotY + GROUND_Y}px`,
             transform: `rotate(${mascotRotation}deg)`,
-            transition: mascotY === 0 ? 'none' : 'transform 0.08s ease-out'
+            transition: 'transform 0.12s ease-out'
           }}
         >
           {activeShield && (
