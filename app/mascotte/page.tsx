@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { EVOLUTION_STAGES, EXP_THRESHOLDS, MAX_MASCOT_PHASE, getStageFromExp, getMascotPose } from '@/lib/mascot-evolution';
 import { usePoseClock } from '@/components/mascot/usePoseClock';
+import FitText from '@/components/ui/FitText';
 import MiniGameArcade from '@/components/games/MiniGameArcade';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
@@ -589,30 +590,14 @@ export default function MascottePage() {
         <div className="relative overflow-hidden rounded-[1.75rem] border border-amber-400/20 bg-zinc-950/90 p-3 shadow-2xl shadow-black/50 backdrop-blur-xl">
           <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-amber-500/10 blur-2xl" />
 
-          <div className="relative flex items-center gap-3">
-            <Link
-              href="/"
-              aria-label="Torna alla home"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-xl text-zinc-200 transition active:scale-90"
-            >
-              ←
-            </Link>
-
-            <div className="min-w-0 flex-1">
-              <div className="mb-1 flex items-center gap-2">
-                <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.16em] text-amber-300">
-                  Fase {mascot.fase}
-                </span>
-                <span className="truncate text-[9px] font-bold uppercase tracking-wider text-zinc-500">
-                  {currentDef.name}
-                </span>
-              </div>
-
-              {mascot.fase > 1 && <button type="button" onClick={() => {
-                evolutionAudioRef.current = prepareEvolutionAudio();
-                setEvolution({ from: mascot.fase - 1, to: mascot.fase, audioContext: evolutionAudioRef.current });
-              }} className="text-[10px] text-amber-300 underline underline-offset-2 min-h-8">Rivedi evoluzione</button>}
-
+          <div className="relative">
+            <div className="flex items-center justify-between gap-3 mb-1">
+              <Link href="/" aria-label="Torna alla home" className="inline-flex min-h-9 items-center gap-1.5 text-[10px] font-bold text-zinc-500 hover:text-white"><span className="text-base" aria-hidden="true">←</span> CAMPEGGIO</Link>
+              <span className="flex min-w-0 w-[48%] max-w-[180px] items-baseline gap-1.5 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-amber-200">
+                <FitText size={20} className="flex-1 text-right font-black tabular-nums">{Math.floor(mascot.exp).toLocaleString('it-IT')}</FitText><span className="shrink-0 text-[10px] font-bold tracking-wider text-amber-300">XP</span>
+              </span>
+            </div>
+            <div className="min-w-0 mb-2">
               {isEditingName ? (
                 <form
                   className="flex items-center gap-1.5"
@@ -638,22 +623,28 @@ export default function MascottePage() {
                 <button
                   type="button"
                   onClick={() => setIsEditingName(true)}
-                  className="group flex max-w-full items-center gap-2 text-left"
+                  className="group flex w-full min-h-11 items-center gap-2 text-left"
                   aria-label={`Modifica il nome ${mascot.nome}`}
                 >
-                  <span className="truncate text-base font-black tracking-tight text-white group-active:text-amber-300">
-                    {mascot.nome}
-                  </span>
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/5 text-[11px] text-zinc-400" aria-hidden="true">
+                  <FitText size={28} className="flex-1 font-black tracking-tight text-white group-active:text-amber-300">{mascot.nome || 'Cavia'}</FitText>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-amber-300/20 bg-amber-300/10 text-[12px] text-amber-300" aria-hidden="true">
                     ✎
                   </span>
                 </button>
               )}
             </div>
-
-            <div className="shrink-0 text-right">
-              <span className="block text-[8px] font-black uppercase tracking-widest text-zinc-500">Potenza</span>
-              <span className="text-sm font-black tabular-nums text-amber-300">⚡ {Math.floor(mascot.exp)}</span>
+            <div className="flex items-center gap-3">
+              <div className="relative flex h-14 w-12 shrink-0 flex-col items-center justify-center rounded-xl border border-amber-400/25 bg-gradient-to-br from-amber-400/15 to-transparent">
+                <span className="text-[7px] font-black uppercase tracking-[0.18em] text-amber-400/70">Fase</span>
+                <span className="text-2xl font-black leading-none tabular-nums tracking-tight text-amber-300">{String(mascot.fase).padStart(2, '0')}</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <FitText size={13} className="w-full font-bold text-zinc-200">{currentDef.name}</FitText>
+                {mascot.fase > 1 && <button type="button" onClick={() => {
+                  evolutionAudioRef.current = prepareEvolutionAudio();
+                  setEvolution({ from: mascot.fase - 1, to: mascot.fase, audioContext: evolutionAudioRef.current });
+                }} className="inline-flex whitespace-nowrap min-h-8 items-center gap-1.5 text-[10px] font-medium text-amber-300/65 hover:text-amber-300"><span aria-hidden="true">↻</span> Rivedi evoluzione</button>}
+              </div>
             </div>
           </div>
 
@@ -715,7 +706,7 @@ export default function MascottePage() {
           
           {/* SCENA VISIVA CAVIA */}
           <section className="rounded-3xl overflow-hidden border border-amber-500/20 shadow-2xl bg-zinc-900">
-          <div className="relative w-full flex items-center justify-center min-h-[220px]">
+          <div className="relative w-full flex items-center justify-center min-h-[200px]">
             <img src="/Backgr.png" alt="Camping" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
             
             <AnimatePresence>
@@ -744,8 +735,8 @@ export default function MascottePage() {
           </div>
 
           <div className="relative border-t border-amber-500/20 bg-gradient-to-b from-zinc-900 to-zinc-950 p-3">
-            <h2 className="text-sm font-black text-amber-300 text-center">Finanzia il parassita</h2>
-            <div className="h-12 flex items-center justify-center px-1 mb-2 text-center" role="status" aria-live="polite">
+            <h2 className="text-sm font-black text-amber-300 text-center">Mantieni il vizio</h2>
+            <div className="h-8 flex items-center justify-center px-1 mb-1 text-center" role="status" aria-live="polite">
               <p className={`text-[10px] leading-snug ${toastMsg ? 'text-amber-300 font-bold' : 'text-zinc-400'}`}>{toastMsg || 'Mangia a scrocco. Ti giudica pure.'}</p>
             </div>
             <div className="grid grid-cols-3 gap-2">

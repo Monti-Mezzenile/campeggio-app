@@ -1,4 +1,4 @@
-.guide { min-height: 100dvh; background: #09090b; color: white; padding: 16px max(16px, calc((100vw - 440px) / 2)) 28px; display: flex; flex-direction: column; gap: 12px; }
+.guide { min-height: 100dvh; background: #09090b; color: white; padding: calc(16px + env(safe-area-inset-top, 0px)) max(16px, calc((100vw - 440px) / 2), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 12px; }
 .back { color: #d4d4d8; font-size: 14px; min-height: 32px; }
 .guideHeader { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
 .guideHeader h1 { font-size: 23px; font-weight: 900; color: #fbbf24; }

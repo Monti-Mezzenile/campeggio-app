@@ -11,14 +11,26 @@ export default function RunnerLandscape({ distance, darkness, playing }: { dista
   const nightRef = useRef<HTMLVideoElement>(null);
   const state = useRef({ distance, darkness, playing });
   useEffect(() => { state.current = { distance, darkness, playing }; }, [distance, darkness, playing]);
+  const showDay = darkness < 1;
+  const showNight = darkness > 0;
   useEffect(() => {
-    for (const video of [dayRef.current, nightRef.current]) {
-      if (!video) continue;
-      video.playbackRate = 0.55;
-      if (playing) void video.play().catch(() => {});
-      else video.pause();
-    }
-  }, [playing]);
+    const syncPlayback = () => {
+      for (const [video, visible] of [[dayRef.current, showDay], [nightRef.current, showNight]] as const) {
+        if (!video) continue;
+        video.playbackRate = 0.55;
+        if (playing && visible && !document.hidden) void video.play().catch(() => {});
+        else video.pause();
+      }
+    };
+    syncPlayback();
+    document.addEventListener('visibilitychange', syncPlayback);
+    const videos = [dayRef.current, nightRef.current];
+    videos.forEach(video => video?.addEventListener('loadeddata', syncPlayback));
+    return () => {
+      document.removeEventListener('visibilitychange', syncPlayback);
+      videos.forEach(video => { video?.removeEventListener('loadeddata', syncPlayback); video?.pause(); });
+    };
+  }, [playing, showDay, showNight]);
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -38,7 +50,7 @@ export default function RunnerLandscape({ distance, darkness, playing }: { dista
       if (previous?.time === video.currentTime) return previous.canvas;
       const cropHeight = Math.min(520, video.videoHeight);
       // Reject black frames if the decoder or clip emits them at a loop boundary.
-      if (sampleCtx) {
+      if (sampleCtx && (!previous || video.currentTime < 0.3 || (Number.isFinite(video.duration) && video.duration - video.currentTime < 0.3))) {
         sampleCtx.drawImage(video, 0, 0, video.videoWidth, cropHeight, 0, 0, 16, 16);
         const pixels = sampleCtx.getImageData(0, 0, 16, 16).data;
         let lit = 0;
@@ -59,7 +71,7 @@ export default function RunnerLandscape({ distance, darkness, playing }: { dista
     let width = 0, height = 0, frame = 0;
     const resize = new ResizeObserver(() => {
       width = canvas.clientWidth; height = canvas.clientHeight;
-      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
       canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio);
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     });
@@ -74,13 +86,18 @@ export default function RunnerLandscape({ distance, darkness, playing }: { dista
         ctx.drawImage(source, trim, 0, sw - trim * 2, sh, x, top, tileWidth, targetHeight);
       }
     };
-    const draw = () => {
+    let lastDraw = -Infinity;
+    const draw = (timestamp: number) => {
+      frame = requestAnimationFrame(draw);
+      // Landscape only: game physics and input retain their full refresh rate.
+      if (document.hidden || timestamp - lastDraw < 1000 / 30) return;
+      lastDraw = timestamp;
       const { distance, darkness } = state.current;
       const skyHeight = Math.max(1, height - RUNNER_ROAD_HEIGHT);
       ctx.globalAlpha = 1;
       ctx.fillStyle = '#18232b'; ctx.fillRect(0, 0, width, height);
       const sky = (video: HTMLVideoElement | null, alpha: number) => {
-        if (!video) return;
+        if (!video || alpha <= 0) return;
         const cached = getVideoFrame(video);
         if (!cached) return;
         ctx.save();
@@ -89,23 +106,22 @@ export default function RunnerLandscape({ distance, darkness, playing }: { dista
         tile(cached, cached.width, cached.height, 0, skyHeight, distance * 0.25);
         ctx.restore();
       };
-      sky(dayRef.current, 1);
+      if (darkness < 1) sky(dayRef.current, 1);
       sky(nightRef.current, darkness);
       ctx.fillStyle = '#51452f'; ctx.fillRect(0, skyHeight, width, RUNNER_ROAD_HEIGHT);
       for (const [road, alpha] of [[dayRoad, 1], [nightRoad, darkness]] as const) {
-        if (!road.complete || !road.naturalWidth) continue;
+        if (alpha <= 0 || (road === dayRoad && darkness === 1) || !road.complete || !road.naturalWidth) continue;
         ctx.globalAlpha = alpha;
         tile(road, road.naturalWidth, road.naturalHeight, skyHeight, RUNNER_ROAD_HEIGHT, distance);
       }
       ctx.globalAlpha = 1;
-      frame = requestAnimationFrame(draw);
     };
     frame = requestAnimationFrame(draw);
     return () => { cancelAnimationFrame(frame); resize.disconnect(); };
   }, []);
   return <>
+    <video ref={dayRef} loop muted playsInline preload="auto" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover pointer-events-none" src="/runner-bg.mp4" />
+    <video ref={nightRef} loop muted playsInline preload="auto" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover pointer-events-none" src="/runner-bg-night.mp4" />
     <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 w-full h-full pointer-events-none" />
-    <video ref={dayRef} loop muted playsInline preload="auto" aria-hidden="true" className="absolute w-px h-px opacity-0 pointer-events-none" src="/runner-bg.mp4" />
-    <video ref={nightRef} loop muted playsInline preload="auto" aria-hidden="true" className="absolute w-px h-px opacity-0 pointer-events-none" src="/runner-bg-night.mp4" />
   </>;
 }
