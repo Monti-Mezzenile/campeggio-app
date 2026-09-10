@@ -17,11 +17,11 @@ export const COLLECTIBLES = [
   { id: 'calamita', icon: '/runner/calamita.png', width: 48, height: 48, points: 20, type: 'magnet' as const },
 ];
 
-// 30s day, 10s dusk, 30s night, 10s dawn; tied to active game time.
+// Each 45-second phase ends with a five-second crossfade into the next.
 export function getRunnerLighting(elapsedMs: number) {
-  const seconds = (elapsedMs / 1000) % 80;
-  const darkness = seconds < 30 ? 0 : seconds < 40 ? (seconds - 30) / 10 : seconds < 70 ? 1 : 1 - (seconds - 70) / 10;
-  return { darkness, label: seconds < 30 ? 'Giorno' : seconds < 40 ? 'Tramonto' : seconds < 70 ? 'Notte' : 'Alba' };
+  const seconds = (elapsedMs / 1000) % 90;
+  const darkness = seconds < 40 ? 0 : seconds < 45 ? (seconds - 40) / 5 : seconds < 85 ? 1 : 1 - (seconds - 85) / 5;
+  return { darkness, label: seconds < 40 ? 'Giorno' : seconds < 45 ? 'Tramonto' : seconds < 85 ? 'Notte' : 'Alba' };
 }
 export const getSpriteFrame = (elapsedMs: number) => Math.floor(elapsedMs / 100) % 4;
 
@@ -33,3 +33,29 @@ export function getRunnerPace(elapsedMs: number, sprint = false) {
     spawnDelay: 2100 - progress * 400,
   };
 }
+
+export const laneFloor = (lane: number) => 12 + (2 - lane) * 40;
+export const clampLane = (lane: number) => Math.max(0, Math.min(2, lane));
+export function runnerContact(playerFloor: number, jump: number, entityFloor: number, collectible: boolean, height: number) {
+  return Math.abs(playerFloor - entityFloor) < 16 && (collectible ? jump <= 2 : jump < height - 10);
+}
+
+// Alternating, announced waves. Full-width barriers arrive only after two minutes.
+export function runnerWave(index: number, elapsed: number) {
+  if (elapsed >= 120000 && index % 3 === 2) return {
+    label: 'DOGANA DEL DISAGIO · SALTA!',
+    hazards: [0, 1, 2].map(lane => ({ lane, offset: 0, hazard: 1, targetLane: lane })),
+  };
+  if (index % 2 === 0) return {
+    label: 'SORPASSO SUINO · CAMBIANO CORSIA!',
+    hazards: [{ lane: 0, offset: 0, hazard: 4, targetLane: 1 }, { lane: 2, offset: 190, hazard: 4, targetLane: 1 }],
+  };
+  return {
+    label: 'FRANA CON PERSONALITÀ · OCCHIO AI SASSI!',
+    hazards: [{ lane: 0, offset: 0, hazard: 3, targetLane: 0 }, { lane: 1, offset: 180, hazard: 3, targetLane: 1 }, { lane: 2, offset: 360, hazard: 3, targetLane: 2 }],
+  };
+}
+
+// Four 256px frames per phase. The baby rabbit keeps its original still image.
+export const getMascotRunSheet = (phase: number) => Number.isInteger(phase) && phase >= 2 && phase <= 9 ? `/runner/fase${phase}_run.png` : null;
+export const getMascotRunFrame = (elapsed: number, airborne = false) => airborne ? 1 : Math.floor(elapsed / 180) % 4;

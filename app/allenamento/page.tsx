@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import GamePause from '@/components/games/GamePause';
+import { useGameMusic } from '@/components/games/useGameMusic';
 import { supabase } from '@/lib/supabase';
 import styles from '../scorribanda/grill.module.css';
 import layout from './merge.module.css';
@@ -147,7 +149,8 @@ function drawGame(ctx: CanvasRenderingContext2D, game: MergeGame, images: Map<st
 }
 
 export default function MergePage() {
-  const [phase, setPhase] = useState<'GUIDE' | 'PLAYING' | 'GAMEOVER'>('GUIDE');
+  const [phase, setPhase] = useState<'GUIDE' | 'PLAYING' | 'PAUSED' | 'GAMEOVER'>('GUIDE');
+  const playMusic = useGameMusic('/audio/giochi/merge.mp3', phase === 'PLAYING');
   const [view, setView] = useState(() => createMergeGame(() => 0.5));
   const [stats, setStats] = useState<Stats>({ maxScore: 0, totalMerges: 0, totalGames: 0 });
   const [ranking, setRanking] = useState<Rank[]>([]);
@@ -274,7 +277,7 @@ export default function MergePage() {
     setStats(updated);
     try { localStorage.setItem('merge_game_stats', JSON.stringify(updated)); } catch { /* Optional local record. */ }
     setRanking([]); setRankingStatus('Caricamento classifica…'); setSaveStatus('');
-    const gained = Math.max(5, Math.floor(view.score / 25));
+    const gained = Math.floor(view.score / 25);
     setXp(gained);
     const currentRun = () => runRef.current === run;
     void (async () => {
@@ -298,6 +301,7 @@ export default function MergePage() {
   }, [phase, stats, view]);
 
   const start = () => {
+    playMusic(true);
     runRef.current++;
     moveDirRef.current = 0;
     const game = createMergeGame();
@@ -352,8 +356,9 @@ export default function MergePage() {
   return <main className={layout.gamePage}>
     <div className={layout.gameLayout}>
       <header className="flex justify-between items-center bg-zinc-900 border border-white/10 rounded-2xl p-3 shadow-md">
-        <Link href="/mascotte" className="text-xs font-black text-zinc-300 py-2">← CAVIA</Link>
+        <Link href="/mascotte" onClick={event => { if (phase === 'PLAYING') { event.preventDefault(); moveDirRef.current = 0; setPhase('PAUSED'); } }} className="text-xs font-black text-zinc-300 py-2">← CAVIA</Link>
         <h1 className="font-black text-amber-400">MERGE</h1>
+        {(phase === 'PLAYING' || phase === 'PAUSED') && <GamePause paused={phase === 'PAUSED'} onPause={() => { moveDirRef.current = 0; setPhase('PAUSED'); }} onResume={() => { playMusic(); setPhase('PLAYING'); }} onFinish={() => { const game = gameRef.current; if (game) { game.phase = 'GAMEOVER'; setView({ ...game }); setPhase('GAMEOVER'); } }} score={view.score} xp={Math.floor(view.score / 25)} />}
         <span className="text-xs text-amber-200">Record <strong>{stats.maxScore}</strong></span>
       </header>
       
@@ -423,7 +428,7 @@ export default function MergePage() {
 
     <dialog ref={dialogRef} className={styles.gameOverDialog} aria-labelledby="merge-end" onCancel={event => event.preventDefault()}>
       <div className="p-5 space-y-3 text-center">
-        <h2 id="merge-end" className="text-xl font-black text-rose-400">Pila traboccata… rifacciamo spazio?</h2>
+        <h2 id="merge-end" className="text-xl font-black text-rose-400">Turno finito. Rifacciamo spazio?</h2>
         <div className="bg-zinc-950 rounded-2xl p-3 space-y-2 text-xs">
           {[['Punteggio totale', view.score], ['Record personale', Math.max(stats.maxScore, view.score)], ['Tempo sopravvissuto', formatTime(view.elapsed)], ['Fusioni', view.merges], ['XP guadagnati', `+${xp}`]].map(([label, value]) => <div key={label} className="flex justify-between"><span className="text-zinc-400">{label}</span><strong className="text-amber-300">{value}</strong></div>)}
         </div>

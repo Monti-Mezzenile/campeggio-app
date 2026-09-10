@@ -2,15 +2,17 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import GamePause from '@/components/games/GamePause';
+import { useGameMusic } from '@/components/games/useGameMusic';
+import RunnerLandscape from '@/components/games/RunnerLandscape';
 import { supabase } from '@/lib/supabase';
 import styles from '../scorribanda/grill.module.css';
 import runnerStyles from './runner.module.css';
-import { HAZARDS, COLLECTIBLES, getRunnerLighting, getSpriteFrame, getRunnerPace } from '@/lib/runner-visuals';
+import { HAZARDS, COLLECTIBLES, getRunnerLighting, getSpriteFrame, getRunnerPace, laneFloor, clampLane, runnerContact, runnerWave, getMascotRunSheet, getMascotRunFrame } from '@/lib/runner-visuals';
 
 // ⚙️ FISICA E COSTANTI
 const GRAVITY = 0.65;
-const JUMP_FORCE = 13.0;
-const GROUND_Y = 56;
+const JUMP_FORCE = 12;
 
 function RunnerIcon({ icon, label, sprite = false, frame = 0, className = '' }: {
   icon: string; label: string; sprite?: boolean; frame?: number; className?: string;
@@ -25,6 +27,8 @@ interface Entity {
   id: number;
   x: number;
   yOffset: number;
+  targetLane?: number;
+  switchAt?: number;
   width: number;
   height: number;
   icon: string;
@@ -52,11 +56,14 @@ interface FloatingText {
 }
 
 export default function RunnerPage() {
-  const [gameState, setGameState] = useState<'START' | 'PLAYING' | 'GAMEOVER'>('START');
+  const [gameState, setGameState] = useState<'START' | 'PLAYING' | 'PAUSED' | 'GAMEOVER'>('START');
+  const playMusic = useGameMusic('/audio/giochi/runner.mp3', gameState === 'PLAYING');
   const [score, setScore] = useState(0);
   const [itemsCollectedCount, setItemsCollectedCount] = useState(0);
   const [expEarned, setExpEarned] = useState(0);
   const [mascotImg, setMascotImg] = useState('/tamagotchi/fase1_coniglio_piccolo.png');
+  const [mascotPhase, setMascotPhase] = useState(1);
+  const [spriteFailed, setSpriteFailed] = useState(false);
   const [mascotId, setMascotId] = useState<string | null>(null);
   const [, setCurrentExp] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -73,6 +80,15 @@ export default function RunnerPage() {
   const elapsedRef = useRef(0);
   const arenaRef = useRef<HTMLDivElement>(null);
   const lighting = getRunnerLighting(elapsedMs);
+  const [lane, setLane] = useState(1);
+  const laneRef = useRef(1);
+  const floorRef = useRef(laneFloor(1));
+  const [floor, setFloor] = useState(laneFloor(1));
+  const roadRef = useRef(0);
+  const [roadOffset, setRoadOffset] = useState(0);
+  const waveIndexRef = useRef(0);
+  const nextWaveRef = useRef(40000);
+  const [waveWarning, setWaveWarning] = useState('');
 
   const [guideOpen, setGuideOpen] = useState(true);
   const gameOverRef = useRef<HTMLDialogElement>(null);
@@ -123,7 +139,7 @@ export default function RunnerPage() {
   // Refs per Loop di Gioco 60fps
   const mascotYRef = useRef(0);
   const velocityRef = useRef(0);
-  const jumpCountRef = useRef(0); // 0 = terra, 1 = primo salto, 2 = doppio salto
+  const jumpCountRef = useRef(0); // One jump; landing resets it.
   const entitiesRef = useRef<Entity[]>([]);
   const dustRef = useRef<DustParticle[]>([]);
   const floatingTextsRef = useRef<FloatingText[]>([]);
@@ -172,6 +188,7 @@ export default function RunnerPage() {
           setMascotId(data.id);
           setCurrentExp(data.exp || 0);
           const fase = data.fase || 1;
+          setMascotPhase(fase);
           const stageImages: Record<number, string> = {
             1: '/tamagotchi/fase1_coniglio_piccolo.png',
             2: '/tamagotchi/fase2_coniglio_medio.png',
@@ -202,7 +219,7 @@ export default function RunnerPage() {
 
   const handleJump = () => {
     if (gameState === 'PLAYING') {
-      if (jumpCountRef.current < 2) {
+      if (jumpCountRef.current < 1) {
         velocityRef.current = JUMP_FORCE;
         jumpCountRef.current += 1;
         triggerHaptic(20);
@@ -217,28 +234,38 @@ export default function RunnerPage() {
               size: Math.random() * 6 + 4,
             });
           }
-        } else {
-          // Salto doppio in aria
-          addFloatingText('DOPPIO SALTO!', 70, mascotYRef.current + GROUND_Y + 40, '#38bdf8');
         }
       }
     }
   };
 
+  const moveLane = (direction: number) => {
+    if (gameState !== 'PLAYING') return;
+    laneRef.current = clampLane(laneRef.current + direction);
+    setLane(laneRef.current);
+  };
   useEffect(() => {
     if (gameState !== 'PLAYING') return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!event.isPrimary || event.button !== 0) return;
-      if (event.target instanceof Element && event.target.closest('a, button, input, select, textarea, dialog')) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.target instanceof Element && event.target.closest('button, a, input, textarea, dialog')) return;
+      if (!['ArrowUp', 'ArrowDown', ' '].includes(event.key)) return;
       event.preventDefault();
-      handleJump();
+      if (event.repeat) return;
+      if (event.key === ' ') handleJump();
+      else moveLane(event.key === 'ArrowUp' ? -1 : 1);
     };
-    document.addEventListener('pointerdown', onPointerDown, { passive: false });
-    return () => document.removeEventListener('pointerdown', onPointerDown);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState]);
 
   const startGame = () => {
+    playMusic(true);
+    laneRef.current = 1; floorRef.current = laneFloor(1);
+    setLane(1); setFloor(laneFloor(1));
+    roadRef.current = 0; setRoadOffset(0);
+    waveIndexRef.current = 0; nextWaveRef.current = 40000; setWaveWarning('');
+    endingRef.current = false;
     scoreRef.current = 0;
     elapsedRef.current = 0;
     setElapsedMs(0);
@@ -269,9 +296,24 @@ export default function RunnerPage() {
     lastFrameTimeRef.current = null;
   };
 
-  const endGame = async () => {
-    triggerHaptic([100, 50, 100]);
-    triggerScreenShake();
+  const endingRef = useRef(false);
+  const pausedAtRef = useRef(0);
+  const pauseGame = () => { pausedAtRef.current = Date.now(); setGameState('PAUSED'); };
+  const resumeGame = () => {
+    playMusic();
+    const duration = Date.now() - pausedAtRef.current;
+    sprintEndTimeRef.current += duration;
+    magnetEndTimeRef.current += duration;
+    lastFrameTimeRef.current = null;
+    setGameState('PLAYING');
+  };
+  const endGame = async (voluntary = false) => {
+    if (endingRef.current) return;
+    endingRef.current = true;
+    if (!voluntary) {
+      triggerHaptic([100, 50, 100]);
+      triggerScreenShake();
+    }
     const finalScore = Math.floor(scoreRef.current);
     setScore(finalScore);
     setGameState('GAMEOVER');
@@ -328,6 +370,11 @@ export default function RunnerPage() {
       // Velocità Progressiva + Moltiplicatore Peperoncino
       const pace = getRunnerPace(elapsedRef.current, isSprintActive);
       const currentSpeed = pace.speed;
+      roadRef.current = roadRef.current + currentSpeed * frameScale;
+      setRoadOffset(roadRef.current);
+      const targetFloor = laneFloor(laneRef.current);
+      floorRef.current += Math.sign(targetFloor - floorRef.current) * Math.min(Math.abs(targetFloor - floorRef.current), 8 * frameScale);
+      setFloor(floorRef.current);
 
       // Fisica Mascotte
       // Do not integrate gravity while grounded: frame durations shorter than 1/60 s
@@ -380,38 +427,33 @@ export default function RunnerPage() {
         .filter((ft) => ft.opacity > 0);
       setFloatingTexts([...floatingTextsRef.current]);
 
-      // Spawn Entità
-      if (elapsedRef.current >= nextSpawnAtRef.current) {
-        const isBonus = Math.random() < 0.42;
-
-        if (isBonus) {
+      // Every grounded object shares the road's displacement. Only mobile hazards overtake it.
+      const arenaWidth = arenaRef.current?.clientWidth ?? 530;
+      const spawnHazard = (hazardIndex: number, lane: number, offset = 0, targetLane = lane) => {
+        const hazard = HAZARDS[hazardIndex];
+        entitiesRef.current.push({
+          ...hazard, id: Math.random(), x: arenaWidth + 24 + offset,
+          yOffset: laneFloor(lane), width: hazard.width * 0.96, height: hazard.height * 0.96,
+          isCollectible: false, targetLane, switchAt: arenaWidth * 0.65,
+        });
+      };
+      const wave = runnerWave(waveIndexRef.current, elapsedRef.current);
+      setWaveWarning(elapsedRef.current >= nextWaveRef.current - 3000 ? wave.label : '');
+      if (elapsedRef.current >= nextWaveRef.current) {
+        wave.hazards.forEach(item => spawnHazard(item.hazard, item.lane, item.offset, item.targetLane));
+        waveIndexRef.current++;
+        nextWaveRef.current = elapsedRef.current + 30000;
+        nextSpawnAtRef.current = elapsedRef.current + 6000;
+        setWaveWarning('');
+      } else if (elapsedRef.current >= nextSpawnAtRef.current && elapsedRef.current < nextWaveRef.current - 6000) {
+        const spawnLane = Math.floor(Math.random() * 3);
+        if (Math.random() < 0.48) {
           const item = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
-          const inAir = Math.random() < 0.5;
           entitiesRef.current.push({
-            id: now,
-            x: (arenaRef.current?.clientWidth ?? 530) + 16,
-            yOffset: inAir ? 65 : 0,
-            width: item.width,
-            height: item.height,
-            icon: item.icon,
-            isCollectible: true,
-            points: item.points,
-            type: item.type,
+            ...item, id: Math.random(), x: arenaWidth + 24, yOffset: laneFloor(spawnLane),
+            width: item.width * 0.96, height: item.height * 0.96, isCollectible: true,
           });
-        } else {
-          const hazard = HAZARDS[Math.floor(Math.random() * HAZARDS.length)];
-          entitiesRef.current.push({
-            id: now,
-            x: (arenaRef.current?.clientWidth ?? 530) + 16,
-            yOffset: 0,
-            width: hazard.width,
-            height: hazard.height,
-            icon: hazard.icon,
-            isCollectible: false,
-            isSprite: hazard.isSprite,
-            speedMultiplier: hazard.speedMultiplier || 1,
-          });
-        }
+        } else spawnHazard(Math.floor(Math.random() * HAZARDS.length), spawnLane);
         nextSpawnAtRef.current = elapsedRef.current + pace.spawnDelay + Math.random() * 600;
       }
 
@@ -421,31 +463,16 @@ export default function RunnerPage() {
 
       const mascotLeft = 40;
       const mascotRight = 95;
-      const mascotBottom = mascotYRef.current;
-      const mascotTop = mascotYRef.current + 80;
-
       for (const ent of entitiesRef.current) {
         const speedMultiplier = ent.speedMultiplier || 1;
-
-        // Calamita attira i bonus
-        if (isMagnetActive && ent.isCollectible && ent.x < 320) {
-          ent.x -= (currentSpeed * speedMultiplier + 4) * frameScale;
-          if (ent.yOffset > mascotYRef.current) ent.yOffset -= 3 * frameScale;
-          else if (ent.yOffset < mascotYRef.current) ent.yOffset += 3 * frameScale;
-        } else {
-          ent.x -= currentSpeed * speedMultiplier * frameScale;
+        const magnetic = isMagnetActive && ent.isCollectible && Math.abs(ent.yOffset - floorRef.current) < 16 && mascotYRef.current <= 2 && ent.x < 320;
+        ent.x -= (currentSpeed * speedMultiplier + (magnetic ? 4 : 0)) * frameScale;
+        if (ent.targetLane !== undefined && ent.x < (ent.switchAt ?? 0)) {
+          const target = laneFloor(ent.targetLane);
+          ent.yOffset += Math.sign(target - ent.yOffset) * Math.min(Math.abs(target - ent.yOffset), 1.5 * frameScale);
         }
-
-        const entLeft = ent.x;
-        const entRight = ent.x + ent.width;
-        const entBottom = ent.yOffset;
-        const entTop = ent.yOffset + ent.height;
-
-        const isColliding =
-          entLeft < mascotRight &&
-          entRight > mascotLeft &&
-          mascotBottom < entTop - 10 &&
-          mascotTop > entBottom + 10;
+        const isColliding = ent.x < mascotRight && ent.x + ent.width > mascotLeft &&
+          runnerContact(floorRef.current, mascotYRef.current, ent.yOffset, ent.isCollectible, ent.height);
 
         if (isColliding) {
           if (ent.isCollectible) {
@@ -459,21 +486,21 @@ export default function RunnerPage() {
             if (ent.type === 'shield') {
               shieldActiveRef.current = true;
               setActiveShield(true);
-              addFloatingText('SCUDO ATTIVO! 🛡️', ent.x, ent.yOffset + GROUND_Y + 20, '#38bdf8');
+              addFloatingText('SCUDO ATTIVO! 🛡️', ent.x, ent.yOffset + 20, '#38bdf8');
             } else if (ent.type === 'sprint') {
               sprintEndTimeRef.current = Date.now() + 5000;
-              addFloatingText('SUPER SPRINT! ⚡', ent.x, ent.yOffset + GROUND_Y + 20, '#ef4444');
+              addFloatingText('SUPER SPRINT! ⚡', ent.x, ent.yOffset + 20, '#ef4444');
             } else if (ent.type === 'magnet') {
               magnetEndTimeRef.current = Date.now() + 7000;
-              addFloatingText('CALAMITA! 🧲', ent.x, ent.yOffset + GROUND_Y + 20, '#a855f7');
+              addFloatingText('CALAMITA! 🧲', ent.x, ent.yOffset + 20, '#a855f7');
             } else {
-              addFloatingText(`+${pts}${isSprintActive ? ' (x2)' : ''}`, ent.x, ent.yOffset + GROUND_Y + 20, '#f59e0b');
+              addFloatingText(`+${pts}${isSprintActive ? ' (x2)' : ''}`, ent.x, ent.yOffset + 20, '#f59e0b');
             }
             continue;
           } else {
             // Se in Sprint siamo invincibili!
             if (isSprintActive) {
-              addFloatingText('TRAVOLTO! 💥', ent.x, ent.yOffset + GROUND_Y + 20, '#f97316');
+              addFloatingText('TRAVOLTO! 💥', ent.x, ent.yOffset + 20, '#f97316');
               triggerHaptic(40);
               continue;
             }
@@ -484,7 +511,7 @@ export default function RunnerPage() {
               setActiveShield(false);
               triggerScreenShake();
               triggerHaptic([50, 50]);
-              addFloatingText('SCUDO DISTRUTTO! 🛡️💥', ent.x, ent.yOffset + GROUND_Y + 20, '#38bdf8');
+              addFloatingText('SCUDO DISTRUTTO! 🛡️💥', ent.x, ent.yOffset + 20, '#38bdf8');
               continue;
             }
 
@@ -533,17 +560,17 @@ export default function RunnerPage() {
         <p>Salta. Schiva. Raccogli.</p>
       </header>
       <section className={styles.guidePanel}>
-        <h2>1. TOCCA OVUNQUE</h2>
-        <p>Un tocco per saltare, un altro in aria per il doppio salto.</p>
+        <h2>1. CAMBIA CORSIA</h2>
+        <p>↑ e ↓ cambiano corsia. SALTA evita gli ostacoli; i bonus si prendono solo a terra nella stessa corsia.</p>
       </section>
       <section className={styles.guidePanel}>
         <h2>2. EVITA</h2>
         <div className={styles.ruleGrid}>
           {HAZARDS.map(item => <div key={item.id} className={styles.ruleItem}>
             <RunnerIcon icon={item.icon} label={item.id.replaceAll('_', ' ')} sprite={item.isSprite} className={`${styles.ruleIcon} ${runnerStyles.ruleIcon}`} />
-            <div><strong>{item.id.replaceAll('_', ' ')}</strong><p>{item.isSprite ? 'Corre verso di te: saltalo!' : 'Saltalo: un urto ferma la corsa.'}</p></div>
+            <div><strong>{item.id.replaceAll('_', ' ')}</strong><p>{item.id === 'maialino' ? 'In branco cambia corsia: segui la freccia!' : item.isSprite ? 'Rotola più veloce della strada.' : 'Cambia corsia o salta: un urto ferma la corsa.'}</p></div>
           </div>)}
-          <div className={styles.ruleItem}><img src="/runner/notte.png" alt="" className={`${styles.ruleIcon} ${runnerStyles.ruleIcon}`} /><div><strong>Notte</strong><p>La pista si oscura: occhi aperti!</p></div></div>
+          <div className={styles.ruleItem}><img src="/runner/notte.png" alt="" className={`${styles.ruleIcon} ${runnerStyles.ruleIcon}`} /><div><strong>Notte</strong><p>Ogni 45 secondi cambia la luce. Le ondate sono annunciate!</p></div></div>
         </div>
       </section>
       <section className={`${styles.guidePanel} ${styles.goldenPanel}`}>
@@ -551,7 +578,7 @@ export default function RunnerPage() {
         <div className={styles.ruleGrid}>
           {COLLECTIBLES.map(item => <div key={item.id} className={styles.ruleItem}>
             <RunnerIcon icon={item.icon} label={item.id} className={`${styles.ruleIcon} ${runnerStyles.ruleIcon}`} />
-            <div><strong>{item.id}</strong><p>{item.type === 'shield' ? 'Ti salva da un urto.' : item.type === 'sprint' ? 'Invincibile e punti ×2 per 5s.' : item.type === 'magnet' ? 'Attira i bonus per 7s.' : `Raccoglila: +${item.points} punti.`}</p></div>
+            <div><strong>{item.id}</strong><p>{item.type === 'shield' ? 'Ti salva da un urto.' : item.type === 'sprint' ? 'Invincibile e punti ×2 per 5s.' : item.type === 'magnet' ? 'Attira i bonus della tua corsia per 7s.' : `Raccoglila: +${item.points} punti.`}</p></div>
           </div>)}
         </div>
       </section>
@@ -562,7 +589,7 @@ export default function RunnerPage() {
   const personalRecord = topScores.length > 0 ? topScores[0] : 0;
 
   return (
-    <div style={{ touchAction: gameState === 'PLAYING' ? 'none' : 'auto' }} className="relative flex flex-col items-center min-h-dvh bg-zinc-950 text-white overflow-x-hidden select-none pt-14 sm:pt-8 pt-[calc(3.5rem+env(safe-area-inset-top))] px-3 sm:px-5 pb-28 sm:pb-32">
+    <div style={{ touchAction: gameState === 'PLAYING' ? 'none' : 'auto' }} className="relative flex flex-col items-center min-h-dvh bg-zinc-950 text-white overflow-x-hidden select-none pt-[calc(8px+env(safe-area-inset-top))] px-3 sm:px-5 pb-[calc(12px+env(safe-area-inset-bottom))]">
 
       {/* SFONDO GENERALE */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
@@ -572,10 +599,11 @@ export default function RunnerPage() {
       {/* 🧭 BARRA SUPERIORE */}
       <div className="w-full max-w-xl z-20 space-y-2 mb-3">
         <div className="flex justify-between items-center">
-          <Link href="/mascotte" className="bg-zinc-900/90 border border-white/20 text-[11px] font-black px-3.5 py-2 rounded-2xl hover:bg-zinc-800 transition-colors shadow-lg backdrop-blur-md uppercase tracking-wider text-zinc-300">
+          <Link href="/mascotte" onClick={event => { if (gameState === 'PLAYING') { event.preventDefault(); pauseGame(); } }} className="bg-zinc-900/90 border border-white/20 text-[11px] font-black px-3.5 py-2 rounded-2xl hover:bg-zinc-800 transition-colors shadow-lg backdrop-blur-md uppercase tracking-wider text-zinc-300">
             ← MASCOTTE
           </Link>
 
+          {(gameState === 'PLAYING' || gameState === 'PAUSED') && <GamePause paused={gameState === 'PAUSED'} onPause={pauseGame} onResume={resumeGame} onFinish={() => { void endGame(true); }} score={score} xp={Math.floor(score / 15)} />}
           <div className="bg-amber-500/20 border border-amber-500/40 backdrop-blur-md px-3.5 py-1.5 rounded-2xl font-black text-amber-400 text-xs tracking-wider shadow-lg flex items-center gap-1.5">
             <span>🏆 RECORD:</span>
             <span className="text-sm font-black text-white">{personalRecord}</span>
@@ -610,28 +638,15 @@ export default function RunnerPage() {
 
       {/* 🎮 ARENA DI GIOCO */}
       <div ref={arenaRef}
-        className={`relative w-full max-w-xl h-[360px] sm:h-[400px] rounded-3xl overflow-hidden border-2 ${sprintTimeLeft > 0 ? 'border-red-500 shadow-red-500/40' : 'border-amber-500/50'} shadow-2xl bg-black z-10 shrink-0 cursor-pointer`}
+        style={{ height: 'clamp(240px, calc(40dvh - 8.8px), 304px)', minHeight: 240, flexShrink: 0 }}
+        className={`relative w-full max-w-xl rounded-3xl overflow-hidden border-2 ${sprintTimeLeft > 0 ? 'border-red-500 shadow-red-500/40' : 'border-amber-500/50'} shadow-2xl bg-black z-10 shrink-0 cursor-pointer`}
       >
 
         {screenShake && <div className={runnerStyles.impactFlash} aria-hidden="true" />}
-        {/* VIDEO SFONDO */}
-        <video autoPlay loop muted playsInline poster="/runner-bg.png"
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none">
-          <source src="/runner-bg.mp4" type="video/mp4" />
-        </video>
-
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent pointer-events-none" />
+        <RunnerLandscape distance={roadOffset} darkness={lighting.darkness} playing={gameState === 'PLAYING'} />
+        {[0, 1, 2].map(track => <div key={track} className={runnerStyles.lane} style={{ bottom: laneFloor(track) - 8, backgroundColor: lane === track ? '#fbbf2410' : 'transparent' }} />)}
         <span className={runnerStyles.timeOfDay}>{lighting.darkness >= 0.5 ? '☾' : '☀'} {lighting.label}</span>
-
-        {/* 👥 OMBRA DELLA MASCOTTE */}
-        <div
-          className="absolute left-[68px] sm:left-[82px] w-8 h-2.5 bg-black/85 rounded-full blur-[1px] pointer-events-none transition-all z-10"
-          style={{
-            bottom: `${GROUND_Y - 3}px`,
-            transform: `scale(${Math.max(0.15, 1 - mascotY / 130)})`,
-            opacity: Math.max(0.2, 1 - mascotY / 100),
-          }}
-        />
+        <div className={runnerStyles.waveWarning} role="status">{waveWarning}</div>
 
         {/* 💨 PARTICELLE DI POLVERE */}
         {dustList.map((d) => (
@@ -640,7 +655,7 @@ export default function RunnerPage() {
             className="absolute bg-amber-200/50 rounded-full blur-[1px] pointer-events-none z-10"
             style={{
               left: `${d.x}px`,
-              bottom: `${d.y + GROUND_Y}px`,
+              bottom: `${d.y + floor}px`,
               width: `${d.size}px`,
               height: `${d.size}px`,
             }}
@@ -665,11 +680,12 @@ export default function RunnerPage() {
 
         {/* 🐰 MASCOTTE SULLA STRADA */}
         <div
-          className="absolute left-8 w-24 h-24 sm:w-28 sm:h-28 z-20 pointer-events-none flex items-center justify-center"
+          className="absolute left-8 w-[91.2px] h-[91.2px] z-20 pointer-events-none flex items-center justify-center"
           style={{
-            bottom: `${mascotY + GROUND_Y}px`,
+            bottom: `min(${mascotY + floor}px, calc(100% - 92px))`,
             transform: `rotate(${mascotRotation}deg)`,
-            transition: 'transform 0.12s ease-out'
+            transition: 'transform 0.12s ease-out',
+            zIndex: 30 - Math.round(floor / 10)
           }}
         >
           {activeShield && (
@@ -678,11 +694,12 @@ export default function RunnerPage() {
           {sprintTimeLeft > 0 && (
             <div className="absolute -inset-4 rounded-full bg-red-500/30 blur-md animate-ping z-0" />
           )}
-          <img
-            src={mascotImg}
-            alt="Mascotte"
-            className="w-full h-full object-contain relative z-10 filter drop-shadow-[0_6px_8px_rgba(0,0,0,0.8)]"
-          />
+          {getMascotRunSheet(mascotPhase) && !spriteFailed ? <span className={runnerStyles.mascotSprite}>
+            <img src={getMascotRunSheet(mascotPhase)!} alt="La tua cavia in corsa" draggable={false}
+              onError={() => setSpriteFailed(true)}
+              style={{ transform: `translateX(-${getMascotRunFrame(elapsedMs, mascotY > 2) * 25}%)` }} />
+          </span> : <img src={mascotImg} alt="Mascotte" className="w-full h-full object-contain relative z-10" />}
+
         </div>
 
         {/* 💣 ENTITÀ SULLA STRADA */}
@@ -693,15 +710,17 @@ export default function RunnerPage() {
               className="absolute flex items-end justify-center pointer-events-none z-20 transition-none"
               style={{
                 left: `${ent.x}px`,
-                bottom: `${ent.yOffset + GROUND_Y}px`,
+                bottom: `${ent.yOffset}px`,
                 width: `${ent.width}px`,
-                height: `${ent.height}px`
+                height: `${ent.height}px`,
+                zIndex: 30 - Math.round(ent.yOffset / 10)
               }}
             >
               {ent.isCollectible && (
                 <div className="absolute -inset-2 rounded-full bg-amber-300/60 blur-md animate-pulse" />
               )}
 
+              {ent.targetLane !== undefined && Math.abs(laneFloor(ent.targetLane) - ent.yOffset) > 3 && <span className={runnerStyles.pigArrow}>{laneFloor(ent.targetLane) > ent.yOffset ? '↑' : '↓'}</span>}
               <RunnerIcon icon={ent.icon} label={ent.isCollectible ? 'Bonus da raccogliere' : 'Ostacolo'}
                 sprite={ent.isSprite} frame={getSpriteFrame(elapsedMs)}
                 className={`${runnerStyles.entityIcon} ${ent.isSprite ? runnerStyles.faceLeft : ''}`} />
@@ -714,7 +733,7 @@ export default function RunnerPage() {
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-5 text-center">
             <h1 className="text-2xl font-black uppercase text-amber-400 tracking-tight mb-2">Corsa Clandestina</h1>
             <p className="text-xs text-zinc-300 font-medium max-w-xs mb-5 leading-relaxed">
-              Fai doppio salto, raccogli super power-up e schiva maialini e sassi rotolanti!
+              Tre corsie, un salto. Raccogli a terra e schiva il traffico suino!
             </p>
             <button
               onClick={(e) => {
@@ -731,13 +750,16 @@ export default function RunnerPage() {
 
       </div>
 
-      <div className={runnerStyles.touchZone} aria-hidden="true">
-        <span className={runnerStyles.touchArrow}>↑ ↑</span>
-        <strong>TOCCA OVUNQUE PER SALTARE</strong>
-        <span>Due tocchi, doppio salto</span>
+      <div className={runnerStyles.controls} aria-label="Comandi corsa">
+        <div className={runnerStyles.controlLabel}><span>CONTROL DECK</span><span>● PLAYER 01</span></div>
+        <div className={runnerStyles.controlLayout}>
+          <div className={runnerStyles.directionPad}>
+            <button disabled={gameState !== 'PLAYING' || lane === 0} onClick={() => moveLane(-1)} aria-label="Corsia superiore"><span aria-hidden="true">▲</span><small>SU</small></button>
+            <button disabled={gameState !== 'PLAYING' || lane === 2} onClick={() => moveLane(1)} aria-label="Corsia inferiore"><span aria-hidden="true">▼</span><small>GIÙ</small></button>
+          </div>
+          <button className={runnerStyles.jumpButton} disabled={gameState !== 'PLAYING'} onClick={handleJump}><span aria-hidden="true">↥</span><small>SALTA</small></button>
+        </div>
       </div>
-
-      <div className={runnerStyles.nightTint} style={{ opacity: lighting.darkness * 0.58 }} aria-hidden="true" />
 
       <dialog ref={gameOverRef} className={styles.gameOverDialog} aria-labelledby="runner-gameover-title" onCancel={event => event.preventDefault()}>
         <div className="flex flex-col gap-3 p-5 text-center">

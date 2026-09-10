@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef, useReducer } from 'react';
 import Link from 'next/link';
+import GamePause from '@/components/games/GamePause';
+import { useGameMusic } from '@/components/games/useGameMusic';
 import { supabase } from '@/lib/supabase';
 import { FOOD_NAMES, getDifficulty, cookingTimes, getFoodImagePath, grillReducer, initialGrillGame, type FoodType, type Order } from '@/lib/grill-game';
 import styles from './grill.module.css';
@@ -12,6 +14,7 @@ interface ServingFlight { id: number; orderId: number; food: FoodType; x: number
 export default function GrigliataPage() {
   const [game, dispatch] = useReducer(grillReducer, initialGrillGame);
   const { phase: gameState, score, lives, combo: comboStreak, slots, orders } = game;
+  const playMusic = useGameMusic('/audio/giochi/grigliata.mp3', gameState === 'PLAYING');
   const difficulty = getDifficulty(game.elapsed);
   const survivalTime = `${Math.floor(game.elapsed / 60000)}:${String(Math.floor(game.elapsed / 1000) % 60).padStart(2, '0')}`;
   const gameOverRef = useRef<HTMLDialogElement>(null);
@@ -98,7 +101,7 @@ export default function GrigliataPage() {
     };
     setStats(updated);
     try { localStorage.setItem('grigliata_stats', JSON.stringify(updated)); } catch { /* Optional local record. */ }
-    const gainedXP = Math.max(12, Math.floor(score / 4) + Math.floor(game.elapsed / 1000 / 3));
+    const gainedXP = Math.floor(score / 4) + Math.floor(game.elapsed / 1000 / 3);
     setExpEarned(gainedXP);
     if (mascotId) {
       void (async () => {
@@ -109,6 +112,7 @@ export default function GrigliataPage() {
   }, [gameState, game.run, game.served, score, game.elapsed, mascotId, stats]);
 
   const startGame = () => {
+    playMusic(true);
     clickedSlotsRef.current.clear();
     setFlights([]); setServedOrders([]); setFeedback(null);
     setExpEarned(0);
@@ -233,9 +237,10 @@ export default function GrigliataPage() {
 
         {/* 1. HEADER */}
         <div className="flex justify-between items-center bg-zinc-900/90 border border-white/10 p-3 rounded-2xl shadow-xl backdrop-blur-md">
-          <Link href="/mascotte" className="bg-zinc-800 hover:bg-zinc-700 border border-white/20 text-[10px] font-black px-3 py-2 rounded-xl text-zinc-300">
+          <Link href="/mascotte" onClick={event => { if (gameState === 'PLAYING') { event.preventDefault(); dispatch({ type: 'PAUSE' }); } }} className="bg-zinc-800 hover:bg-zinc-700 border border-white/20 text-[10px] font-black px-3 py-2 rounded-xl text-zinc-300">
             ← MASCOTTE
           </Link>
+          {(gameState === 'PLAYING' || gameState === 'PAUSED') && <GamePause paused={gameState === 'PAUSED'} onPause={() => dispatch({ type: 'PAUSE' })} onResume={() => { playMusic(); dispatch({ type: 'RESUME' }); }} onFinish={() => dispatch({ type: 'FINISH' })} score={score} xp={Math.floor(score / 4) + Math.floor(game.elapsed / 1000 / 3)} />}
           <div className="text-right">
             <span className="text-[9px] font-black uppercase text-amber-500 tracking-wider block">
               🥩 GRIGLIATA DEL PANICO

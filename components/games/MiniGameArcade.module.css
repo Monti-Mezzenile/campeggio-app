@@ -1,0 +1,19 @@
+.arcade { padding: 12px; border: 1px solid #ffffff15; border-radius: 24px; background: #18181be6; }
+.arcade header { text-align: center; align-items: center; display: flex; flex-direction: column; gap: 4px; margin: 0 2px 14px; }
+.arcade h2 { color: white; font-size: 18px; font-weight: 900; }
+.arcade header > span { font-size: 9px; letter-spacing: .16em; color: #fbbf24; font-weight: 800; }
+.shelf { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.card { display: flex; flex-direction: column; min-width: 0; padding: 4px; border-radius: 14px; border: 1px solid var(--accent); background: linear-gradient(140deg,var(--tint),#09090b); box-shadow: 0 5px 0 #09090b; transition: transform .18s; }
+.card:hover { transform: translateY(-3px); }
+.card:active { transform: translateY(3px); }
+.card:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+.card img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 10px; }
+.runner { --accent: #7dd3fc; --tint: #075985; }
+.grill { --accent: #fdba74; --tint: #9a3412; }
+.merge { --accent: #c4b5fd; --tint: #5b21b6; }
+.play { margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 5px; color: var(--accent); font-size: 9px; font-weight: 900; padding: 10px 0 6px; letter-spacing: .04em; }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+
+.caption { padding: 9px 3px 2px; text-align: center; }
+.caption h3 { color: var(--accent); font-size: 12px; font-weight: 900; line-height: 1.4; }
+.caption p { color: #d4d4d8; font-size: 10px; line-height: 1.5; margin-top: 4px; overflow-wrap: anywhere; }

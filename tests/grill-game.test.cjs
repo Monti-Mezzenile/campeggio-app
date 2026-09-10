@@ -131,3 +131,25 @@ test('only losing all lives ends a run; retry resets survival and score', () => 
   assert.equal(game.elapsed, 0); assert.equal(game.score, 0); assert.equal(game.served, 0);
   assert.equal(game.lives, 3); assert.equal(game.run, run + 1);
 });
+
+test('pause freezes cooking, orders and score; resume continues the same run', () => {
+  const running = tick(place(start()), 2000);
+  const paused = reduce(running, { type: 'PAUSE' });
+  assert.equal(paused.phase, 'PAUSED');
+  assert.equal(tick(paused, 60000), paused);
+  assert.equal(place(paused), paused);
+  assert.equal(reduce(paused, { type: 'SERVE', index: 0 }), paused);
+  const resumed = reduce(paused, { type: 'RESUME' });
+  assert.deepEqual(resumed, running);
+  assert.equal(tick(resumed, 100).elapsed, running.elapsed + 100);
+});
+
+test('ending from pause preserves earned results and cannot end twice', () => {
+  let game = tick(place(start()), 6000);
+  game = reduce(game, { type: 'SERVE', index: 0 });
+  const ended = reduce(reduce(game, { type: 'PAUSE' }), { type: 'FINISH' });
+  assert.equal(ended.phase, 'GAMEOVER');
+  assert.ok(ended.score > 0);
+  for (const key of ['score', 'elapsed', 'served', 'lives', 'run']) assert.equal(ended[key], game[key]);
+  assert.equal(reduce(ended, { type: 'FINISH' }), ended);
+});

@@ -35,7 +35,7 @@ export const FOOD_NAMES: Record<FoodType, string> = {
 export interface GrillSlot { id: number; foodType: FoodType; elapsed: number; state: CookState }
 export interface Order { id: number; foodType: FoodType; timeLeft: number; maxTime: number }
 export interface GrillGame {
-  phase: 'START' | 'PLAYING' | 'GAMEOVER';
+  phase: 'START' | 'PLAYING' | 'PAUSED' | 'GAMEOVER';
   score: number;
   elapsed: number;
   lives: number;
@@ -56,6 +56,9 @@ export const cookingTimes = (elapsed: number) => ({
   burnt: 6000 / getDifficulty(elapsed).cookSpeed + Math.max(3000, 5000 / getDifficulty(elapsed).cookSpeed),
 });
 export type GrillAction =
+  | { type: 'PAUSE' }
+  | { type: 'RESUME' }
+  | { type: 'FINISH' }
   | { type: 'START'; random: number }
   | { type: 'TICK'; milliseconds: number; random: number }
   | { type: 'PLACE'; food: FoodType }
@@ -78,6 +81,9 @@ export function grillReducer(game: GrillGame, action: GrillAction): GrillGame {
     };
     return { ...next, orders: [newOrder(next, action.random)] };
   }
+  if (action.type === 'PAUSE') return game.phase === 'PLAYING' ? { ...game, phase: 'PAUSED' } : game;
+  if (action.type === 'RESUME') return game.phase === 'PAUSED' ? { ...game, phase: 'PLAYING' } : game;
+  if (action.type === 'FINISH') return game.phase === 'PAUSED' ? { ...game, phase: 'GAMEOVER' } : game;
   if (game.phase !== 'PLAYING') return game;
   if (action.type === 'PLACE') {
     if (!getDifficulty(game.elapsed).allowedFoods.includes(action.food)) return game;

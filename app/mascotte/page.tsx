@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import MiniGameArcade from '@/components/games/MiniGameArcade';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { persistedMascotNeeds } from '@/lib/mascot-needs';
@@ -797,48 +798,7 @@ export default function MascottePage() {
           </div>
           </section>
 
-          {/* SALA GIOCHI */}
-          <section aria-labelledby="minigiochi-title" className="rounded-3xl border border-white/10 bg-zinc-900/90 p-3 space-y-3">
-            <header className="px-1 pt-1">
-              <p className="text-[9px] font-black uppercase tracking-widest text-amber-400">Aumenta gli XP con i minigiochi</p>
-              <h2 id="minigiochi-title" className="text-lg font-black text-white mt-1">Scegli il tuo disastro.</h2>
-            </header>
-            <Link href="/runner" className="group relative isolate flex items-center min-h-[176px] overflow-hidden rounded-2xl border border-sky-300/30 bg-gradient-to-br from-cyan-950 via-sky-950 to-zinc-950 p-4 active:scale-[0.98] transition-transform focus-visible:outline-2 focus-visible:outline-sky-300">
-              <div className="relative z-20 w-[48%]">
-                <span className="text-[8px] font-black uppercase tracking-widest text-sky-300">Riflessi o rimpianti</span>
-                <h3 className="text-2xl font-black text-white mt-1">Corsa</h3>
-                <p className="text-[11px] text-sky-100/75 mt-1 leading-snug">Scappa dai problemi.<br />Salta quelli grossi.</p>
-                <span className="inline-flex mt-3 rounded-full bg-sky-300 px-3 py-1.5 text-[10px] font-black text-sky-950">CORRI ↗</span>
-              </div>
-              <div className="absolute right-0 bottom-2 w-[58%] h-[156px] pointer-events-none" aria-hidden="true">
-                <span className="absolute bottom-3 inset-x-3 h-5 rounded-[50%] bg-black/40 blur-md" />
-                <img src="/icons/cavallo-run.png" alt="" className="absolute -top-2 -left-2 w-[154px] h-[140px] max-w-none object-contain -rotate-6 group-hover:-translate-y-1 transition-transform" />
-                <img src="/icons/coniglio-run.png" alt="" className="absolute -bottom-1 -right-3 z-10 w-[130px] h-[122px] max-w-none object-contain rotate-3 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-            <div className="grid grid-cols-2 gap-3">
-              <Link href="/scorribanda" className="group relative overflow-hidden rounded-2xl border border-orange-400/30 bg-gradient-to-b from-orange-950 to-zinc-950 p-3 active:scale-[0.98] transition-transform focus-visible:outline-2 focus-visible:outline-orange-300">
-                <span className="text-[8px] font-black uppercase tracking-widest text-orange-300">Cottura o panico</span>
-                <div className="relative h-24 flex items-center justify-center" aria-hidden="true">
-                  <span className="absolute w-16 h-12 rounded-full bg-orange-500/30 blur-xl" />
-                  <img src="/grigliata/bistecca_cotta.png" alt="" className="relative w-24 h-24 object-contain -rotate-12 group-hover:rotate-0 transition-transform" />
-                </div>
-                <h3 className="text-lg font-black text-white">Grigliata</h3>
-                <p className="text-[10px] text-orange-100/70 min-h-8">Salva la cena.<br />La dignità è già andata.</p>
-                <span className="flex justify-between items-center mt-3 border-t border-orange-400/20 pt-2 text-[10px] font-black text-orange-300">ACCENDI IL CAOS <span>↗</span></span>
-              </Link>
-              <Link href="/allenamento" className="group relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-b from-violet-950 to-zinc-950 p-3 active:scale-[0.98] transition-transform focus-visible:outline-2 focus-visible:outline-violet-300">
-                <span className="text-[8px] font-black uppercase tracking-widest text-violet-300">Incastri e disastri</span>
-                <div className="relative h-24" aria-hidden="true">
-                  <img src="/merge/merge_carota.png" alt="" className="absolute w-14 h-14 top-3 left-0 -rotate-12 object-contain" />
-                  <img src="/merge/merge_mela.png" alt="" className="absolute w-20 h-20 top-3 right-0 rotate-12 object-contain group-hover:rotate-0 transition-transform" />
-                </div>
-                <h3 className="text-lg font-black text-white">Merge</h3>
-                <p className="text-[10px] text-violet-100/70 min-h-8">Fai spazio.<br />Al prossimo errore.</p>
-                <span className="flex justify-between items-center mt-3 border-t border-violet-400/20 pt-2 text-[10px] font-black text-violet-300">COMBINA GUAI <span>↗</span></span>
-              </Link>
-            </div>
-          </section>
+          <MiniGameArcade />
 
 
 
