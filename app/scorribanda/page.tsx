@@ -112,6 +112,7 @@ export default function GrigliataPage() {
   }, [gameState, game.run, game.served, score, game.elapsed, mascotId, stats]);
 
   const startGame = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     playMusic(true);
     clickedSlotsRef.current.clear();
     setFlights([]); setServedOrders([]); setFeedback(null);
@@ -220,7 +221,7 @@ export default function GrigliataPage() {
   }
 
   return (
-    <div className="relative flex flex-col items-center min-h-dvh bg-zinc-950 text-white select-none pt-3 sm:pt-6 px-3 sm:px-5 pb-6 overflow-x-hidden">
+    <div className={`${styles.gameSafeArea} relative flex flex-col items-center min-h-dvh bg-zinc-950 text-white select-none overflow-x-hidden`}>
       
       {/* ANIMAZIONE RALLENTATA SPRITE SHEET */}
       <style>{`

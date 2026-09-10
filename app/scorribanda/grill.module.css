@@ -82,3 +82,12 @@
 .ruleItem strong { display: block; font-size: 11px; text-transform: capitalize; color: #fde68a; }
 .ruleItem p { font-size: 10px; line-height: 1.35; color: #d4d4d8; }
 @media (max-width: 359px) { .ruleGrid { grid-template-columns: 1fr; } }
+
+/* Shared game surface: keep controls inside iPhone safe areas in either orientation. */
+.gameSafeArea {
+  box-sizing: border-box;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+}

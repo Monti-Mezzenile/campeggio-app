@@ -252,6 +252,7 @@ export default function RunnerPage() {
   }, [gameState]);
 
   const startGame = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     playMusic(true);
     laneRef.current = 1; floorRef.current = laneFloor(1);
     setLane(1); setFloor(laneFloor(1));
@@ -599,7 +600,7 @@ export default function RunnerPage() {
   const personalRecord = topScores.length > 0 ? topScores[0] : 0;
 
   return (
-    <div style={{ touchAction: gameState === 'PLAYING' ? 'none' : 'auto' }} className="relative flex flex-col items-center min-h-dvh bg-zinc-950 text-white overflow-x-hidden select-none pt-[calc(8px+env(safe-area-inset-top))] px-3 sm:px-5 pb-[calc(12px+env(safe-area-inset-bottom))]">
+    <div style={{ touchAction: gameState === 'PLAYING' ? 'none' : 'auto' }} className={`${styles.gameSafeArea} relative flex flex-col items-center min-h-dvh bg-zinc-950 text-white overflow-x-hidden select-none`}>
 
       {/* SFONDO GENERALE */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
