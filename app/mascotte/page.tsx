@@ -53,12 +53,12 @@ const calculateLiveStats = (mascotData: any) => {
 };
 
 const ITEMS = [
-  { id: 'carota', label: 'Carota', type: 'fame', val: 15, exp: 0, icon: '/icons/carota.png' },
-  { id: 'cosciotto', label: 'Cosciotto', type: 'fame', val: 35, exp: 1, icon: '/icons/cosciotto.png' },
-  { id: 'acqua', label: 'Acqua', type: 'sete', val: 20, exp: 0, icon: '/icons/acqua.png' },
-  { id: 'birra', label: 'Birra', type: 'sete', val: 35, exp: 1, icon: '/icons/birra.png' },
-  { id: 'cannetta', label: 'Cannetta', type: 'svago', val: 25, exp: 1, icon: '/icons/cannetta.png' },
-  { id: 'drone', label: 'Drone', type: 'svago', val: 40, exp: 2, icon: '/icons/drone.png' },
+  { id: 'carota', label: 'Carota', type: 'fame', val: 15, exp: 15, icon: '/icons/carota.png' },
+  { id: 'cosciotto', label: 'Cosciotto', type: 'fame', val: 35, exp: 35, icon: '/icons/cosciotto.png' },
+  { id: 'acqua', label: 'Acqua', type: 'sete', val: 20, exp: 20, icon: '/icons/acqua.png' },
+  { id: 'birra', label: 'Birra', type: 'sete', val: 35, exp: 35, icon: '/icons/birra.png' },
+  { id: 'cannetta', label: 'Cannetta', type: 'svago', val: 25, exp: 25, icon: '/icons/cannetta.png' },
+  { id: 'drone', label: 'Drone', type: 'svago', val: 40, exp: 40, icon: '/icons/drone.png' },
 ];
 
 const MASCOT_QUOTES = [
