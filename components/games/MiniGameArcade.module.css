@@ -2,7 +2,7 @@
 .arcade header { text-align: center; align-items: center; display: flex; flex-direction: column; gap: 4px; margin: 0 2px 14px; }
 .arcade h2 { color: white; font-size: 18px; font-weight: 900; }
 .arcade header > span { font-size: 9px; letter-spacing: .16em; color: #fbbf24; font-weight: 800; }
-.shelf { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.shelf { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .card { display: flex; flex-direction: column; min-width: 0; padding: 4px; border-radius: 14px; border: 1px solid var(--accent); background: linear-gradient(140deg,var(--tint),#09090b); box-shadow: 0 5px 0 #09090b; transition: transform .18s; }
 .card:hover { transform: translateY(-3px); }
 .card:active { transform: translateY(3px); }
@@ -17,3 +17,5 @@
 .caption { padding: 9px 3px 2px; text-align: center; }
 .caption h3 { color: var(--accent); font-size: 12px; font-weight: 900; line-height: 1.4; }
 .caption p { color: #d4d4d8; font-size: 10px; line-height: 1.5; margin-top: 4px; overflow-wrap: anywhere; }
+
+.bullet { --accent: #d4dba1; --tint: #304526; text-align: left; cursor: pointer; }

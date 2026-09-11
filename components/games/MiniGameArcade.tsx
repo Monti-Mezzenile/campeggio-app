@@ -7,6 +7,7 @@ export default function MiniGameArcade() {
     <div className={styles.shelf}>
       {[
         { name: 'Corsa clandestina', label: 'Corsa', description: 'Scappa. I problemi corrono.', href: '/runner', poster: 'runner', theme: styles.runner },
+        { name: 'Bullet Hell', label: 'Bullet Hell', description: 'Il bosco ha fame. Tu hai una raffica.', href: '/bullet-hell', poster: 'bullet', theme: styles.bullet },
         { name: 'Grigliata del panico', label: 'Grigliata', description: 'Sfama gli altri. Rischia la denuncia.', href: '/scorribanda', poster: 'grigliata', theme: styles.grill },
         { name: 'Merge', label: 'Merge', description: 'Fondi frutta. Spreca vita.', href: '/allenamento', poster: 'merge', theme: styles.merge },
       ].map(game => <Link key={game.href} href={game.href} aria-label={`Gioca a ${game.name}`} className={`${styles.card} ${game.theme}`}>

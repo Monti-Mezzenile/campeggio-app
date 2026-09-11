@@ -775,14 +775,13 @@ export default function MascottePage() {
           <header className="px-1 pt-1 pb-2">
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-500">Bestiario del campeggio</span>
             <h2 className="text-xl font-black text-white mt-1">Il peggio, in bella mostra.</h2>
-            <p className="text-xs text-zinc-400 mt-1">Scegli chi viziare. O a chi rovinare la giornata.</p>
+            <p className="text-xs text-zinc-400 mt-1">Qui vedi solo le sagome. Fai crescere la tua cavia per scoprire le evoluzioni.</p>
           </header>
           {otherMascots.length === 0 ? (
             <p className="text-center p-6 text-xs text-zinc-400 bg-zinc-900/50 rounded-2xl border border-white/5">Nessuna bestia in vista. Goditi la pace.</p>
           ) : (
             <div className="grid grid-cols-2 gap-3">
               {otherMascots.map((other, idx) => {
-                const otherDef = EVOLUTION_STAGES[other.fase] || EVOLUTION_STAGES[1];
                 const owner = !other.owner_name || other.owner_name === 'Ignoto' ? 'Allenatore anonimo' : other.owner_name;
                 const needs = [
                   { label: 'Fame', value: Math.min(100, Math.max(0, other.fame ?? 50)), color: 'bg-rose-400' },
@@ -795,10 +794,11 @@ export default function MascottePage() {
                     style={{ background: idx % 2 === 0 ? 'radial-gradient(ellipse at 50% 80%, #44403c, #18181b 75%)' : 'radial-gradient(ellipse at 50% 80%, #234138, #18181b 75%)' }}>
                     <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(to top, transparent 0px, transparent 31px, #fff 32px, transparent 33px)' }} />
                     <span className="absolute top-3 left-3 text-[9px] font-mono text-white/35">N° {String(idx + 1).padStart(2, '0')}</span>
-                    <span className="absolute top-3 right-3 text-[8px] font-black text-amber-200 bg-black/30 px-1.5 py-0.5 rounded-md">FASE {other.fase || 1}</span>
+                    <span className="absolute top-3 right-3 text-[10px] font-black text-amber-200 bg-black/30 px-1.5 py-0.5 rounded-md">FASE {other.fase || 1}</span>
                     <span className="absolute bottom-4 w-20 h-3 bg-black/50 rounded-full blur-md" aria-hidden="true" />
-                    <img src={getMascotPose(other.fase, poseTime, other.id || '')} alt={otherDef.name} loading="lazy" decoding="async" draggable={false}
-                      className="relative z-10 w-full h-36 px-2 mt-5 object-contain drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)] pointer-events-none" />
+                    <img src={getMascotPose(other.fase, 0, other.id || '')} alt="Sagoma misteriosa della cavia" loading="lazy" decoding="async" draggable={false}
+                      className="relative z-10 w-full h-36 px-2 mt-5 object-contain pointer-events-none select-none"
+                      style={{ filter: 'brightness(0) invert(0.65) blur(3px)', opacity: 0.7 }} />
                   </button>
                   <div className="p-3 flex flex-col flex-1 gap-2.5">
                     <div>

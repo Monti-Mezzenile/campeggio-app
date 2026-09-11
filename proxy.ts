@@ -76,5 +76,6 @@ export const config = {
     '/runner/:path*',
     '/scorribanda/:path*',
     '/allenamento/:path*',
+    '/bullet-hell/:path*',
   ],
 };
