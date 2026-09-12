@@ -6,6 +6,7 @@ import { useGameMusic } from '@/components/games/useGameMusic';
 import { supabase } from '@/lib/supabase';
 import { mountBulletGame, type BulletController, type BulletSnapshot } from '@/lib/bullet/runtime';
 import styles from './BulletHell.module.css';
+import BulletLeaderboard from './BulletLeaderboard';
 import { upgradeIcon } from '@/lib/bullet/upgrade-icons';
 
 const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
@@ -130,6 +131,7 @@ export default function BulletHell({ onClose }: { onClose: () => void }) {
         <h3>{snapshot.hp > 0 ? 'Per oggi basta.' : 'Ti hanno preso.'}</h3>
         <p>{formatTime(snapshot.seconds)} di resistenza · {snapshot.kills} nemici<br />{snapshot.score.toLocaleString('it-IT')} punti · Record: {best.toLocaleString('it-IT')}</p>
         <strong className={styles.reward}>+{snapshot.xp} XP</strong><p role="status">{reward}</p>
+        <BulletLeaderboard score={snapshot.score} />
         <button type="button" className={styles.primary} disabled={saving} onClick={start}>Un’altra rivolta</button>
         <button type="button" className={styles.secondary} disabled={saving} onClick={onClose}>Torna alla cavia</button>
       </div>}

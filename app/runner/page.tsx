@@ -580,11 +580,7 @@ export default function RunnerPage() {
         <p>Salta. Schiva. Raccogli.</p>
       </header>
       <section className={styles.guidePanel}>
-        <h2>1. CAMBIA CORSIA</h2>
-        <p>↑ e ↓ cambiano corsia. SALTA evita gli ostacoli; i bonus si prendono solo a terra nella stessa corsia.</p>
-      </section>
-      <section className={styles.guidePanel}>
-        <h2>2. EVITA</h2>
+        <h2>1. EVITA</h2>
         <div className={styles.ruleGrid}>
           {HAZARDS.map(item => <div key={item.id} className={styles.ruleItem}>
             <RunnerIcon icon={item.icon} label={item.id.replaceAll('_', ' ')} sprite={item.isSprite} className={`${styles.ruleIcon} ${runnerStyles.ruleIcon}`} />
@@ -594,7 +590,7 @@ export default function RunnerPage() {
         </div>
       </section>
       <section className={`${styles.guidePanel} ${styles.goldenPanel}`}>
-        <h2>3. RACCOGLI</h2>
+        <h2>2. RACCOGLI</h2>
         <div className={styles.ruleGrid}>
           {COLLECTIBLES.map(item => <div key={item.id} className={styles.ruleItem}>
             <RunnerIcon icon={item.icon} label={item.id} className={`${styles.ruleIcon} ${runnerStyles.ruleIcon}`} />

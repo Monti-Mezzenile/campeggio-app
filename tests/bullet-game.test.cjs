@@ -500,3 +500,26 @@ test('third boss and summoned reinforcements share a bounded population budget',
   assert.ok(populationLimit(100000) <= 48);
   assert.ok(populationLimit(100000, true) <= 18);
 });
+
+test('orbit upgrades keep moving during boss recovery without damaging surviving bosses', async () => {
+  const [{ BulletGame }, , , { WEAPONS }] = await ready;
+  const { BOSS_ROSTER } = await load('waves.js');
+  const game = new BulletGame(canopy, rng()); game.start(); game.enemies = [];
+  const orbitDef = Object.values(WEAPONS).find(def => def.type === 'orbit');
+  const orbit = game.makeWeapon(orbitDef);
+  game.player.weapons = [orbit];
+  const boss = game.spawn(BOSS_ROSTER[0]);
+  game.recoveryUntil = game.time + 8;
+  game.update(1 / 60);
+  const shard = orbit._shards[0];
+  const angle = shard.angle;
+  boss.x = shard.x; boss.y = shard.y;
+  const hp = boss.hp;
+  game.input.getMoveVector = () => ({ x: 1, y: 0 });
+  for (let i = 0; i < 60; i++) game.update(1 / 60);
+  assert.ok(shard.angle > angle);
+  assert.ok(Math.abs(Math.hypot(shard.x - game.player.x, shard.y - game.player.y) - shard.radius) < 0.001);
+  assert.equal(boss.hp, hp);
+  game.pause(); const pausedAngle = shard.angle;
+  game.update(1); assert.equal(shard.angle, pausedAngle);
+});

@@ -101,3 +101,12 @@
 @media (max-width: 350px), (orientation: landscape) and (max-height: 600px) { .upgradeIcon { width: 40px; height: 40px; } .choices button { gap: 8px; padding: 9px; } }
 
 .bossRow + .bossRow { margin-top: 7px; }
+
+.leaderboard { width: 100%; max-width: 420px; text-align: left; padding: 14px; border: 1px solid #cdbb7330; border-radius: 14px; background: #0b1511; }
+.leaderboard h4 { font-size: 15px; font-weight: 800; }
+.leaderboard p { margin: 5px 0 10px; }
+.leaderboard ol { list-style: none; padding: 0; margin: 0; }
+.leaderboard li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid #cdbb7320; font-size: 13px; }
+.rank { min-width: 24px; color: #e8cf91; font-variant-numeric: tabular-nums; }
+.playerName { flex: 1; overflow-wrap: anywhere; min-width: 0; }
+.leaderboard strong { font-variant-numeric: tabular-nums; white-space: nowrap; }
