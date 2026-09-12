@@ -442,3 +442,61 @@ test('first upgrade offers a new firing pattern and choosing equips it', async (
     assert.equal(game.state, 'playing');
   }
 });
+
+test('each boss death creates eight safe seconds, including during multi-boss encounters', async () => {
+  const [{ BulletGame, BOSS_RECOVERY_SECONDS }] = await ready;
+  const { BOSS_ROSTER, FOES } = await load('waves.js');
+  const game = new BulletGame(canopy, rng()); game.start(); game.enemies = [];
+  game.player.weapons = [];
+  const first = game.spawn(BOSS_ROSTER[0]);
+  const second = game.spawn(BOSS_ROSTER[1]);
+  game.spawn(FOES.minion);
+  game.enemyProjectiles = [{}]; game.bossShots = [{}]; game.hazards = [{}];
+  first.hp = 0; game.collectDeaths();
+  assert.equal(game.bossKills, 1); assert.equal(game.kills, 1);
+  assert.deepEqual(game.enemies, [second]);
+  assert.equal(game.enemyProjectiles.length + game.bossShots.length + game.hazards.length, 0);
+  assert.equal(game.snapshot().wave.secondsLeft, BOSS_RECOVERY_SECONDS);
+  assert.equal(game.snapshot().wave.breather, true);
+  assert.equal(game.spawn(FOES.minion), null);
+  assert.equal(game.special(), false);
+  const position = [second.x, second.y, second.hp];
+  const waveClock = game.time - game.waveDelay;
+  game.input.getMoveVector = () => ({ x: 1, y: 0 });
+  const playerX = game.player.x;
+  for (let i = 0; i < 420; i++) game.update(1 / 60);
+  assert.deepEqual([second.x, second.y, second.hp], position);
+  assert.ok(game.player.x > playerX);
+  assert.ok(Math.abs(game.time - game.waveDelay - waveClock) < 0.001);
+  assert.equal(game.recovering, true);
+  for (let i = 0; i < 70; i++) game.update(1 / 60);
+  assert.equal(game.recovering, false);
+  second.hp = 0; game.collectDeaths();
+  assert.equal(game.bossKills, 2); assert.equal(game.recovering, true);
+  assert.equal(game.enemies.length, 0);
+  game.pause(); const until = game.recoveryUntil, time = game.time;
+  game.update(10); assert.equal(game.time, time); assert.equal(game.recoveryUntil, until);
+});
+
+test('third boss and summoned reinforcements share a bounded population budget', async () => {
+  const [{ BulletGame, populationLimit }] = await ready;
+  const { FOES } = await load('waves.js');
+  const { updateBoss } = await load('bosses.js');
+  const game = new BulletGame(canopy, rng()); game.start(); game.enemies = [];
+  game.time = 440; game.nextBossIndex = 2;
+  for (let i = 0; i < 200; i++) game.spawn(FOES.minion);
+  assert.equal(game.enemies.length, populationLimit(440));
+  game.updateWaves(0);
+  const queen = game.enemies.find(e => e.boss);
+  assert.equal(queen.id, 'brood_queen');
+  assert.equal(game.enemies.filter(e => !e.boss).length, populationLimit(440, true));
+  for (let i = 0; i < 100; i++) {
+    game.spawn(FOES.minion2);
+    queen.attackCount = 0; queen.telegraph = { angle: 0, until: game.time };
+    updateBoss(queen, game, 0.01);
+    game.updateWaves(8);
+    assert.ok(game.enemies.length <= populationLimit(game.time, true) + 1);
+  }
+  assert.ok(populationLimit(100000) <= 48);
+  assert.ok(populationLimit(100000, true) <= 18);
+});

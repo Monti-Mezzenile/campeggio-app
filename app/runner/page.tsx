@@ -457,7 +457,7 @@ export default function RunnerPage() {
         nextSpawnAtRef.current = elapsedRef.current + Math.max(6000, (arenaWidth + waveLength + 150) / (currentSpeed * 60) * 1000);
         nextWaveRef.current = Math.max(
           elapsedRef.current + runnerWaveInterval(waveIndexRef.current),
-          nextSpawnAtRef.current + 1500,
+          nextSpawnAtRef.current + 16000,
         );
         setWaveWarning('');
       } else if (elapsedRef.current >= nextSpawnAtRef.current && elapsedRef.current < nextWaveRef.current - 6000) {

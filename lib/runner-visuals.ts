@@ -84,51 +84,46 @@ export function runnerWave(index: number, elapsed: number, random = Math.random)
 }
 
 export function runnerWaveInterval(index: number) {
-  return index < 8 ? 30000 : Math.max(8500, 15000 - (index - 8) * 450);
+  return index < 8 ? 30000 : 28000;
 }
 
 function advancedRunnerWave(index: number, random: () => number): RunnerWave {
   const pick = (count: number) => Math.floor(random() * count);
-  // Gradually approach the physical limits instead of repeating a final tier.
-  const pressure = 1 - 1 / (1 + (index - 8) / 12);
-  const rows = 4 + Math.floor(pressure * 6) + pick(3);
+  const pressure = 1 - 1 / (1 + Math.floor(index / 8) / 4);
+  const rows = 3 + Math.floor(pressure * 5) + pick(2);
+  const kind = index % 8;
   const hazards: RunnerWave['hazards'] = [];
   const pickups: NonNullable<RunnerWave['pickups']> = [];
   let offset = 0;
-  let previousGate = false;
+  let gap = pick(3);
   const add = (lane: number, hazard: number, targetLane = lane) => {
     hazards.push({ lane, offset, hazard, targetLane,
       ...(hazard === 4 ? { switchFraction: 0.72 + random() * 0.24 } : {}) });
   };
   for (let row = 0; row < rows; row++) {
-    // Choose each row independently: no fixed slalom, wave theme or pig route.
-    const gap = pick(3);
-    const gate = random() < 0.12 + pressure * 0.2;
-    if (row) {
-      const minimum = gate || previousGate ? 285 : Math.round(290 - pressure * 60);
-      offset += minimum + pick(Math.round(100 - pressure * 55));
-    }
-    if (gate) {
+    if (row) offset += (kind === 5 ? 285 : Math.round(310 - pressure * 65)) + pick(65);
+    if (kind === 3) {
+      // The offered round remains a genuine bonus break, with a new route.
+      gap = gap === 1 ? pick(2) * 2 : 1;
+      for (let i = 0; i < 3; i++) pickups.push({ lane: gap, offset: offset + i * 75, item: 1 });
+    } else if (kind === 5) {
       for (let lane = 0; lane < 3; lane++) add(lane, 1);
-    } else {
-      const count = random() < 0.45 + pressure * 0.5 ? 2 : 1;
-      const occupied = [0, 1, 2].filter(lane => lane !== gap);
-      if (random() < 0.5) occupied.reverse();
+    } else if (kind === 4) {
+      gap = gap === 1 ? pick(2) * 2 : 1;
+      for (let lane = 0; lane < 3; lane++) if (lane !== gap) add(lane, 0);
+      pickups.push({ lane: gap, offset, item: 0 });
+    } else if ([0, 2, 6].includes(kind)) {
+      // Every pig wave has its own routes: straight, inward, outward, crossing.
       const starts = [0, 1, 2];
-      for (let i = 0; i < count; i++) {
-        const hazard = pick(5);
-        if (hazard === 4) {
-          // Independent destinations allow straight runs, convergence, outward
-          // turns and crossings. Keep one destination lane open in every row.
-          const start = starts.splice(pick(starts.length), 1)[0];
-          add(start, hazard, occupied[pick(2)]);
-        } else add(occupied[i], hazard);
-      }
+      const count = kind === 6 || random() < pressure ? 2 : 1;
+      for (let i = 0; i < count; i++) add(starts.splice(pick(starts.length), 1)[0], 4, pick(3));
+    } else {
+      gap = pick(3);
+      add((gap + 1) % 3, 3);
+      if (random() < pressure) add((gap + 2) % 3, 3);
     }
-    previousGate = gate;
   }
-  // Rewards are unpredictable too, and safely follow the mixed formation.
-  pickups.push({ lane: pick(3), offset: offset + 220 + pick(100), item: random() < 0.15 ? 3 : pick(3) });
+  if (kind !== 3) pickups.push({ lane: pick(3), offset: offset + 240, item: random() < 0.15 ? 3 : pick(3) });
   return { label: '', hazards, pickups };
 }
 
