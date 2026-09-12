@@ -110,3 +110,13 @@
 .rank { min-width: 24px; color: #e8cf91; font-variant-numeric: tabular-nums; }
 .playerName { flex: 1; overflow-wrap: anywhere; min-width: 0; }
 .leaderboard strong { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.modeMenu { align-items: center; justify-content: safe center; gap: 16px; padding: 24px; overflow-y: auto; text-align: center; }
+.modeMenu > * { flex-shrink: 0; }
+.modeMenu h1 { font-size: 24px; font-weight: 900; }
+.modeMenu p { max-width: 380px; color: #c3c5b2; font-size: 13px; }
+.modePoster { width: min(280px, 40vh); border-radius: 20px; }
+.joinForm { display: grid; gap: 10px; width: min(100%, 320px); }
+.joinForm input { background: #081510; border: 1px solid #cdbb7360; border-radius: 10px; padding: 12px; color: white; font-size: 24px; letter-spacing: .25em; text-align: center; }
+.roomInfo strong { font-size: 30px; letter-spacing: .2em; color: #e8cf91; user-select: text; }
+.coopBar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px; padding: 7px 14px; font-size: 11px; background: #142c29; color: #b8e9ee; }

@@ -1,4 +1,6 @@
+import type { CoopConnection } from './coop-session';
 export interface BulletSnapshot {
+  coop?: boolean; playerIndex?: number; runId?: string; peerConnected?: boolean; teammateHp?: number; teammateMaxHp?: number; downed?: boolean; reviveProgress?: number;
   state: 'ready' | 'playing' | 'paused' | 'upgrade' | 'over';
   seconds: number; kills: number; hp: number; maxHp: number; level: number;
   exp: number; expToNext: number; specialIn: number; shield: number; speed: number;
@@ -12,4 +14,4 @@ export interface BulletController {
   start(): void; pause(): void; special(): void; choose(id: string): void;
   finish(): void; destroy(): void;
 }
-export function mountBulletGame(canvas: HTMLCanvasElement, surface: HTMLElement, onSnapshot: (snapshot: BulletSnapshot) => void, signal: AbortSignal, joystick: HTMLElement): Promise<BulletController>;
+export function mountBulletGame(canvas: HTMLCanvasElement, surface: HTMLElement, onSnapshot: (snapshot: BulletSnapshot) => void, signal: AbortSignal, joystick: HTMLElement, connection?: CoopConnection): Promise<BulletController>;

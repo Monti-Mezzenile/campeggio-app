@@ -93,3 +93,29 @@ ricarica e disegno dello speciale. `npm run build -- --webpack` verifica la buil
 Il controllo visivo sul telefono resta necessario: i permessi di controllo del
 browser non erano disponibili nella sessione. Controllare in particolare notch,
 safe area inferiore, orientamento e leggibilità delle barre sul dispositivo reale.
+
+
+## Cooperativa online
+
+Il menu offre single player oppure stanze per due account con codice di sei caratteri.
+Il creatore simula la partita a 60 Hz; l'ospite invia input normalizzati e riceve
+scene a 12,5 Hz, interpolate per il disegno. Il creatore resta rosa, l'ospite è azzurro.
+Salute, speciale e bonus temporanei sono personali; XP di livello e scelte dei
+potenziamenti sono condivisi. Tre secondi entro 85 unità rianimano il compagno.
+La partita termina quando entrambi cadono o uno sceglie di terminarla.
+
+`coop-game.js` estende il motore single player. `coop-wire.js` serializza soltanto
+i dati necessari al disegno; `coop-runtime.js` gestisce comandi, heartbeat,
+sequenze e identificatori di partita. Dopo tre secondi senza il compagno la
+simulazione va in pausa; si riprende esplicitamente quando torna connesso.
+Il creatore deve tenere aperta la partita: non è prevista migrazione dell'host.
+
+`coop-session.ts` usa due canali Supabase Realtime privati, uno per ruolo. Le policy
+permettono a entrambi di ricevere, ma solo al proprietario del ruolo di pubblicare.
+Le RPC in `20260912140000_bullet_coop_rooms.sql` creano e chiudono stanze,
+riservano il secondo posto con lock di riga e rifiutano terzi giocatori.
+Le stanze scadono dopo due ore. Uscire chiude la stanza.
+
+Verifiche: `node --test tests/bullet-coop.test.cjs tests/bullet-game.test.cjs`.
+`supabase/tests/bullet_coop.sql` va eseguito dentro `BEGIN` / `ROLLBACK` per
+verificare le RPC con tre profili esistenti senza persistere stanze di prova.
