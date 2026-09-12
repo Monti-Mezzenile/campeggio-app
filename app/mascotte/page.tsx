@@ -151,7 +151,7 @@ export default function MascottePage() {
     nome: 'Vittima del Campeggio',
     last_updated_at: new Date().toISOString()
   });
-  const [evolution, setEvolution] = useState<{ from: number; to: number; audioContext: AudioContext | null; soundtrack?: HTMLAudioElement; fullMotion?: boolean } | null>(null);
+  const [evolution, setEvolution] = useState<{ from: number; to: number; audioContext: AudioContext | null; soundtrack?: HTMLAudioElement } | null>(null);
   const previousPhaseRef = useRef<number | null>(null);
   const initialStoredPhaseRef = useRef<number | null>(null);
   const feedingRef = useRef(false);
@@ -582,7 +582,7 @@ export default function MascottePage() {
           to={EVOLUTION_STAGES[evolution.to]}
           audioContext={evolution.audioContext}
           soundtrack={evolution.soundtrack}
-          fullMotion={evolution.fullMotion}
+          fullMotion
           onComplete={finishEvolution}
         />
       )}
@@ -646,7 +646,7 @@ export default function MascottePage() {
                   const soundtrack = new Audio('/audio/trasformazione.mp3');
                   soundtrack.volume = 0.8;
                   void soundtrack.play().catch(() => {});
-                  setEvolution({ from: mascot.fase - 1, to: mascot.fase, audioContext: null, soundtrack, fullMotion: true });
+                  setEvolution({ from: mascot.fase - 1, to: mascot.fase, audioContext: null, soundtrack });
                 }} className="inline-flex whitespace-nowrap min-h-8 items-center gap-1.5 text-[10px] font-medium text-amber-300/65 hover:text-amber-300"><span aria-hidden="true">↻</span> Rivedi evoluzione</button>}
               </div>
             </div>

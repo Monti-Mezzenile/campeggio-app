@@ -9,7 +9,7 @@ import RunnerLandscape from '@/components/games/RunnerLandscape';
 import { supabase } from '@/lib/supabase';
 import styles from '../scorribanda/grill.module.css';
 import runnerStyles from './runner.module.css';
-import { HAZARDS, COLLECTIBLES, getRunnerLighting, getSpriteFrame, getRunnerPace, laneFloor, clampLane, runnerContact, runnerHorizontalContact, runnerWave, getMascotRunSheet, getMascotRunFrame } from '@/lib/runner-visuals';
+import { HAZARDS, COLLECTIBLES, getRunnerLighting, getSpriteFrame, getRunnerPace, laneFloor, clampLane, runnerContact, runnerHorizontalContact, runnerWave, runnerWaveInterval, getMascotRunSheet, getMascotRunFrame } from '@/lib/runner-visuals';
 
 // ⚙️ FISICA E COSTANTI
 const GRAVITY = 0.65;
@@ -30,6 +30,7 @@ interface Entity {
   yOffset: number;
   targetLane?: number;
   switchAt?: number;
+  laneChangeSpeed?: number;
   width: number;
   height: number;
   icon: string;
@@ -428,28 +429,36 @@ export default function RunnerPage() {
 
       // Every grounded object shares the road's displacement. Only mobile hazards overtake it.
       const arenaWidth = arenaRef.current?.clientWidth ?? 530;
-      const spawnHazard = (hazardIndex: number, lane: number, offset = 0, targetLane = lane) => {
+      const spawnHazard = (hazardIndex: number, lane: number, offset = 0, targetLane = lane, switchFraction = 0.65, synchronizeSpeed = false) => {
         const hazard = HAZARDS[hazardIndex];
+        const switchAt = arenaWidth * switchFraction;
         entitiesRef.current.push({
           ...hazard, id: Math.random(), x: arenaWidth + 24 + offset,
           yOffset: laneFloor(lane), width: hazard.width * 0.96, height: hazard.height * 0.96,
-          isCollectible: false, targetLane, switchAt: arenaWidth * 0.65,
+          isCollectible: false, targetLane, switchAt,
+          speedMultiplier: synchronizeSpeed ? 1 : (hazard.speedMultiplier ?? 1),
+          laneChangeSpeed: Math.max(1.5, Math.abs(laneFloor(targetLane) - laneFloor(lane)) * currentSpeed * 1.15 / Math.max(60, switchAt - 120)),
         });
       };
-      const wave = runnerWave(waveIndexRef.current, elapsedRef.current);
-      setWaveWarning(elapsedRef.current >= nextWaveRef.current - 3000 ? wave.label : '');
+      const introducing = waveIndexRef.current < 8;
+      setWaveWarning(introducing && elapsedRef.current >= nextWaveRef.current - 3000
+        ? runnerWave(waveIndexRef.current, elapsedRef.current).label : '');
       if (elapsedRef.current >= nextWaveRef.current) {
-        wave.hazards.forEach(item => spawnHazard(item.hazard, item.lane, item.offset, item.targetLane));
+        const wave = runnerWave(waveIndexRef.current, elapsedRef.current);
+        wave.hazards.forEach(item => spawnHazard(item.hazard, item.lane, item.offset, item.targetLane, item.switchFraction, !introducing));
         wave.pickups?.forEach(pickup => {
           const item = COLLECTIBLES[pickup.item];
           entitiesRef.current.push({ ...item, id: Math.random(), x: arenaWidth + 24 + pickup.offset,
             yOffset: laneFloor(pickup.lane), width: item.width * 0.96, height: item.height * 0.96, isCollectible: true });
         });
         waveIndexRef.current++;
-        nextWaveRef.current = elapsedRef.current + 30000;
         const waveLength = Math.max(0, ...wave.hazards.map(item => item.offset), ...(wave.pickups ?? []).map(item => item.offset));
         // Give the entire formation time to pass before adding random traffic.
         nextSpawnAtRef.current = elapsedRef.current + Math.max(6000, (arenaWidth + waveLength + 150) / (currentSpeed * 60) * 1000);
+        nextWaveRef.current = Math.max(
+          elapsedRef.current + runnerWaveInterval(waveIndexRef.current),
+          nextSpawnAtRef.current + 1500,
+        );
         setWaveWarning('');
       } else if (elapsedRef.current >= nextSpawnAtRef.current && elapsedRef.current < nextWaveRef.current - 6000) {
         const spawnLane = Math.floor(Math.random() * 3);
@@ -473,7 +482,7 @@ export default function RunnerPage() {
         ent.x -= (currentSpeed * speedMultiplier + (magnetic ? 4 : 0)) * frameScale;
         if (ent.targetLane !== undefined && ent.x < (ent.switchAt ?? 0)) {
           const target = laneFloor(ent.targetLane);
-          ent.yOffset += Math.sign(target - ent.yOffset) * Math.min(Math.abs(target - ent.yOffset), 1.5 * frameScale);
+          ent.yOffset += Math.sign(target - ent.yOffset) * Math.min(Math.abs(target - ent.yOffset), (ent.laneChangeSpeed ?? 1.5) * frameScale);
         }
         const isColliding = runnerHorizontalContact(ent.x, ent.width, ent.isCollectible) &&
           runnerContact(floorRef.current, mascotYRef.current, ent.yOffset, ent.isCollectible, ent.height);

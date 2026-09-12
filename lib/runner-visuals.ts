@@ -40,13 +40,14 @@ export function runnerContact(playerFloor: number, jump: number, entityFloor: nu
   return Math.abs(playerFloor - entityFloor) < (collectible ? 16 : 12) && (collectible ? jump <= 2 : jump < height * 0.55);
 }
 
-// Alternating, announced waves. Full-width barriers arrive only after two minutes.
+// Only the first circuit announces formations; later circuits remix them.
 interface RunnerWave {
   label: string;
-  hazards: { lane: number; offset: number; hazard: number; targetLane: number }[];
+  hazards: { lane: number; offset: number; hazard: number; targetLane: number; switchFraction?: number }[];
   pickups?: { lane: number; offset: number; item: number }[];
 }
-export function runnerWave(index: number, elapsed: number): RunnerWave {
+export function runnerWave(index: number, elapsed: number, random = Math.random): RunnerWave {
+  if (index >= 8) return advancedRunnerWave(index, random);
   const kind = index % 8;
   if (kind === 3) return {
     label: 'GIRO OFFERTO · SEGUI LE BIRRE!',
@@ -80,6 +81,55 @@ export function runnerWave(index: number, elapsed: number): RunnerWave {
     label: 'FRANA CON PERSONALITÀ · OCCHIO AI SASSI!',
     hazards: [{ lane: 0, offset: 0, hazard: 3, targetLane: 0 }, { lane: 1, offset: 180, hazard: 3, targetLane: 1 }, { lane: 2, offset: 360, hazard: 3, targetLane: 2 }],
   };
+}
+
+export function runnerWaveInterval(index: number) {
+  return index < 8 ? 30000 : Math.max(8500, 15000 - (index - 8) * 450);
+}
+
+function advancedRunnerWave(index: number, random: () => number): RunnerWave {
+  const pick = (count: number) => Math.floor(random() * count);
+  // Gradually approach the physical limits instead of repeating a final tier.
+  const pressure = 1 - 1 / (1 + (index - 8) / 12);
+  const rows = 4 + Math.floor(pressure * 6) + pick(3);
+  const hazards: RunnerWave['hazards'] = [];
+  const pickups: NonNullable<RunnerWave['pickups']> = [];
+  let offset = 0;
+  let previousGate = false;
+  const add = (lane: number, hazard: number, targetLane = lane) => {
+    hazards.push({ lane, offset, hazard, targetLane,
+      ...(hazard === 4 ? { switchFraction: 0.72 + random() * 0.24 } : {}) });
+  };
+  for (let row = 0; row < rows; row++) {
+    // Choose each row independently: no fixed slalom, wave theme or pig route.
+    const gap = pick(3);
+    const gate = random() < 0.12 + pressure * 0.2;
+    if (row) {
+      const minimum = gate || previousGate ? 285 : Math.round(290 - pressure * 60);
+      offset += minimum + pick(Math.round(100 - pressure * 55));
+    }
+    if (gate) {
+      for (let lane = 0; lane < 3; lane++) add(lane, 1);
+    } else {
+      const count = random() < 0.45 + pressure * 0.5 ? 2 : 1;
+      const occupied = [0, 1, 2].filter(lane => lane !== gap);
+      if (random() < 0.5) occupied.reverse();
+      const starts = [0, 1, 2];
+      for (let i = 0; i < count; i++) {
+        const hazard = pick(5);
+        if (hazard === 4) {
+          // Independent destinations allow straight runs, convergence, outward
+          // turns and crossings. Keep one destination lane open in every row.
+          const start = starts.splice(pick(starts.length), 1)[0];
+          add(start, hazard, occupied[pick(2)]);
+        } else add(occupied[i], hazard);
+      }
+    }
+    previousGate = gate;
+  }
+  // Rewards are unpredictable too, and safely follow the mixed formation.
+  pickups.push({ lane: pick(3), offset: offset + 220 + pick(100), item: random() < 0.15 ? 3 : pick(3) });
+  return { label: '', hazards, pickups };
 }
 
 // Four 256px frames per phase. The baby rabbit keeps its original still image.

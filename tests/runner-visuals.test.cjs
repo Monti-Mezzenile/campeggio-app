@@ -128,7 +128,65 @@ test('new waves provide a bonus break and clear slalom corridors without overlap
     const wave = runnerWave(index, 40000 + index * 30000);
     for (const item of [...wave.hazards, ...(wave.pickups ?? [])]) {
       assert.ok(item.lane >= 0 && item.lane <= 2);
-      assert.ok(item.offset >= 0 && item.offset <= 1100);
+      assert.ok(item.offset >= 0 && item.offset <= (index < 8 ? 1100 : 4500));
     }
+  }
+});
+
+test('after the introduction formations vary, stay silent and build pressure', () => {
+  const { runnerWave, runnerWaveInterval } = exported;
+  let seed = 42;
+  const random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
+  const signatures = new Set();
+  const pigRoutes = new Set();
+  let earlyCount = 0;
+  let lateCount = 0;
+  let mixedWaves = 0;
+  let veryLateCount = 0;
+  for (let sample = 0; sample < 300; sample++) {
+    const wave = runnerWave(8, 280000, random);
+    signatures.add(JSON.stringify(wave.hazards));
+    assert.equal(wave.label, '');
+    earlyCount += wave.hazards.length;
+    lateCount += runnerWave(40, 700000, random).hazards.length;
+    veryLateCount += runnerWave(200, 2500000, random).hazards.length;
+    if (new Set(wave.hazards.map(hazard => hazard.hazard)).size >= 3) mixedWaves++;
+    const offsets = [...new Set(wave.hazards.map(hazard => hazard.offset))];
+    for (const offset of offsets) {
+      const row = wave.hazards.filter(hazard => hazard.offset === offset);
+      assert.ok(new Set(row.map(hazard => hazard.targetLane)).size < 3 ||
+        (row.length === 3 && row.every(hazard => hazard.hazard === 1)),
+      'every row leaves an opening or a jumpable customs gate');
+    }
+    for (const hazard of wave.hazards) {
+      assert.ok([0, 1, 2].includes(hazard.lane));
+      assert.ok([0, 1, 2].includes(hazard.targetLane));
+      if (hazard.hazard === 4) pigRoutes.add(`${hazard.lane}>${hazard.targetLane}`);
+    }
+    for (const pickup of wave.pickups) {
+      assert.ok(!wave.hazards.some(hazard => hazard.offset === pickup.offset && hazard.targetLane === pickup.lane));
+    }
+  }
+  assert.ok(signatures.size > 100);
+  assert.equal(pigRoutes.size, 9, 'pigs use every direction, including straight runs and inward turns');
+  assert.ok(lateCount > earlyCount * 1.4);
+  assert.ok(veryLateCount > lateCount, 'complexity keeps increasing beyond the previous final tier');
+  assert.ok(mixedWaves > 200, 'obstacle types mix within waves, rather than repeating one theme');
+  assert.equal(runnerWaveInterval(7), 30000);
+  assert.ok(runnerWaveInterval(8) < 30000);
+  assert.ok(runnerWaveInterval(30) < runnerWaveInterval(8));
+  assert.equal(runnerWaveInterval(1000), 8500);
+});
+
+test('consecutive customs gates allow landing before the next jump at maximum speed', () => {
+  const { runnerWave, getRunnerPace } = exported;
+  const wave = runnerWave(40, 700000, () => 0.2);
+  const rows = [...new Set(wave.hazards.map(hazard => hazard.offset))];
+  assert.ok(rows.length >= 7);
+  // Match the game's single-jump physics, with a generous landing/reaction margin.
+  const jumpFrames = Math.ceil(2 * 12 / 0.65) + 10;
+  for (let i = 0; i < rows.length; i++) {
+    assert.equal(wave.hazards.filter(hazard => hazard.offset === rows[i]).length, 3);
+    if (i) assert.ok((rows[i] - rows[i - 1]) / getRunnerPace(700000).speed > jumpFrames);
   }
 });
