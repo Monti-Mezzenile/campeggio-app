@@ -403,6 +403,37 @@ export default function MascottePage() {
     if (!mascot.id || evolution || feedingRef.current) return;
     const statKey = item.type as 'fame' | 'sete' | 'svago';
 
+    if (statKey === 'svago') {
+      feedingRef.current = true;
+      const audioContext = prepareEvolutionAudio();
+      let evolving = false;
+      try {
+        const { data, error } = await supabase.rpc('play_with_mascot', { p_item: item.id });
+        if (error || !data) throw error ?? new Error('Risposta non disponibile');
+        if (data.status === 'resting') {
+          playAudioEffect('hurt');
+          setToastMsg(`😵 Basta giochi! La cavia deve riposare: riprova tra ${Math.max(1, Math.ceil(data.wait_seconds / 60))} minuti. Nessun XP assegnato.`);
+        } else {
+          const next = { ...mascot, ...data.mascot };
+          evolving = next.fase > mascot.fase;
+          if (evolving) evolutionAudioRef.current = audioContext;
+          mascotBaselineRef.current = next;
+          setMascot(next);
+          playAudioEffect(data.status === 'overstimulated' ? 'hurt' : 'munch');
+          setToastMsg(data.status === 'overstimulated'
+            ? '😵 Sovrastimolata! −15% Svago, nessun XP. Ora riposa per 30 minuti.'
+            : `+${Math.max(0, Math.round(next.svago - mascot.svago))}% SVAGO${data.xp > 0 ? ` e +${data.xp} XP` : ''}!${data.wait_seconds > 0 ? ' Ora riposa per 30 minuti.' : ''}`);
+        }
+        setTimeout(() => setToastMsg(null), 5000);
+      } catch {
+        setToastMsg('Non riesco a salvare la cavia. Riprova tra un momento.');
+      } finally {
+        feedingRef.current = false;
+        if (!evolving) void audioContext?.close().catch(() => {});
+      }
+      return;
+    }
+
     // 🚨 Indigestione/Sbronza scatta solo se la stat è già al 100% pieno
     if (mascot[statKey] >= 100) {
       const penalty = 15;
