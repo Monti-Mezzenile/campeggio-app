@@ -145,7 +145,7 @@ test('endless run continues past ten minutes, scores survival, and ends only on 
     assert.ok(game.projectiles.length <= 350 && game.enemyProjectiles.length <= 300);
   }
   assert.notEqual(game.state, 'over'); assert.ok(game.time > 600); assert.ok(game.kills > 0);
-  assert.equal(rewardForRun(240, 360), 240, "six minutes and 240 kills award twice the former 120 XP");
+  assert.equal(rewardForRun(240, 360), 216, "six minutes respect the shared 36 XP/minute ceiling");
   assert.equal(rewardForRun(0, 360), 120);
   assert.equal(rewardForRun(0, 0), 0);
   assert.equal(game.snapshot().xp, rewardForRun(game.kills, game.time));

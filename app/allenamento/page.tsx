@@ -1,5 +1,7 @@
 'use client';
 
+import { mergeReward } from '@/lib/game-rewards';
+
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import GamePause from '@/components/games/GamePause';
@@ -465,7 +467,7 @@ export default function MergePage() {
     setStats(updated);
     try { localStorage.setItem('merge_game_stats', JSON.stringify(updated)); } catch { /* Optional local record */ }
     setRanking([]); setRankingStatus('Caricamento classifica…'); setSaveStatus('');
-    const gained = Math.floor(view.score / 25);
+    const gained = mergeReward(view.score, view.elapsed / 1000);
     setXp(gained);
     const currentRun = () => runRef.current === run;
     void (async () => {
@@ -473,7 +475,7 @@ export default function MergePage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { if (currentRun()) setRankingStatus('Accedi per partecipare alla classifica dei profili.'); return; }
         const { error: saveError } = await supabase.rpc('submit_merge_score', { p_score: view.score });
-        const { error: xpError } = await supabase.rpc('increment_mascot_exp', { p_delta: gained });
+        const { error: xpError } = gained > 0 ? await supabase.rpc('increment_mascot_exp', { p_delta: gained }) : { error: null };
         if (currentRun()) setSaveStatus([saveError ? 'Punteggio non salvato online.' : '', xpError ? 'XP non accreditati: mascotte non disponibile o errore di rete.' : ''].filter(Boolean).join(' '));
         const entries: Rank[] = [];
         for (let offset = 0; ; offset += 100) {
@@ -549,7 +551,7 @@ export default function MergePage() {
       <header className="flex justify-between items-center bg-zinc-900/90 border border-amber-500/20 backdrop-blur-md rounded-2xl p-3 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
         <Link href="/mascotte" onClick={event => { if (phase === 'PLAYING') { event.preventDefault(); moveDirRef.current = 0; setPhase('PAUSED'); } }} className="text-xs font-black text-zinc-300 py-2 hover:text-amber-400 transition-colors">← CAVIA</Link>
         <h1 className="font-black text-amber-400 tracking-wider text-base drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]">MERGE</h1>
-        {(phase === 'PLAYING' || phase === 'PAUSED') && <GamePause paused={phase === 'PAUSED'} onPause={() => { moveDirRef.current = 0; setPhase('PAUSED'); }} onResume={() => { playMusic(); setPhase('PLAYING'); }} onFinish={() => { const game = gameRef.current; if (game) { game.phase = 'GAMEOVER'; setView({ ...game }); setPhase('GAMEOVER'); } }} score={view.score} xp={Math.floor(view.score / 25)} />}
+        {(phase === 'PLAYING' || phase === 'PAUSED') && <GamePause paused={phase === 'PAUSED'} onPause={() => { moveDirRef.current = 0; setPhase('PAUSED'); }} onResume={() => { playMusic(); setPhase('PLAYING'); }} onFinish={() => { const game = gameRef.current; if (game) { game.phase = 'GAMEOVER'; setView({ ...game }); setPhase('GAMEOVER'); } }} score={view.score} xp={mergeReward(view.score, view.elapsed / 1000)} />}
         <span className="text-xs text-amber-200">Record <strong className="text-amber-400 font-extrabold">{stats.maxScore}</strong></span>
       </header>
 

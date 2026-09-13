@@ -1,5 +1,7 @@
 'use client';
 
+import { runnerReward } from '@/lib/game-rewards';
+
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import GamePause from '@/components/games/GamePause';
@@ -311,7 +313,7 @@ export default function RunnerPage() {
     const finalScore = Math.floor(scoreRef.current);
     setScore(finalScore);
     setGameState('GAMEOVER');
-    const gained = Math.floor(finalScore / 15);
+    const gained = runnerReward(finalScore, elapsedRef.current / 1000);
     setExpEarned(gained);
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -776,7 +778,7 @@ export default function RunnerPage() {
           </div>
           <div className={runnerStyles.actionPad}>
           <button className={runnerStyles.jumpButton} disabled={gameState !== 'PLAYING'} onClick={handleJump}><span aria-hidden="true">↥</span><small>SALTA</small></button>
-            {(gameState === 'PLAYING' || gameState === 'PAUSED') && <GamePause buttonClassName={runnerStyles.pauseButton} paused={gameState === 'PAUSED'} onPause={pauseGame} onResume={resumeGame} onFinish={() => { void endGame(true); }} score={score} xp={Math.floor(score / 15)} />}
+            {(gameState === 'PLAYING' || gameState === 'PAUSED') && <GamePause buttonClassName={runnerStyles.pauseButton} paused={gameState === 'PAUSED'} onPause={pauseGame} onResume={resumeGame} onFinish={() => { void endGame(true); }} score={score} xp={runnerReward(score, elapsedMs / 1000)} />}
           </div>
         </div>
       </div>

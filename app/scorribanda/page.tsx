@@ -1,5 +1,7 @@
 'use client';
 
+import { grillReward } from '@/lib/game-rewards';
+
 import React, { useState, useEffect, useRef, useReducer } from 'react';
 import Link from 'next/link';
 import GamePause from '@/components/games/GamePause';
@@ -101,9 +103,9 @@ export default function GrigliataPage() {
     };
     setStats(updated);
     try { localStorage.setItem('grigliata_stats', JSON.stringify(updated)); } catch { /* Optional local record. */ }
-    const gainedXP = Math.floor(score / 4) + Math.floor(game.elapsed / 1000 / 3);
+    const gainedXP = grillReward(game.served, game.elapsed / 1000);
     setExpEarned(gainedXP);
-    if (mascotId) {
+    if (mascotId && gainedXP > 0) {
       void (async () => {
         const { data, error } = await supabase.rpc('increment_mascot_exp', { p_delta: gainedXP });
         if (!error && data !== null && mountedRef.current) { setCurrentExp(data); }
@@ -241,7 +243,7 @@ export default function GrigliataPage() {
           <Link href="/mascotte" onClick={event => { if (gameState === 'PLAYING') { event.preventDefault(); dispatch({ type: 'PAUSE' }); } }} className="bg-zinc-800 hover:bg-zinc-700 border border-white/20 text-[10px] font-black px-3 py-2 rounded-xl text-zinc-300">
             ← MASCOTTE
           </Link>
-          {(gameState === 'PLAYING' || gameState === 'PAUSED') && <GamePause paused={gameState === 'PAUSED'} onPause={() => dispatch({ type: 'PAUSE' })} onResume={() => { playMusic(); dispatch({ type: 'RESUME' }); }} onFinish={() => dispatch({ type: 'FINISH' })} score={score} xp={Math.floor(score / 4) + Math.floor(game.elapsed / 1000 / 3)} />}
+          {(gameState === 'PLAYING' || gameState === 'PAUSED') && <GamePause paused={gameState === 'PAUSED'} onPause={() => dispatch({ type: 'PAUSE' })} onResume={() => { playMusic(); dispatch({ type: 'RESUME' }); }} onFinish={() => dispatch({ type: 'FINISH' })} score={score} xp={grillReward(game.served, game.elapsed / 1000)} />}
           <div className="text-right">
             <span className="text-[9px] font-black uppercase text-amber-500 tracking-wider block">
               🥩 GRIGLIATA DEL PANICO
