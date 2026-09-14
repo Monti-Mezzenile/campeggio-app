@@ -1,6 +1,7 @@
 import type { CoopConnection } from './coop-session';
 export interface BulletSnapshot {
   coop?: boolean; playerIndex?: number; runId?: string; peerConnected?: boolean; teammateHp?: number; teammateMaxHp?: number; downed?: boolean; reviveProgress?: number;
+  maxUpgradeTier: number;
   state: 'ready' | 'playing' | 'paused' | 'upgrade' | 'over';
   seconds: number; kills: number; hp: number; maxHp: number; level: number;
   exp: number; expToNext: number; specialIn: number; shield: number; speed: number;

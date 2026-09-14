@@ -158,6 +158,7 @@ function BulletHellGame({ onClose, connection }: { onClose: () => void; connecti
       {snapshot && state === 'upgrade' && <div className={`${styles.overlay} ${styles.upgrades}`}>
         <span className={styles.tag}>LIVELLO {snapshot.level}</span><h3>Scegli come<br />fare danni.</h3>
         {connection && <p>Il potenziamento scelto vale per entrambi.</p>}
+        {snapshot.maxUpgradeTier < 3 && <p>Il grado 3 si sblocca dopo aver sconfitto il secondo boss.</p>}
         <div className={styles.choices}>{snapshot.choices.map(choice => <button type="button" key={choice.id} onClick={() => chooseUpgrade(choice.id)}>
           <img className={styles.upgradeIcon} src={upgradeIcon(choice.id)} alt="" width={56} height={56} draggable={false} />
           <div className={styles.upgradeCopy}><strong>{choice.label}<small>{choice.maxLevel ? `${choice.level} / ${choice.maxLevel}` : 'CURA'}</small></strong>

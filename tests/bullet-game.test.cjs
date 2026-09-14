@@ -112,7 +112,7 @@ test('dead enemies cannot inflict contact damage and only drop XP once', async (
 test('collected carrots open level choices and resume after a valid selection', async () => {
   const [{ BulletGame }, , { ExpOrb }] = await ready;
   const game = new BulletGame(canopy, rng()); game.start();
-  game.expOrbs = [new ExpOrb(game.player.x, game.player.y, 450)]; game.update(1 / 60);
+  game.expOrbs = [new ExpOrb(game.player.x, game.player.y, 475)]; game.update(1 / 60);
   assert.equal(game.state, 'upgrade'); assert.equal(game.player.level, 4);
   assert.ok(game.time < 1, 'first upgrade opens immediately, even before 20 seconds');
   game.choose('invalid'); assert.equal(game.state, 'upgrade');
@@ -522,4 +522,68 @@ test('orbit upgrades keep moving during boss recovery without damaging surviving
   assert.equal(boss.hp, hp);
   game.pause(); const pausedAngle = shard.angle;
   game.update(1); assert.equal(shard.angle, pausedAngle);
+});
+
+test('early levels stay quick, later costs grow without a plateau, and co-op costs 40% more', async () => {
+  const { levelXpCost } = await load('progression.js');
+  const [{ BulletGame }] = await ready;
+  const { CoopGame } = await load('coop-game.js');
+  assert.deepEqual([1, 2, 3, 4, 5, 6].map(level => levelXpCost(level)), [100, 135, 240, 390, 600, 870]);
+  assert.ok(levelXpCost(15) > levelXpCost(10));
+  assert.ok(levelXpCost(20) > levelXpCost(15));
+  for (const [Type, multiplier] of [[BulletGame, 1], [CoopGame, 1.4]]) {
+    const game = new Type(canopy, rng()); game.start();
+    for (let level = 1; level < 15; level++) {
+      assert.equal(game.player.expToNext, Math.ceil(levelXpCost(level) * multiplier));
+      game.player.gainExp(game.player.expToNext);
+      assert.equal(game.player.level, level + 1);
+      assert.equal(game.player.exp, 0);
+    }
+    game.start(); assert.equal(game.player.expToNext, Math.ceil(100 * multiplier));
+  }
+});
+
+test('third-tier weapons and passives unlock only after the second defeated boss', async () => {
+  const [{ BulletGame }, , , { WEAPONS, PASSIVES }] = await ready;
+  const { SHOT_WEAPONS } = await load('shot-patterns.js');
+  const game = new BulletGame(canopy, rng()); game.start();
+  game.player.weapons = ['KNIFE', 'MAGIC_WAND', 'ORBIT', 'MINE', 'FROST_NOVA'].map(key => {
+    const weapon = game.makeWeapon(WEAPONS[key]); weapon.levelUp(); return weapon;
+  });
+  const pattern = game.makeWeapon(SHOT_WEAPONS[0]); pattern.levelUp(); game.player.weapons.push(pattern);
+  for (const key of ['MIGHT', 'COOLDOWN', 'MOVESPEED', 'MAX_HP', 'MAGNET']) {
+    game.player.addPassive(PASSIVES[key]); game.player.addPassive(PASSIVES[key]);
+  }
+  for (const kills of [0, 1]) {
+    game.bossKills = kills; game.offerUpgrades();
+    assert.deepEqual(game.choices.map(c => c.id), ['heal']);
+    assert.equal(game.snapshot().maxUpgradeTier, 2);
+  }
+  game.bossKills = 2;
+  const offered = new Set();
+  for (let i = 0; i < 100; i++) {
+    game.offerUpgrades();
+    for (const choice of game.choices) if (choice.kind !== 'heal') {
+      assert.equal(choice.level, 3); offered.add(choice.kind);
+    }
+  }
+  assert.deepEqual([...offered].sort(), ['passive', 'weapon']);
+  assert.equal(game.snapshot().maxUpgradeTier, 3);
+  game.start(); assert.equal(game.snapshot().maxUpgradeTier, 2);
+});
+
+test('normal enemies drop bonuses half as often while every boss keeps its guaranteed reward', async () => {
+  const [{ BulletGame }] = await ready;
+  const game = new BulletGame(canopy); game.start();
+  for (let i = 0; i < 100; i++) {
+    game.random = () => (i + 0.5) / 100;
+    game.enemies = [{ hp: 0, boss: false, x: 0, y: 0, expValue: 10 }];
+    game.collectDeaths();
+  }
+  assert.equal(game.pickups.length, 6);
+  assert.equal(game.expOrbs.length, 100, 'XP carrots still drop from every enemy');
+  game.random = () => 0.99;
+  game.enemies = [{ hp: 0, boss: true, x: 0, y: 0, expValue: 220 }];
+  game.collectDeaths();
+  assert.equal(game.pickups.length, 7); assert.equal(game.pickups.at(-1).kind, 'heal');
 });

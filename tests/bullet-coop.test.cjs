@@ -47,7 +47,7 @@ test('guest collects shared XP and upgrades apply to both weapons', async () => 
   const game = await ready();
   const { ExpOrb } = await load('core/entities.js');
   const guest = game.players[1];
-  game.expOrbs.push(new ExpOrb(guest.x, guest.y, 100));
+  game.expOrbs.push(new ExpOrb(guest.x, guest.y, game.progressPlayer.expToNext));
   game.update(1 / 60);
   assert.equal(game.state, 'upgrade');
   assert.equal(game.snapshotFor(0).level, game.snapshotFor(1).level);
