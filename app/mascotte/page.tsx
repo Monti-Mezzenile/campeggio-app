@@ -806,13 +806,14 @@ export default function MascottePage() {
           <header className="px-1 pt-1 pb-2">
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-500">Bestiario del campeggio</span>
             <h2 className="text-xl font-black text-white mt-1">Il peggio, in bella mostra.</h2>
-            <p className="text-xs text-zinc-400 mt-1">Qui vedi solo le sagome. Fai crescere la tua cavia per scoprire le evoluzioni.</p>
+            <p className="text-xs text-zinc-400 mt-1">Vedi le cavie della tua fase o inferiore. Quelle più evolute restano sagome finché non le raggiungi.</p>
           </header>
           {otherMascots.length === 0 ? (
             <p className="text-center p-6 text-xs text-zinc-400 bg-zinc-900/50 rounded-2xl border border-white/5">Nessuna bestia in vista. Goditi la pace.</p>
           ) : (
             <div className="grid grid-cols-2 gap-3">
               {otherMascots.map((other, idx) => {
+                const isRevealed = (other.fase || 1) <= mascot.fase;
                 const owner = !other.owner_name || other.owner_name === 'Ignoto' ? 'Allenatore anonimo' : other.owner_name;
                 const needs = [
                   { label: 'Fame', value: Math.min(100, Math.max(0, other.fame ?? 50)), color: 'bg-rose-400' },
@@ -827,9 +828,9 @@ export default function MascottePage() {
                     <span className="absolute top-3 left-3 text-[9px] font-mono text-white/35">N° {String(idx + 1).padStart(2, '0')}</span>
                     <span className="absolute top-3 right-3 text-[10px] font-black text-amber-200 bg-black/30 px-1.5 py-0.5 rounded-md">FASE {other.fase || 1}</span>
                     <span className="absolute bottom-4 w-20 h-3 bg-black/50 rounded-full blur-md" aria-hidden="true" />
-                    <img src={getMascotPose(other.fase, 0, other.id || '')} alt="Sagoma misteriosa della cavia" loading="lazy" decoding="async" draggable={false}
+                    <img src={getMascotPose(other.fase || 1, isRevealed ? poseTime : 0, other.id || '')} alt={isRevealed ? other.nome_mascotte || 'Cavia' : 'Sagoma misteriosa della cavia'} loading="lazy" decoding="async" draggable={false}
                       className="relative z-10 w-full h-36 px-2 mt-5 object-contain pointer-events-none select-none"
-                      style={{ filter: 'brightness(0) invert(0.65) blur(3px)', opacity: 0.7 }} />
+                      style={isRevealed ? undefined : { filter: 'brightness(0) invert(0.65) blur(3px)', opacity: 0.7 }} />
                   </button>
                   <div className="p-3 flex flex-col flex-1 gap-2.5">
                     <div>
