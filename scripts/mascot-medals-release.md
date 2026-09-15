@@ -13,6 +13,6 @@ The first entry presents the medals introduction, followed by the fiscal receipt
 
 Care uses atomic server RPCs. Rejected care does not count. Care streaks and distinct game days use Europe/Rome dates. Full maintenance requires a new transition to three full bars. New game runs are registered at start and completed once by UUID; a repeated completion cannot change the run. Medal podiums have separate new-season standings and preserve earned trophies.
 
-Art: `ullatenente-di-ritorno.png` is the supplied filename. `non-era-un-coniglio.png` was not supplied; that card uses a horse placeholder until the artwork is added.
+Art: `ullatenente-di-ritorno.png` is the supplied filename. `non-era-un-coniglio.png` completes the supplied artwork collection.
 
 Validation: TypeScript, production build, targeted ESLint, game reward/evolution/grill tests, and SQL regression checks in a rolled-back transaction. `supabase/tests/mascot_medals.sql` must run inside a disposable/rolled-back transaction with the migration loaded and launch unset; never run it standalone on the active release.

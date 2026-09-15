@@ -88,7 +88,7 @@ export const MEDALS: Medal[] = [
     "requirement": "Raggiungere la fase 5 con una nuova evoluzione dopo l’apertura del medagliere.",
     "quip": "Sulla confezione sembrava più piccolo.",
     "target": 1,
-    "image": null
+    "image": "/medagliegiochi/non-era-un-coniglio.png"
   },
   {
     "id": "pigna-di-traverso",
