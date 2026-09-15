@@ -153,3 +153,15 @@ test('ending from pause preserves earned results and cannot end twice', () => {
   for (const key of ['score', 'elapsed', 'served', 'lives', 'run']) assert.equal(ended[key], game[key]);
   assert.equal(reduce(ended, { type: 'FINISH' }), ended);
 });
+
+test('medal streak preserves 35 consecutive orders after an error and resets for a new run', () => {
+  let game = { ...tick(place(start()), 6000), combo: 34, maxCombo: 34 };
+  game = reduce(game, { type: 'SERVE', index: 0 });
+  assert.equal(game.maxCombo, 35);
+  game = { ...game, orders: [{ id: 900, foodType: 'salsiccia', timeLeft: 1, maxTime: 20000 }] };
+  game = tick(game, 1);
+  assert.equal(game.combo, 0);
+  assert.equal(game.maxCombo, 35);
+  const next = reduce({ ...game, phase: 'GAMEOVER' }, { type: 'START', random: 0 });
+  assert.equal(next.maxCombo, 0);
+});

@@ -1,5 +1,7 @@
 'use client';
 
+import { beginMedalGame, finishMedalGame, type MedalRun } from '@/lib/medal-game-client';
+
 import { runnerReward } from '@/lib/game-rewards';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -64,6 +66,7 @@ export default function RunnerPage() {
   const playMusic = useGameMusic('/audio/giochi/runner.mp3', gameState === 'PLAYING');
   const [score, setScore] = useState(0);
   const [itemsCollectedCount, setItemsCollectedCount] = useState(0);
+  const medalRunRef = useRef<MedalRun | null>(null);
   const [expEarned, setExpEarned] = useState(0);
   const [mascotImg, setMascotImg] = useState('/tamagotchi/fase1_coniglio_piccolo.png');
   const [mascotPhase, setMascotPhase] = useState(1);
@@ -255,6 +258,7 @@ export default function RunnerPage() {
   }, [gameState]);
 
   const startGame = () => {
+    medalRunRef.current = beginMedalGame('corsa');
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     playMusic(true);
     laneRef.current = 1; floorRef.current = laneFloor(1);
@@ -311,6 +315,7 @@ export default function RunnerPage() {
       triggerScreenShake();
     }
     const finalScore = Math.floor(scoreRef.current);
+    void finishMedalGame(medalRunRef.current, finalScore).catch(e => setRankingStatus(e.message));
     setScore(finalScore);
     setGameState('GAMEOVER');
     const gained = runnerReward(finalScore, elapsedRef.current / 1000);

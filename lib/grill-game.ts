@@ -40,6 +40,7 @@ export interface GrillGame {
   elapsed: number;
   lives: number;
   combo: number;
+  maxCombo: number;
   served: number;
   slots: (GrillSlot | null)[];
   orders: Order[];
@@ -48,7 +49,7 @@ export interface GrillGame {
   run: number;
 }
 export const initialGrillGame: GrillGame = {
-  phase: 'START', score: 0, elapsed: 0, lives: 3, combo: 0,
+  phase: 'START', score: 0, elapsed: 0, lives: 3, combo: 0, maxCombo: 0,
   served: 0, slots: Array(6).fill(null), orders: [], spawnElapsed: 0, nextId: 1, run: 0,
 };
 export const cookingTimes = (elapsed: number) => ({
@@ -109,7 +110,7 @@ export function grillReducer(game: GrillGame, action: GrillAction): GrillGame {
     return {
       ...game, slots, orders: game.orders.filter((_, index) => index !== orderIndex),
       score: game.score + Math.round(35 * (1 + game.combo * 0.2)),
-      combo: game.combo + 1, served: game.served + 1,
+      combo: game.combo + 1, maxCombo: Math.max(game.maxCombo, game.combo + 1), served: game.served + 1,
     };
   }
   const dt = Math.max(0, action.milliseconds);

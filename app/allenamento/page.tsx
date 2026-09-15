@@ -1,5 +1,7 @@
 'use client';
 
+import { beginMedalGame, finishMedalGame, type MedalRun } from '@/lib/medal-game-client';
+
 import { mergeReward } from '@/lib/game-rewards';
 
 import { useEffect, useRef, useState } from 'react';
@@ -332,6 +334,7 @@ function drawGame(
 }
 
 export default function MergePage() {
+  const medalRunRef = useRef<MedalRun | null>(null);
   const [phase, setPhase] = useState<'GUIDE' | 'PLAYING' | 'PAUSED' | 'GAMEOVER'>('GUIDE');
   const playMusic = useGameMusic('/audio/giochi/merge.mp3', phase === 'PLAYING');
   const [view, setView] = useState(() => createMergeGame(() => 0.5));
@@ -469,14 +472,16 @@ export default function MergePage() {
     setRanking([]); setRankingStatus('Caricamento classifica…'); setSaveStatus('');
     const gained = mergeReward(view.score, view.elapsed / 1000);
     setXp(gained);
+    const medalRun = medalRunRef.current;
     const currentRun = () => runRef.current === run;
     void (async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { if (currentRun()) setRankingStatus('Accedi per partecipare alla classifica dei profili.'); return; }
+        const medalError = await finishMedalGame(medalRun, view.score).then(() => '', e => e.message);
         const { error: saveError } = await supabase.rpc('submit_merge_score', { p_score: view.score });
         const { error: xpError } = gained > 0 ? await supabase.rpc('increment_mascot_exp', { p_delta: gained }) : { error: null };
-        if (currentRun()) setSaveStatus([saveError ? 'Punteggio non salvato online.' : '', xpError ? 'XP non accreditati: mascotte non disponibile o errore di rete.' : ''].filter(Boolean).join(' '));
+        if (currentRun()) setSaveStatus([medalError, saveError ? 'Punteggio non salvato online.' : '', xpError ? 'XP non accreditati: mascotte non disponibile o errore di rete.' : ''].filter(Boolean).join(' '));
         const entries: Rank[] = [];
         for (let offset = 0; ; offset += 100) {
           const { data, error } = await supabase.rpc('get_merge_leaderboard').range(offset, offset + 99);
@@ -491,6 +496,7 @@ export default function MergePage() {
   }, [phase, stats, view]);
 
   const start = () => {
+    medalRunRef.current = beginMedalGame('merge');
     playMusic(true);
     runRef.current++;
     moveDirRef.current = 0;

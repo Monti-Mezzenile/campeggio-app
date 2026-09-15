@@ -1,5 +1,7 @@
 'use client';
 
+import { beginMedalGame, finishMedalGame, type MedalRun } from '@/lib/medal-game-client';
+
 import { grillReward } from '@/lib/game-rewards';
 
 import React, { useState, useEffect, useRef, useReducer } from 'react';
@@ -58,6 +60,7 @@ export default function GrigliataPage() {
   const plateRefs = useRef(new Map<number, HTMLDivElement>());
   const displayOrders = [...orders, ...servedOrders].sort((a, b) => a.id - b.id);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const medalRunRef = useRef<MedalRun | null>(null);
   const rewardRunRef = useRef(0);
   const flightIdRef = useRef(0);
   const clickedSlotsRef = useRef(new Set<number>());
@@ -97,6 +100,7 @@ export default function GrigliataPage() {
   useEffect(() => {
     if (gameState !== 'GAMEOVER' || rewardRunRef.current === game.run) return;
     rewardRunRef.current = game.run;
+    void finishMedalGame(medalRunRef.current, score, game.maxCombo).catch(e => setRankingStatus(e.message));
     const updated = {
       bestScore: Math.max(stats.bestScore, score), totalGrillades: stats.totalGrillades + 1,
       itemsServed: stats.itemsServed + game.served,
@@ -114,6 +118,7 @@ export default function GrigliataPage() {
   }, [gameState, game.run, game.served, score, game.elapsed, mascotId, stats]);
 
   const startGame = () => {
+    medalRunRef.current = beginMedalGame('grigliata');
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     playMusic(true);
     clickedSlotsRef.current.clear();

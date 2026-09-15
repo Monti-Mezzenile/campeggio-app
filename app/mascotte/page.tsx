@@ -4,11 +4,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { EVOLUTION_STAGES, EXP_THRESHOLDS, MAX_MASCOT_PHASE, getStageFromExp, getMascotPose } from '@/lib/mascot-evolution';
 import { usePoseClock } from '@/components/mascot/usePoseClock';
+import MascotMedals from '@/components/mascot/MascotMedals';
 import FitText from '@/components/ui/FitText';
 import MiniGameArcade from '@/components/games/MiniGameArcade';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
-import { persistedMascotNeeds } from '@/lib/mascot-needs';
 import EvolutionSequence, { prepareEvolutionAudio } from '@/components/mascot/EvolutionSequence';
 
 const DECAY_RATES = { fame: 3.5, sete: 4.5, svago: 3.0 };
@@ -219,19 +219,10 @@ export default function MascottePage() {
         }
 
         initialStoredPhaseRef.current = myMascot.fase || 1;
-        const liveMyMascot = calculateLiveStats(myMascot);
-        const updatedMyMascot = { ...liveMyMascot, ...persistedMascotNeeds(liveMyMascot) };
-
-        const persistedAt = new Date().toISOString();
-        await supabase.from('mascots').update({
-          fame: updatedMyMascot.fame,
-          sete: updatedMyMascot.sete,
-          svago: updatedMyMascot.svago,
-          exp: updatedMyMascot.exp,
-          fase: updatedMyMascot.fase,
-          owner_name: ownerName,
-          last_updated_at: persistedAt
-        }).eq('id', myMascot.id);
+        const { data: refreshed, error: refreshError } = await supabase.rpc('refresh_mascot');
+        if (refreshError || !refreshed) throw refreshError ?? new Error('Cavia non disponibile');
+        const updatedMyMascot = refreshed;
+        const persistedAt = refreshed.last_updated_at;
 
         if (!isMounted) return;
 
@@ -403,112 +394,33 @@ export default function MascottePage() {
     if (!mascot.id || evolution || feedingRef.current) return;
     const statKey = item.type as 'fame' | 'sete' | 'svago';
 
-    if (statKey === 'svago') {
-      feedingRef.current = true;
-      const audioContext = prepareEvolutionAudio();
-      let evolving = false;
-      try {
-        const { data, error } = await supabase.rpc('play_with_mascot', { p_item: item.id });
-        if (error || !data) throw error ?? new Error('Risposta non disponibile');
-        if (data.status === 'resting') {
-          playAudioEffect('hurt');
-          setToastMsg(`😵 Basta giochi! La cavia deve riposare: riprova tra ${Math.max(1, Math.ceil(data.wait_seconds / 60))} minuti. Nessun XP assegnato.`);
-        } else {
-          const next = { ...mascot, ...data.mascot };
-          evolving = next.fase > mascot.fase;
-          if (evolving) evolutionAudioRef.current = audioContext;
-          mascotBaselineRef.current = next;
-          setMascot(next);
-          playAudioEffect(data.status === 'overstimulated' ? 'hurt' : 'munch');
-          setToastMsg(data.status === 'overstimulated'
-            ? '😵 Sovrastimolata! −15% Svago, nessun XP. Ora riposa per 30 minuti.'
-            : `+${Math.max(0, Math.round(next.svago - mascot.svago))}% SVAGO${data.xp > 0 ? ` e +${data.xp} XP` : ''}!${data.wait_seconds > 0 ? ' Ora riposa per 30 minuti.' : ''}`);
-        }
-        setTimeout(() => setToastMsg(null), 5000);
-      } catch {
-        setToastMsg('Non riesco a salvare la cavia. Riprova tra un momento.');
-      } finally {
-        feedingRef.current = false;
-        if (!evolving) void audioContext?.close().catch(() => {});
-      }
-      return;
-    }
-
-    // 🚨 Indigestione/Sbronza scatta solo se la stat è già al 100% pieno
-    if (mascot[statKey] >= 100) {
-      const penalty = 15;
-      const updatedNeeds = persistedMascotNeeds({ ...mascot, svago: mascot.svago - penalty });
-      const nowIso = new Date().toISOString();
-      feedingRef.current = true;
-      try {
-        const { error } = await supabase.from('mascots').update({
-          ...updatedNeeds, last_updated_at: nowIso,
-        }).eq('id', mascot.id);
-        if (error) throw error;
-      } catch (error) {
-        console.error('Errore salvataggio cavia:', error);
-        setToastMsg('Non riesco a salvare la cavia. Riprova tra un momento.');
-        return;
-      } finally {
-        feedingRef.current = false;
-      }
-      const next = { ...mascot, ...updatedNeeds, last_updated_at: nowIso };
-      mascotBaselineRef.current = next;
-      setMascot(next);
-      playAudioEffect('hurt');
-      setToastMsg(item.type === 'sete' ? `🥴 Sbronza colossale! (-15% Svago)` : `🤮 Indigestione! (-15% Svago)`);
-      setTimeout(() => setToastMsg(null), 5000);
-      return;
-    }
-
-    const isCritical = mascot.fame < 20 || mascot.sete < 20 || mascot.svago < 20;
-    const expGained = isCritical ? 0 : item.exp;
-
-    const updatedNeeds = persistedMascotNeeds({ ...mascot, [statKey]: mascot[statKey] + item.val });
-    const newExp = mascot.exp + expGained;
-    const newFase = getStageFromExp(newExp);
-    const nowIso = new Date().toISOString();
-
-    const updatedMascot = {
-      ...mascot,
-      ...updatedNeeds,
-      exp: newExp,
-      fase: newFase,
-      last_updated_at: nowIso
-    };
-
     feedingRef.current = true;
-    if (newFase > mascot.fase) {
-      void evolutionAudioRef.current?.close().catch(() => {});
-      evolutionAudioRef.current = prepareEvolutionAudio();
-    }
+    const audioContext = prepareEvolutionAudio();
+    let evolving = false;
     try {
-      const { error } = await supabase.from('mascots').update({
-        ...updatedNeeds,
-        exp: newExp,
-        fase: newFase,
-        last_updated_at: nowIso,
-      }).eq('id', mascot.id);
-      if (error) throw error;
-    } catch (error) {
-      console.error('Errore salvataggio cavia:', error);
-      void evolutionAudioRef.current?.close().catch(() => {});
-      evolutionAudioRef.current = null;
-      setToastMsg('Non riesco a salvare la cavia. Riprova tra un momento.');
-      return;
+      const { data, error } = await supabase.rpc('care_for_mascot', { p_item: item.id });
+      if (error || !data) throw error ?? new Error('Risposta non disponibile');
+      if (data.status === 'resting') {
+        setToastMsg(`😵 Deve riposare ancora ${Math.max(1, Math.ceil(data.wait_seconds / 60))} minuti.`);
+      } else {
+        const next = { ...mascot, ...data.mascot };
+        evolving = next.fase > mascot.fase;
+        if (evolving) evolutionAudioRef.current = audioContext;
+        mascotBaselineRef.current = next;
+        setMascot(next);
+        playAudioEffect(data.status === 'played' ? 'munch' : 'hurt');
+        setToastMsg(data.status === 'overstimulated' ? '😵 Sovrastimolata! −15% Svago. Riposo per 30 minuti.'
+          : data.status === 'overfed' ? '🥴 Era già piena! −15% Svago. Questa cura non conta per i distintivi.'
+          : `+${Math.max(0, Math.round(next[statKey] - mascot[statKey]))}% ${statKey.toUpperCase()} · +${data.xp} XP${data.wait_seconds > 0 ? ' · Ora riposa per 30 minuti.' : ''}`);
+        window.dispatchEvent(new Event('mascot-medals-changed'));
+      }
+      setTimeout(() => setToastMsg(null), 5000);
+    } catch {
+      setToastMsg('Non riesco a salvare la cura. Riprova tra un momento.');
     } finally {
       feedingRef.current = false;
+      if (!evolving) void audioContext?.close().catch(() => {});
     }
-
-    mascotBaselineRef.current = updatedMascot;
-    setMascot(updatedMascot);
-
-    if (newFase <= mascot.fase) {
-      playAudioEffect('munch');
-      setToastMsg(`+${item.val}% ${statKey.toUpperCase()}${expGained > 0 ? ` e +${expGained} XP` : ''}!`);
-      setTimeout(() => setToastMsg(null), 5000);
-    }
-
   };
 
   const handleMascotTap = () => {
@@ -528,7 +440,7 @@ export default function MascottePage() {
     setRivalActionPending(true);
 
     try {
-      const { data, error } = await supabase.rpc('apply_mascot_action', {
+      const { data, error } = await supabase.rpc('medal_rival_action', {
         p_target_mascot_id: rival.id,
         p_action_type: actionType,
       });
@@ -540,6 +452,7 @@ export default function MascottePage() {
         return;
       }
 
+      window.dispatchEvent(new Event('mascot-medals-changed'));
       const result = data as {
         id: string;
         fame: number;
@@ -793,6 +706,7 @@ export default function MascottePage() {
           </div>
           </section>
 
+          {user && <MascotMedals userId={user.id} />}
           <MiniGameArcade />
 
 
@@ -885,6 +799,7 @@ export default function MascottePage() {
                 <p className="text-[9px] uppercase tracking-widest text-amber-400 font-black">Relazioni tossiche</p>
                 <h3 className="text-lg font-black text-white mt-1">{selectedRival.nome_mascotte || 'Bestia Ignota'}</h3>
                 <p className="text-xs text-zinc-400 mt-1">Scegli il danno. O compra il perdono.</p>
+                <MascotMedals userId={selectedRival.user_id} readOnly />
               </div>
               <div className="grid grid-cols-2 gap-2 pt-1">
                 {([

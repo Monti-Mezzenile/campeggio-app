@@ -1,5 +1,7 @@
 'use client';
 
+import { beginMedalGame, finishMedalGame, type MedalRun } from '@/lib/medal-game-client';
+
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Gamepad2, Zap, Swords, Volume2, VolumeX } from 'lucide-react';
 import { useGameMusic } from '@/components/games/useGameMusic';
@@ -29,9 +31,11 @@ function BulletHellGame({ onClose, connection }: { onClose: () => void; connecti
   const controller = useRef<BulletController | null>(null);
   const finished = useRef(false);
   const lastRun = useRef('');
+  const medalRunRef = useRef<MedalRun | null>(null);
   const [snapshot, setSnapshot] = useState<BulletSnapshot | null>(null);
   const [error, setError] = useState('');
   const [reward, setReward] = useState('');
+  const [medalError, setMedalError] = useState('');
   const [best, setBest] = useState(0);
   const [loadingAttempt, setLoadingAttempt] = useState(0);
   const [muted, setMuted] = useState(false);
@@ -48,6 +52,7 @@ function BulletHellGame({ onClose, connection }: { onClose: () => void; connecti
         setBest(next);
       } catch { /* A local record is optional in private browsing. */ }
       const currentRun = () => !abort.signal.aborted && (!run.runId || run.runId === lastRun.current);
+      try { await finishMedalGame(medalRunRef.current, run.score); } catch (e) { if (currentRun()) setMedalError(e instanceof Error ? e.message : 'Distintivi non salvati'); }
       if (run.xp <= 0) { setReward('Nessun XP maturato in questa partita.'); return; }
       setReward('Salvataggio XP della cavia…');
       try {
@@ -58,10 +63,15 @@ function BulletHellGame({ onClose, connection }: { onClose: () => void; connecti
         if (currentRun()) setReward('Connessione interrotta: salvataggio XP non confermato.');
       }
     };
+    let trackedMedalRun = '';
     const receive = (run: BulletSnapshot) => {
       if (abort.signal.aborted) return;
       if (run.runId && run.runId !== lastRun.current) {
         lastRun.current = run.runId; finished.current = false; setReward('');
+      }
+      if (run.state === 'playing' && (!medalRunRef.current || (run.runId && run.runId !== trackedMedalRun))) {
+        trackedMedalRun = run.runId || '';
+        medalRunRef.current = beginMedalGame('bullet');
       }
       setSnapshot(run);
       if (run.state === 'over' && !finished.current) {
@@ -87,7 +97,7 @@ function BulletHellGame({ onClose, connection }: { onClose: () => void; connecti
         const { error } = await supabase.rpc('start_bullet_room', { p_id: connection.room.id });
         if (error) throw error;
       }
-      finished.current = false; setReward(''); controller.current?.start();
+      finished.current = false; medalRunRef.current = null; setMedalError(''); setReward(''); controller.current?.start();
     } catch { setError('Impossibile avviare la stanza. Verifica la connessione.'); }
     finally { setStarting(false); }
   };
@@ -97,6 +107,7 @@ function BulletHellGame({ onClose, connection }: { onClose: () => void; connecti
   const saving = reward === 'Salvataggio XP della cavia…';
 
   return <section ref={root} className={styles.game} aria-label="Bullet Hell: la rivolta della cavia">
+    {medalError && <p role="status">{medalError}</p>}
     {snapshot && state === 'ready' && <div className={`${styles.overlay} ${styles.intro}`}>
       <h1 className={styles.srOnly}>Bullet Hell</h1>
       <img className={styles.introPoster} src="/locandinegiochi/bullet.jpeg" alt="Bullet Hell: la rivolta della cavia" width={2048} height={2048} />
