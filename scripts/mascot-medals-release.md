@@ -16,3 +16,9 @@ Care uses atomic server RPCs. Rejected care does not count. Care streaks and dis
 Art: `ullatenente-di-ritorno.png` is the supplied filename. `non-era-un-coniglio.png` completes the supplied artwork collection.
 
 Validation: TypeScript, production build, targeted ESLint, game reward/evolution/grill tests, and SQL regression checks in a rolled-back transaction. `supabase/tests/mascot_medals.sql` must run inside a disposable/rolled-back transaction with the migration loaded and launch unset; never run it standalone on the active release.
+
+## Rehabilitation medal
+
+`20260915120000_grill_rehabilitation_medal.sql` replaces the unused clean-record award with `riabilitato-alla-brace`, reusing its PNG. It requires ten completed grill runs started after that account's fiscal allocation was applied. Only runs already tracked in the new ledger are eligible. Completion triggers and UUID idempotency prevent repeated submissions from incrementing it twice. No XP, launch dates or other counters are reset.
+
+The mascot page and its dialogs reserve the safe-area insets on all four edges for notched devices.

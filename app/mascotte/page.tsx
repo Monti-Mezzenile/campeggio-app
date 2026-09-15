@@ -1,5 +1,6 @@
 'use client';
 
+import styles from './mascotte.module.css';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { EVOLUTION_STAGES, EXP_THRESHOLDS, MAX_MASCOT_PHASE, getStageFromExp, getMascotPose } from '@/lib/mascot-evolution';
@@ -519,7 +520,7 @@ export default function MascottePage() {
   const isCriticalState = mascot.fame < 20 || mascot.sete < 20 || mascot.svago < 20;
 
   return (
-    <div className="flex flex-col items-center min-h-dvh bg-zinc-950 text-white select-none pb-24">
+    <div className={`${styles.page} flex flex-col items-center min-h-dvh bg-zinc-950 text-white select-none`}>
       {evolution && (
         <EvolutionSequence
           from={EVOLUTION_STAGES[evolution.from]}
@@ -532,7 +533,7 @@ export default function MascottePage() {
       )}
       
       {/* TESSERINO DI SOPRAVVIVENZA */}
-      <div className="w-full max-w-md px-3 pb-2 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+      <div className="w-full max-w-md px-3 pb-2">
         <div className="relative overflow-hidden rounded-[1.75rem] border border-amber-400/20 bg-zinc-950/90 p-3 shadow-2xl shadow-black/50 backdrop-blur-xl">
           <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-amber-500/10 blur-2xl" />
 
@@ -622,7 +623,7 @@ export default function MascottePage() {
         </div>
       </div>
 
-      {toastMsg && activeTab !== 'mascotte' && <div role="status" className="fixed bottom-5 left-4 right-4 z-[60] mx-auto max-w-sm rounded-2xl border border-amber-400/40 bg-zinc-950 px-4 py-3 text-center text-xs font-bold text-amber-300 shadow-xl">{toastMsg}</div>}
+      {toastMsg && activeTab !== 'mascotte' && <div role="status" className={`${styles.toast} fixed z-[60] mx-auto max-w-sm rounded-2xl border border-amber-400/40 bg-zinc-950 px-4 py-3 text-center text-xs font-bold text-amber-300 shadow-xl`}>{toastMsg}</div>}
 
       {/* 🧭 SELETTORE TAB */}
       <div className="w-full max-w-md px-4 mt-3 z-10">
@@ -791,8 +792,8 @@ export default function MascottePage() {
       {/* MODAL INTERAZIONE RIVALE */}
       <AnimatePresence>
         {selectedRival && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} className="bg-zinc-900 border-2 border-amber-500/50 rounded-3xl p-5 w-full max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain text-center relative shadow-2xl space-y-4">
+          <div className={`${styles.rivalOverlay} fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center`}>
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} className={`${styles.rivalDialog} bg-zinc-900 border-2 border-amber-500/50 rounded-3xl p-5 w-full max-w-sm overflow-y-auto overscroll-contain text-center relative shadow-2xl space-y-4`}>
               <button onClick={() => setSelectedRival(null)} aria-label="Chiudi interazioni" className="absolute top-2 right-2 w-11 h-11 text-white font-bold text-sm">✕</button>
 
               <div className="pr-5 text-left">

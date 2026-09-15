@@ -19,12 +19,12 @@ export const MEDALS: Medal[] = [
     "image": "/medagliegiochi/ullatenente-di-ritorno.png"
   },
   {
-    "id": "fedina-culinaria-pulita",
-    "name": "Fedina culinaria pulita",
+    "id": "riabilitato-alla-brace",
+    "name": "Riabilitato alla brace",
     "category": "Finanza",
-    "requirement": "Essere presenti alla verifica senza XP da correggere.",
-    "quip": "Una volta tanto, torna tutto.",
-    "target": 1,
+    "requirement": "Completare 10 grigliate iniziate dopo la tua verifica fiscale. Contano soltanto le partite del nuovo registro.",
+    "quip": "Ha pagato il conto. Ora pretende la ricevuta.",
+    "target": 10,
     "image": "/medagliegiochi/fedina-culinaria-pulita.png"
   },
   {
