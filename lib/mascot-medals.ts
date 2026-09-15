@@ -182,7 +182,7 @@ export const MEDALS: Medal[] = [
   }
 ];
 for (const [game, name] of [['corsa', 'Corsa'], ['bullet', 'Bullet Hell'], ['grigliata', 'Grigliata'], ['merge', 'Merge']]) {
-  for (let rank = 1; rank <= 3; rank++) MEDALS.push({ id: `${game}${rank}`, name: `${name} · ${rank}° posto`, category: 'Podi dei giochi', requirement: `Raggiungere il ${rank}° posto nella classifica del medagliere, con le partite giocate dalla sua apertura. Il distintivo resta tuo anche se vieni superato. A parità di punti conta chi li ha ottenuti prima.`, quip: 'Il podio passa. La gloria resta.', target: 1, image: `/medagliegiochi/${game}${rank}.png` });
+  for (let rank = 1; rank <= 3; rank++) MEDALS.push({ id: `${game}${rank}`, name: `${name} · ${rank}° posto`, category: 'Podi dei giochi', requirement: `Raggiungere il ${rank}° posto nella classifica del medagliere, con le partite giocate dalla sua apertura. Il distintivo resta tuo anche se vieni superato. A parità di punti conta chi li ha ottenuti prima. Il 15 settembre 2026 il distintivo è stato assegnato anche ai primi tre delle classifiche storiche esistenti.`, quip: 'Il podio passa. La gloria resta.', target: 1, image: `/medagliegiochi/${game}${rank}.png` });
 }
 export interface MedalState {
   launched_at: string | null;

@@ -800,8 +800,8 @@ export default function MascottePage() {
                 <p className="text-[9px] uppercase tracking-widest text-amber-400 font-black">Relazioni tossiche</p>
                 <h3 className="text-lg font-black text-white mt-1">{selectedRival.nome_mascotte || 'Bestia Ignota'}</h3>
                 <p className="text-xs text-zinc-400 mt-1">Scegli il danno. O compra il perdono.</p>
-                <MascotMedals userId={selectedRival.user_id} readOnly />
               </div>
+              <MascotMedals key={selectedRival.user_id} userId={selectedRival.user_id} readOnly />
               <div className="grid grid-cols-2 gap-2 pt-1">
                 {([
                   { action: 'pigna', icon: '/icons/ceppo.png', label: 'Saluto dal bosco', hint: 'Una pigna. Zero affetto.', effect: '−12% Svago', tone: 'border-red-500/30 bg-red-950/40 text-red-300' },

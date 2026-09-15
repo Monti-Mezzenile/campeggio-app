@@ -22,3 +22,9 @@ Validation: TypeScript, production build, targeted ESLint, game reward/evolution
 `20260915120000_grill_rehabilitation_medal.sql` replaces the unused clean-record award with `riabilitato-alla-brace`, reusing its PNG. It requires ten completed grill runs started after that account's fiscal allocation was applied. Only runs already tracked in the new ledger are eligible. Completion triggers and UUID idempotency prevent repeated submissions from incrementing it twice. No XP, launch dates or other counters are reset.
 
 The mascot page and its dialogs reserve the safe-area insets on all four edges for notched devices.
+
+## Current leaderboard awards
+
+`20260915150000_award_existing_game_podiums.sql` grants the top three medals from each existing leaderboard as explicitly requested. The assignment is preserved in `mascot_podium_snapshot_20260915`; ties follow the visible leaderboards (score descending, user UUID ascending). Existing earned medals keep their original dates, and no care/game counters or XP are changed. Future new-season medal rules are unchanged.
+
+Rival sheets use a compact medal ribbon. It displays the owner's featured medals or, when none are selected, up to three most recently earned medals. The full catalog remains accessible through “Vedi tutti”.

@@ -65,10 +65,23 @@ export default function MascotMedals({ userId, readOnly = false }: { userId: str
   }
   const featured = (data?.featured || []).map(id => MEDALS.find(m => m.id === id)).filter((m): m is Medal => !!m);
   const earned = data?.earned || {};
-  const count = Object.keys(earned).length;
+  const collected = MEDALS.filter(m => earned[m.id]).sort((a, b) => Date.parse(earned[b.id]) - Date.parse(earned[a.id]));
+  const displayed = featured.length ? featured : collected.slice(0, 3);
+  const count = collected.length;
   const audit = data?.audit;
   const active = !!data?.launched_at;
-  return <section className={styles.section} aria-label={readOnly ? 'Distintivi della cavia' : 'Il tuo medagliere'}>
+  return <section className={readOnly ? styles.rivalSummary : styles.section} aria-label={readOnly ? 'Distintivi della cavia' : 'Il tuo medagliere'}>
+    {readOnly ? <>
+      <div className={styles.rivalHeading}>
+        <h2>Distintivi <span>{data ? count : '…'}</span></h2>
+        <button type="button" onClick={() => { setSelected(null); setOpen(true); }} aria-label="Apri tutti i distintivi di questa cavia">Vedi tutti <span aria-hidden="true">↗</span></button>
+      </div>
+      <div className={styles.rivalMedals}>
+        {displayed.map(medal => <button key={medal.id} type="button" title={medal.name} aria-label={medal.name} onClick={() => { setSelected(medal); setOpen(true); }}><MedalArt medal={medal} /></button>)}
+        {displayed.length === 0 && <p>{data ? 'Una reputazione ancora da costruire.' : 'Caricamento distintivi…'}</p>}
+        {count > displayed.length && <button type="button" className={styles.moreMedals} onClick={() => { setSelected(null); setOpen(true); }} aria-label={`Altri ${count - displayed.length} distintivi`}>+{count - displayed.length}</button>}
+      </div>
+    </> : <>
     <div className={styles.heading}><div><small>ONORI DI DUBBIA PROVENIENZA</small><h2>Il medagliere</h2></div><span className={styles.count}>{count}<small> / {MEDALS.length}</small></span></div>
     <div className={styles.featured}>
       {[0, 1, 2].map(i => <button type="button" key={i} className={styles.slot} onClick={() => { setSelected(featured[i] || null); setOpen(true); }} aria-label={featured[i]?.name || `Posto ${i + 1} per un distintivo`}>
@@ -77,11 +90,12 @@ export default function MascotMedals({ userId, readOnly = false }: { userId: str
     </div>
     <button type="button" className={styles.catalogButton} onClick={() => { setSelected(null); setOpen(true); }}>Apri il medagliere <span>→</span></button>
     {!readOnly && <p className={styles.caption}>{active ? 'Scegli fino a 3 distintivi da esporre. Gli altri potranno ammirarli. O rosicare.' : 'Il registro aprirà con il lancio. Puoi già scoprire le imprese.'}</p>}
+    </>}
     {error && <p role="alert" className={styles.error}>{error} <button type="button" onClick={() => void load()}>Riprova</button></p>}
     {newMedal && !step && <button className={styles.unlocked} onClick={() => { setSelected(newMedal); setNewMedal(null); setOpen(true); }}><MedalArt medal={newMedal} /><span>NUOVO DISTINTIVO!<strong>{newMedal.name}</strong></span></button>}
 
     <dialog ref={dialog} className={styles.dialog} onCancel={() => { setOpen(false); setSelected(null); }} onClose={() => setOpen(false)}>
-      <div className={styles.dialogHeader}><div><small>ARCHIVIO DELLE IMPRESE DISCUTIBILI</small><h2>{selected ? 'Verbale di gloria' : 'La tua leggenda, a pezzi'}</h2></div><button autoFocus type="button" onClick={() => { setOpen(false); setSelected(null); }} aria-label="Chiudi medagliere">✕</button></div>
+      <div className={styles.dialogHeader}><div><small>ARCHIVIO DELLE IMPRESE DISCUTIBILI</small><h2>{selected ? 'Verbale di gloria' : readOnly ? 'La sua leggenda, a pezzi' : 'La tua leggenda, a pezzi'}</h2></div><button autoFocus type="button" onClick={() => { setOpen(false); setSelected(null); }} aria-label="Chiudi medagliere">✕</button></div>
       {selected ? <div className={styles.detail}>
         <button type="button" className={styles.back} onClick={() => setSelected(null)}>← Tutti i distintivi</button>
         <MedalArt medal={selected} locked={!earned[selected.id]} />
@@ -95,7 +109,7 @@ export default function MascotMedals({ userId, readOnly = false }: { userId: str
         <p className={styles.introText}>{readOnly ? 'Le imprese di questa cavia.' : 'Le medaglie raccontano ciò che combini. Nessun bonus XP: solo gloria, sospetti e pessime abitudini.'}</p>
         <p className={styles.launch}>{active ? `Conteggi dal ${new Date(data!.launched_at!).toLocaleString('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'short', timeStyle: 'short' })} · ora italiana` : 'Conteggi ancora fermi · apertura con il lancio'}. Le azioni precedenti non contano. I distintivi della Finanza ricordano l’evento.</p>
         <div className={styles.filters} aria-label="Categorie">{['Tutti', ...new Set(MEDALS.map(m => m.category))].map(c => <button type="button" key={c} aria-pressed={c === category} onClick={() => setCategory(c)}>{c}</button>)}</div>
-        <div className={styles.grid}>{MEDALS.filter(m => category === 'Tutti' || m.category === category).map(m => <button type="button" key={m.id} className={`${styles.card} ${earned[m.id] ? styles.earned : ''}`} onClick={() => setSelected(m)}>
+        <div className={styles.grid}>{MEDALS.filter(m => category === 'Tutti' || m.category === category).sort((a, b) => readOnly ? Number(!!earned[b.id]) - Number(!!earned[a.id]) : 0).map(m => <button type="button" key={m.id} className={`${styles.card} ${earned[m.id] ? styles.earned : ''}`} onClick={() => setSelected(m)}>
           <span className={styles.status}>{earned[m.id] ? '✓ CONQUISTATO' : 'DA CONQUISTARE'}</span><MedalArt medal={m} locked={!earned[m.id]} /><h3>{m.name}</h3><Progress medal={m} data={data} readOnly={readOnly} /><span className={styles.discover}>Scopri il requisito →</span>
         </button>)}</div>
       </>}
